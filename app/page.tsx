@@ -87,33 +87,28 @@ export default function Home() {
     [partA, partB, currentStrap]
   );
 
-  const adjustGap = (direction: "in" | "out") => {
+  const setGapHalf = (nextHalfGap: number) => {
     if (!partA || !partB) return;
     const centerY = (partA.y + partB.y) / 2;
-    const halfGap = (partB.y - partA.y) / 2;
-    const step = 28;
     const minHalfGap = 250;
     const maxHalfGap = 700;
-    const nextHalfGap = clamp(
-      halfGap + (direction === "in" ? -step : step),
-      minHalfGap,
-      maxHalfGap
-    );
-    setPartA((prev) => (prev ? { ...prev, y: centerY - nextHalfGap } : prev));
-    setPartB((prev) => (prev ? { ...prev, y: centerY + nextHalfGap } : prev));
+    const boundedGap = clamp(nextHalfGap, minHalfGap, maxHalfGap);
+    setPartA((prev) => (prev ? { ...prev, y: centerY - boundedGap } : prev));
+    setPartB((prev) => (prev ? { ...prev, y: centerY + boundedGap } : prev));
   };
 
-  const adjustStrapScale = (direction: "in" | "out") => {
-    const step = 5;
-    const nextA = clamp((partA?.scale ?? 80) + (direction === "in" ? step : -step), 30, 230);
-    const nextB = clamp((partB?.scale ?? 80) + (direction === "in" ? step : -step), 30, 230);
-    setPartA((prev) => (prev ? { ...prev, scale: nextA } : prev));
-    setPartB((prev) => (prev ? { ...prev, scale: nextB } : prev));
+  const setStrapScale = (nextScale: number) => {
+    const boundedScale = clamp(nextScale, 30, 250);
+    setPartA((prev) => (prev ? { ...prev, scale: boundedScale } : prev));
+    setPartB((prev) => (prev ? { ...prev, scale: boundedScale } : prev));
   };
 
-  const adjustDialScale = (direction: "in" | "out") => {
-    setDialScale((prev) => clamp(prev + (direction === "in" ? 0.05 : -0.05), 0.7, 1.35));
+  const setDialScaleValue = (nextScale: number) => {
+    setDialScale(clamp(nextScale, 0.7, 1.35));
   };
+
+  const strapGap = partA && partB ? (partB.y - partA.y) / 2 : 320;
+  const strapScale = partA && partB ? (partA.scale + partB.scale) / 2 : 90;
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-12">
@@ -189,17 +184,6 @@ export default function Home() {
           <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
             3. Live Preview
           </h2>
-          <div className="mb-2 flex items-center justify-center gap-2 text-center text-sm font-medium text-muted">
-            <button
-              type="button"
-              onClick={() => onCycleStrap(-1)}
-              className="rounded-md border border-line px-2 py-1 text-base text-ink hover:bg-canvas"
-              aria-label="Previous strap"
-            >
-              ↑
-            </button>
-            <span>Scroll Up / Down To Change Strap</span>
-          </div>
         {isCleaningDial ? (
           <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
             Cleaning uploaded dial background...
@@ -223,24 +207,33 @@ export default function Home() {
             onCycleStrap={onCycleStrap}
             controls={
               <div className="rounded-xl border border-line bg-canvas p-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted">
                   Preview Controls
                 </p>
                 <div className="mt-2 grid gap-2">
-                  <ControlRow
+                  <SliderControl
                     label="Strap Gap"
-                    onMinus={() => adjustGap("in")}
-                    onPlus={() => adjustGap("out")}
+                    min={250}
+                    max={700}
+                    step={1}
+                    value={strapGap}
+                    onChange={setGapHalf}
                   />
-                  <ControlRow
+                  <SliderControl
                     label="Strap Size"
-                    onMinus={() => adjustStrapScale("out")}
-                    onPlus={() => adjustStrapScale("in")}
+                    min={30}
+                    max={250}
+                    step={1}
+                    value={strapScale}
+                    onChange={setStrapScale}
                   />
-                  <ControlRow
+                  <SliderControl
                     label="Dial Size"
-                    onMinus={() => adjustDialScale("out")}
-                    onPlus={() => adjustDialScale("in")}
+                    min={0.7}
+                    max={1.35}
+                    step={0.01}
+                    value={dialScale}
+                    onChange={setDialScaleValue}
                   />
                 </div>
               </div>
@@ -251,18 +244,6 @@ export default function Home() {
             Upload a watch image to start previewing straps.
           </div>
         )}
-          <div className="mt-2 flex items-center justify-center gap-2 text-center text-sm font-medium text-muted">
-            <button
-              type="button"
-              onClick={() => onCycleStrap(1)}
-              className="rounded-md border border-line px-2 py-1 text-base text-ink hover:bg-canvas"
-              aria-label="Next strap"
-            >
-              ↓
-            </button>
-            <span>Scroll Up / Down To Change Strap</span>
-          </div>
-
         <p className="mt-3 text-sm text-muted">
           Visual inspiration only. Final fit depends on lug width &amp; strap model.
         </p>
@@ -275,34 +256,34 @@ export default function Home() {
   );
 }
 
-interface ControlRowProps {
+interface SliderControlProps {
   label: string;
-  onMinus: () => void;
-  onPlus: () => void;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  onChange: (value: number) => void;
 }
 
-function ControlRow({ label, onMinus, onPlus }: ControlRowProps) {
+function SliderControl({ label, min, max, step, value, onChange }: SliderControlProps) {
   return (
     <div className="rounded-lg border border-line bg-white p-3">
-      <span className="text-base font-medium text-ink">{label}</span>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onMinus}
-          className="mt-2 min-h-11 min-w-11 rounded-md border border-line px-3 py-2 text-xl font-semibold text-ink hover:bg-canvas"
-          aria-label={`${label} decrease`}
-        >
-          -
-        </button>
-        <button
-          type="button"
-          onClick={onPlus}
-          className="mt-2 min-h-11 min-w-11 rounded-md border border-line px-3 py-2 text-xl font-semibold text-ink hover:bg-canvas"
-          aria-label={`${label} increase`}
-        >
-          +
-        </button>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-base font-medium text-ink">{label}</span>
+        <span className="text-sm text-muted">
+          {label === "Dial Size" ? `${Math.round(value * 100)}%` : Math.round(value)}
+        </span>
       </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="h-2 w-full"
+        aria-label={label}
+      />
     </div>
   );
 }

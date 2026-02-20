@@ -8,8 +8,7 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
-  WheelEvent
+  useState
 } from "react";
 import {
   CANVAS_SIZE,
@@ -59,8 +58,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const [error, setError] = useState<string>("");
     const [isTicking, setIsTicking] = useState(false);
     const [cursor, setCursor] = useState<CSSProperties["cursor"]>("grab");
-    const lastTickAtRef = useRef(0);
-    const wheelCarryRef = useRef(0);
     const strapImageSizeRef = useRef<{ aW: number; aH: number; bW: number; bH: number } | null>(
       null
     );
@@ -240,23 +237,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       setCursor("grab");
     };
 
-    const onWheel = (event: WheelEvent<HTMLCanvasElement>) => {
-      event.preventDefault();
-      const now = Date.now();
-      wheelCarryRef.current += event.deltaY;
-
-      const threshold = 90;
-      const canTick = now - lastTickAtRef.current > 140;
-      if (Math.abs(wheelCarryRef.current) < threshold || !canTick) return;
-
-      const direction: 1 | -1 = wheelCarryRef.current > 0 ? 1 : -1;
-      wheelCarryRef.current = 0;
-      lastTickAtRef.current = now;
-      setIsTicking(true);
-      window.setTimeout(() => setIsTicking(false), 90);
-      onCycleStrap(direction);
-    };
-
     return (
       <div
         className={`rounded-2xl border p-4 transition ${
@@ -264,17 +244,42 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
         }`}
       >
         <div className={controls ? "grid gap-3 lg:grid-cols-[1fr,220px]" : ""}>
-          <canvas
-            ref={canvasRef}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
-            onWheel={onWheel}
-            className="aspect-square w-full rounded-xl border border-line bg-white"
-            style={{ touchAction: "none", cursor }}
-            aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize. Scroll to cycle straps."
-          />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsTicking(true);
+                window.setTimeout(() => setIsTicking(false), 90);
+                onCycleStrap(-1);
+              }}
+              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-line bg-white/95 px-3 py-2 text-lg text-ink shadow-sm hover:bg-canvas"
+              aria-label="Previous strap"
+            >
+              ←
+            </button>
+            <canvas
+              ref={canvasRef}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              className="aspect-square w-full rounded-xl border border-line bg-white"
+              style={{ touchAction: "none", cursor }}
+              aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setIsTicking(true);
+                window.setTimeout(() => setIsTicking(false), 90);
+                onCycleStrap(1);
+              }}
+              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-line bg-white/95 px-3 py-2 text-lg text-ink shadow-sm hover:bg-canvas"
+              aria-label="Next strap"
+            >
+              →
+            </button>
+          </div>
           {controls ? <div className="self-start">{controls}</div> : null}
         </div>
         {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}

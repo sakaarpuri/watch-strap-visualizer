@@ -239,6 +239,38 @@ const averageCornerColor = (
   return { r: r / count, g: g / count, b: b / count };
 };
 
+const removeLegacyStrapHeuristic = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number
+) => {
+  const cx = width / 2;
+  const cy = height / 2;
+  const halfW = width / 2;
+  const halfH = height / 2;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const i = (y * width + x) * 4;
+      const alpha = data[i + 3];
+      if (alpha === 0) continue;
+
+      const nx = Math.abs((x - cx) / halfW);
+      const ny = Math.abs((y - cy) / halfH);
+
+      // Suppress vertical strap-like areas above and below dial/case region.
+      if (ny > 0.55 && nx < 0.62) {
+        data[i + 3] = 0;
+        continue;
+      }
+
+      if (ny > 0.45 && nx < 0.45) {
+        data[i + 3] = Math.min(data[i + 3], 26);
+      }
+    }
+  }
+};
+
 export const autoCleanDialImage = async (file: File): Promise<string> => {
   const src = URL.createObjectURL(file);
   try {
@@ -265,7 +297,6 @@ export const autoCleanDialImage = async (file: File): Promise<string> => {
         data[i + 3] = 0;
       }
     }
-
     ctx.putImageData(imageData, 0, 0);
 
     let minX = canvas.width;
@@ -306,6 +337,10 @@ export const autoCleanDialImage = async (file: File): Promise<string> => {
 
     outCtx.clearRect(0, 0, cropWidth, cropHeight);
     outCtx.drawImage(canvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+    const cropped = outCtx.getImageData(0, 0, cropWidth, cropHeight);
+    removeLegacyStrapHeuristic(cropped.data, cropWidth, cropHeight);
+    outCtx.putImageData(cropped, 0, 0);
     return out.toDataURL("image/png");
   } finally {
     URL.revokeObjectURL(src);
