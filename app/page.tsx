@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import ImageUploader from "@/components/ImageUploader";
-import Stepper from "@/components/Stepper";
 import {
   autoCleanDialImage,
   calculateAutoPlacement,
@@ -17,7 +16,6 @@ import {
   StrapVariant
 } from "@/lib/strapLibrary";
 
-const STEPS = ["Upload Dial", "Select Strap Category", "Preview & Scroll"];
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
@@ -36,8 +34,6 @@ export default function Home() {
 
   const strapsInCategory = getStrapsForCategory(category);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
-
-  const currentStep = !watchSrc ? 1 : !currentStrap ? 2 : 3;
 
   const onUploadDial = async (
     file: File,
@@ -118,10 +114,6 @@ export default function Home() {
         </h1>
         <p className="mt-2 text-base text-muted">Inspiration Mode</p>
       </header>
-
-      <section className="mt-8">
-        <Stepper currentStep={currentStep} steps={STEPS} />
-      </section>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-[380px,1fr]">
         <aside className="space-y-5">
