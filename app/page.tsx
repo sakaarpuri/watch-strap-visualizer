@@ -223,7 +223,7 @@ export default function Home() {
                     label="Strap Size"
                     min={30}
                     max={250}
-                    step={1}
+                    step={0.2}
                     value={strapScale}
                     onChange={setStrapScale}
                   />

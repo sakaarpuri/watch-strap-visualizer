@@ -215,7 +215,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       const deltaX = canvasPoint.x - drag.startCanvasX;
       const deltaY = canvasPoint.y - drag.startCanvasY;
       if (drag.mode === "resize") {
-        const scaleDelta = deltaX * 0.26;
+        const scaleDelta = deltaX * 0.09;
         const nextA = clamp(drag.startScaleA + scaleDelta, 30, 250);
         const nextB = clamp(drag.startScaleB + scaleDelta, 30, 250);
         onDragPartsChange(
