@@ -23,17 +23,17 @@ export const STRAP_STYLES: StrapStyle[] = [
 ];
 
 export const DEFAULT_PART_A: PartTransform = {
-  scale: 95,
+  scale: 85,
   x: 0,
-  y: -215,
+  y: -240,
   rotation: 0,
   opacity: 1
 };
 
 export const DEFAULT_PART_B: PartTransform = {
-  scale: 95,
+  scale: 85,
   x: 0,
-  y: 215,
+  y: 240,
   rotation: 180,
   opacity: 1
 };
@@ -77,7 +77,7 @@ const drawPart = (
 };
 
 const drawWatch = (ctx: CanvasRenderingContext2D, image: HTMLImageElement) => {
-  const max = CANVAS_SIZE * 0.74;
+  const max = CANVAS_SIZE * 0.68;
   const ratio = Math.min(max / image.width, max / image.height);
   const w = image.width * ratio;
   const h = image.height * ratio;

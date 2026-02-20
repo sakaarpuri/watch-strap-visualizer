@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent } from "react";
+import { ChangeEvent, useId, useState } from "react";
 
 interface ImageUploaderProps {
   id: string;
@@ -15,23 +15,42 @@ export default function ImageUploader({
   previewUrl,
   onFileSelect
 }: ImageUploaderProps) {
+  const inputId = useId();
+  const [fileName, setFileName] = useState<string>("No file selected");
+
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      setFileName("No file selected");
+      return;
+    }
+    setFileName(file.name);
     onFileSelect(file);
   };
 
   return (
     <div className="rounded-2xl border border-line p-5">
-      <label htmlFor={id} className="text-sm font-medium text-ink">
+      <p id={id} className="text-sm font-medium text-ink">
         {label}
-      </label>
+      </p>
+      <div className="mt-3 flex items-center gap-3">
+        <label
+          htmlFor={inputId}
+          className="cursor-pointer rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink transition hover:bg-canvas"
+        >
+          Choose File
+        </label>
+        <span className="max-w-[160px] truncate text-sm text-muted md:max-w-[220px]">
+          {fileName}
+        </span>
+      </div>
       <input
-        id={id}
+        id={inputId}
         type="file"
         accept="image/*"
+        aria-labelledby={id}
         onChange={handleChange}
-        className="mt-3 block w-full text-sm file:mr-4 file:rounded-lg file:border file:border-line file:bg-white file:px-3 file:py-2 file:text-sm file:text-ink"
+        className="sr-only"
       />
       <div className="mt-4 flex h-24 items-center justify-center rounded-xl border border-dashed border-line bg-canvas">
         {previewUrl ? (

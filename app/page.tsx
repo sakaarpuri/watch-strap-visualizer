@@ -10,12 +10,11 @@ import {
   DEFAULT_PART_A,
   DEFAULT_PART_B,
   PartTransform,
-  STRAP_STYLES,
-  StrapStyle
+  STRAP_STYLES
 } from "@/lib/compose";
 
 const createPart = (part: PartTransform): PartTransform => ({ ...part });
-const STYLE_PRESETS = STRAP_STYLES.filter((styleItem) => styleItem.alpha > 0);
+const DEFAULT_STYLE = STRAP_STYLES[0];
 
 export default function Home() {
   const [watchSrc, setWatchSrc] = useState("/sample-watch.svg");
@@ -24,7 +23,6 @@ export default function Home() {
   const [combinedSrc, setCombinedSrc] = useState<string>("");
   const [partA, setPartA] = useState<PartTransform>(createPart(DEFAULT_PART_A));
   const [partB, setPartB] = useState<PartTransform>(createPart(DEFAULT_PART_B));
-  const [style, setStyle] = useState<StrapStyle>(STRAP_STYLES[0]);
   const [combining, setCombining] = useState(false);
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
@@ -68,7 +66,6 @@ export default function Home() {
   const onReset = () => {
     setPartA(createPart(DEFAULT_PART_A));
     setPartB(createPart(DEFAULT_PART_B));
-    setStyle(STRAP_STYLES[0]);
   };
 
   return (
@@ -119,12 +116,12 @@ export default function Home() {
           <span className="text-xs text-muted">Creates a quick single strap reference.</span>
         </div>
         {combinedSrc ? (
-          <div className="mt-4 rounded-xl border border-line bg-canvas p-3">
+          <div className="mt-4 flex items-center justify-center rounded-xl border border-line bg-canvas p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={combinedSrc}
               alt="Combined strap preview"
-              className="h-40 w-auto rounded-md object-contain"
+              className="max-h-44 w-auto rounded-md object-contain"
             />
           </div>
         ) : null}
@@ -142,7 +139,7 @@ export default function Home() {
             strapBSrc={strapBSrc}
             partA={partA}
             partB={partB}
-            style={style}
+            style={DEFAULT_STYLE}
           />
           <p className="mt-3 text-sm text-muted">
             Visual inspiration only. Final fit depends on lug width &amp; strap model.
@@ -167,47 +164,10 @@ export default function Home() {
 
         <aside className="space-y-5">
           <div className="rounded-2xl border border-line p-5">
-            <h3 className="text-sm font-semibold">Strap Styles</h3>
+            <h3 className="text-sm font-semibold">Adjust Strap Placement</h3>
             <p className="mt-1 text-xs text-muted">
-              Simple tint overlays for fast inspiration.
+              Use the controls below to tune strap fit, angle, and transparency.
             </p>
-            <div
-              className="mt-3 grid grid-cols-2 gap-2"
-              role="group"
-              aria-label="Preset strap styles"
-            >
-              {STYLE_PRESETS.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
-                  onClick={() => setStyle(preset)}
-                  aria-label={`Apply ${preset.name} tint to strap preview`}
-                  aria-pressed={style.name === preset.name}
-                  className={`rounded-lg border px-2 py-2 text-left transition ${
-                    style.name === preset.name
-                      ? "border-ink bg-ink text-white"
-                      : "border-line bg-white text-ink hover:bg-canvas"
-                  }`}
-                >
-                  <div
-                    className={`relative h-10 overflow-hidden rounded-md border ${
-                      style.name === preset.name ? "border-white/30" : "border-line"
-                    } bg-canvas`}
-                    aria-hidden="true"
-                  >
-                    <div
-                      className="absolute left-4 top-1 h-8 w-3 rounded-full"
-                      style={{ backgroundColor: preset.color, opacity: Math.min(1, preset.alpha + 0.45) }}
-                    />
-                    <div
-                      className="absolute right-4 top-1 h-8 w-3 rounded-full"
-                      style={{ backgroundColor: preset.color, opacity: Math.min(1, preset.alpha + 0.45) }}
-                    />
-                  </div>
-                  <span className="mt-2 block text-xs font-medium">{preset.name}</span>
-                </button>
-              ))}
-            </div>
           </div>
 
           <ControlPanel
@@ -253,10 +213,7 @@ function ControlPanel({ title, value, onChange }: ControlPanelProps) {
       <div className="mt-4 space-y-3">
         {controls.map((control) => (
           <label key={control.key} className="block">
-            <div className="mb-1 flex items-center justify-between text-xs">
-              <span>{control.label}</span>
-              <span className="text-muted">{value[control.key].toFixed(2)}</span>
-            </div>
+            <div className="mb-1 text-xs">{control.label}</div>
             <input
               type="range"
               min={control.min}
