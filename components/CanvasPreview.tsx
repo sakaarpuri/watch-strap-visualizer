@@ -240,10 +240,16 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     return (
       <div
         className={`rounded-2xl border p-4 transition ${
-          isTicking ? "border-ink" : "border-line"
+          isTicking ? "border-slate-500" : "border-white/70"
         }`}
+        style={{
+          background:
+            "linear-gradient(150deg, rgba(255,255,255,0.72), rgba(248,250,252,0.64))",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,.8), 0 12px 30px rgba(15,23,42,.08)",
+          backdropFilter: "blur(8px)"
+        }}
       >
-        <div className={controls ? "grid gap-3 lg:grid-cols-[1fr,220px]" : ""}>
+        <div className={controls ? "grid gap-3 lg:grid-cols-[1fr,280px]" : ""}>
           <div className="relative">
             <button
               type="button"
@@ -252,7 +258,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
                 window.setTimeout(() => setIsTicking(false), 90);
                 onCycleStrap(-1);
               }}
-              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-line bg-white/95 px-3 py-2 text-lg text-ink shadow-sm hover:bg-canvas"
+              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/80 bg-white/90 px-3 py-2 text-lg text-ink shadow hover:bg-white"
               aria-label="Previous strap"
             >
               ←
@@ -274,7 +280,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
                 window.setTimeout(() => setIsTicking(false), 90);
                 onCycleStrap(1);
               }}
-              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-line bg-white/95 px-3 py-2 text-lg text-ink shadow-sm hover:bg-canvas"
+              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/80 bg-white/90 px-3 py-2 text-lg text-ink shadow hover:bg-white"
               aria-label="Next strap"
             >
               →

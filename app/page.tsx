@@ -27,6 +27,7 @@ export default function Home() {
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
   const [dialScale, setDialScale] = useState(1);
+  const [preserveSettings, setPreserveSettings] = useState(true);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [isCleaningDial, setIsCleaningDial] = useState(false);
 
@@ -67,9 +68,17 @@ export default function Home() {
 
   useEffect(() => {
     void autoAlignStraps();
-    // Recompute placement whenever dial or strap selection changes.
+    // Always recompute when watch image changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSrc, category, strapIndex]);
+  }, [watchSrc]);
+
+  useEffect(() => {
+    if (!partA || !partB || !preserveSettings) {
+      void autoAlignStraps();
+    }
+    // Preserve user transforms by default on strap changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, strapIndex, preserveSettings]);
 
   const onCycleStrap = (direction: 1 | -1) => {
     setStrapIndex((prev) => {
@@ -87,7 +96,7 @@ export default function Home() {
     if (!partA || !partB) return;
     const centerY = (partA.y + partB.y) / 2;
     const minHalfGap = 250;
-    const maxHalfGap = 700;
+    const maxHalfGap = 900;
     const boundedGap = clamp(nextHalfGap, minHalfGap, maxHalfGap);
     setPartA((prev) => (prev ? { ...prev, y: centerY - boundedGap } : prev));
     setPartB((prev) => (prev ? { ...prev, y: centerY + boundedGap } : prev));
@@ -124,7 +133,7 @@ export default function Home() {
             onFileSelect={(file) => void onUploadDial(file, setWatchPreviewSrc)}
           />
 
-          <div className="rounded-2xl border border-line p-6">
+          <div className="glass-card rounded-2xl p-6">
             <label htmlFor="strap-category" className="text-lg font-medium text-ink">
               2. Select Strap Category
             </label>
@@ -144,12 +153,35 @@ export default function Home() {
               ))}
             </select>
 
-            <div className="mt-4 rounded-xl border border-line bg-canvas p-4">
+            <div className="mt-4 rounded-xl border border-white/70 bg-white/60 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
               <p className="text-sm uppercase tracking-[0.12em] text-muted">Current Strap</p>
               <p className="mt-2 text-xl font-semibold text-ink">{currentStrap.label}</p>
               <p className="mt-2 text-sm text-muted">
-                Hover preview and scroll to cycle straps with a clicky step motion.
+                Use left/right arrows in preview to switch straps.
               </p>
+            </div>
+
+            <div className="neo-toggle mt-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-ink">Keep Adjustments</p>
+                <p className="text-xs text-muted">Apply current gap/size settings to next strap</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreserveSettings((prev) => !prev)}
+                aria-pressed={preserveSettings}
+                className={`relative h-8 w-14 rounded-full border transition ${
+                  preserveSettings
+                    ? "border-emerald-500/40 bg-emerald-400/30"
+                    : "border-slate-300 bg-white/70"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
+                    preserveSettings ? "left-7" : "left-1"
+                  }`}
+                />
+              </button>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3">
@@ -198,24 +230,24 @@ export default function Home() {
             }}
             onCycleStrap={onCycleStrap}
             controls={
-              <div className="rounded-xl border border-slate-300 bg-slate-100 p-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">
+              <div className="glass-card rounded-xl p-3">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Preview Controls
                 </p>
                 <div className="mt-2 grid gap-2">
                   <SliderControl
                     label="Strap Gap"
                     min={250}
-                    max={700}
+                    max={900}
                     step={1}
                     value={strapGap}
                     onChange={setGapHalf}
                   />
                   <SliderControl
                     label="Strap Size"
-                    min={30}
-                    max={250}
-                    step={0.2}
+                    min={55}
+                    max={175}
+                    step={0.05}
                     value={strapScale}
                     onChange={setStrapScale}
                   />
