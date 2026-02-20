@@ -206,8 +206,8 @@ export default function Home() {
             }}
             onCycleStrap={onCycleStrap}
             controls={
-              <div className="rounded-xl border border-line bg-canvas p-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-muted">
+              <div className="rounded-xl border border-slate-300 bg-slate-100 p-3">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">
                   Preview Controls
                 </p>
                 <div className="mt-2 grid gap-2">
@@ -267,10 +267,10 @@ interface SliderControlProps {
 
 function SliderControl({ label, min, max, step, value, onChange }: SliderControlProps) {
   return (
-    <div className="rounded-lg border border-line bg-white p-3">
+    <div className="rounded-lg border border-slate-300 bg-white p-3 shadow-sm">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-base font-medium text-ink">{label}</span>
-        <span className="text-sm text-muted">
+        <span className="text-sm text-slate-600">
           {label === "Dial Size" ? `${Math.round(value * 100)}%` : Math.round(value)}
         </span>
       </div>
