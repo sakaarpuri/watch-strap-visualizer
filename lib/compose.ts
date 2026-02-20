@@ -317,3 +317,44 @@ export const autoCleanDialImage = async (file: File): Promise<string> => {
     URL.revokeObjectURL(src);
   }
 };
+
+export const enhanceDialImage = async (file: File): Promise<string> => {
+  const fast = await autoCleanDialImage(file);
+  const image = await loadImage(fast);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return fast;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const halfW = canvas.width / 2;
+  const halfH = canvas.height / 2;
+
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const i = (y * canvas.width + x) * 4;
+      const alpha = data[i + 3];
+      if (alpha === 0) continue;
+
+      const nx = (x - cx) / halfW;
+      const ny = (y - cy) / halfH;
+      const ellipse = (nx * nx) / (0.62 * 0.62) + (ny * ny) / (0.52 * 0.52);
+
+      // Soften likely strap spill in upper/lower center while protecting the watch head.
+      if (Math.abs(nx) < 0.5 && Math.abs(ny) > 0.5 && ellipse > 1.05) {
+        data[i + 3] = Math.min(alpha, 24);
+      }
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL("image/png");
+};

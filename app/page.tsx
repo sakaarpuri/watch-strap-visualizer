@@ -7,6 +7,7 @@ import ImageUploader from "@/components/ImageUploader";
 import {
   autoCleanDialImage,
   calculateAutoPlacement,
+  enhanceDialImage,
   PartTransform
 } from "@/lib/compose";
 import {
@@ -32,6 +33,7 @@ const uiToStrapScale = (uiValue: number) => {
 export default function Home() {
   const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
   const [watchPreviewSrc, setWatchPreviewSrc] = useState("/mock-dial.svg");
+  const [uploadedDialFile, setUploadedDialFile] = useState<File | null>(null);
   const [category, setCategory] = useState<StrapCategory>("All categories");
   const [strapIndex, setStrapIndex] = useState(0);
   const [partA, setPartA] = useState<PartTransform | null>(null);
@@ -42,6 +44,7 @@ export default function Home() {
   const [lockView, setLockView] = useState(false);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [isCleaningDial, setIsCleaningDial] = useState(false);
+  const [cleanMode, setCleanMode] = useState<"fast" | "enhanced">("fast");
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
 
@@ -53,9 +56,25 @@ export default function Home() {
     previewSetter: Dispatch<SetStateAction<string>>
   ) => {
     previewSetter(URL.createObjectURL(file));
+    setUploadedDialFile(file);
     setIsCleaningDial(true);
     try {
       const cleaned = await autoCleanDialImage(file);
+      setWatchSrc(cleaned);
+    } finally {
+      setIsCleaningDial(false);
+    }
+  };
+
+  const rerunDialClean = async (mode: "fast" | "enhanced") => {
+    if (!uploadedDialFile) return;
+    setCleanMode(mode);
+    setIsCleaningDial(true);
+    try {
+      const cleaned =
+        mode === "enhanced"
+          ? await enhanceDialImage(uploadedDialFile)
+          : await autoCleanDialImage(uploadedDialFile);
       setWatchSrc(cleaned);
     } finally {
       setIsCleaningDial(false);
@@ -212,6 +231,39 @@ export default function Home() {
               >
                 Download PNG
               </button>
+            </div>
+
+            <div className="glass-card mt-4 rounded-xl p-4">
+              <p className="text-sm font-semibold text-ink">Dial Cleanup</p>
+              <p className="mt-1 text-xs text-muted">
+                Generate a cleaner dial cutout from your uploaded image.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={!uploadedDialFile || isCleaningDial}
+                  onClick={() => void rerunDialClean("fast")}
+                  className={`rounded-lg border px-3 py-2 text-sm ${
+                    cleanMode === "fast"
+                      ? "border-cyan-400 bg-cyan-50 text-cyan-900"
+                      : "border-slate-300 bg-white text-ink"
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  Fast Clean
+                </button>
+                <button
+                  type="button"
+                  disabled={!uploadedDialFile || isCleaningDial}
+                  onClick={() => void rerunDialClean("enhanced")}
+                  className={`rounded-lg border px-3 py-2 text-sm ${
+                    cleanMode === "enhanced"
+                      ? "border-fuchsia-400 bg-fuchsia-50 text-fuchsia-900"
+                      : "border-slate-300 bg-white text-ink"
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  Enhanced Clean (I2I)
+                </button>
+              </div>
             </div>
 
           </div>
