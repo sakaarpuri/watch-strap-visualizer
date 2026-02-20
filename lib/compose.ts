@@ -77,13 +77,19 @@ const drawPart = (
 };
 
 const drawWatch = (ctx: CanvasRenderingContext2D, image: HTMLImageElement) => {
+  const { x, y, w, h } = getWatchRect(image);
+  ctx.drawImage(image, x, y, w, h);
+};
+
+const getWatchRect = (image: HTMLImageElement) => {
   const max = CANVAS_SIZE * 0.68;
   const ratio = Math.min(max / image.width, max / image.height);
   const w = image.width * ratio;
   const h = image.height * ratio;
   const x = CANVAS_SIZE / 2 - w / 2;
   const y = CANVAS_SIZE / 2 - h / 2;
-  ctx.drawImage(image, x, y, w, h);
+
+  return { x, y, w, h };
 };
 
 export const renderComposition = async (
@@ -143,4 +149,50 @@ export const combineStrapParts = async (
   ctx.drawImage(partB, 0, aHeight + gap, targetWidth, bHeight);
 
   return canvas.toDataURL("image/png");
+};
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
+
+export const calculateAutoPlacement = async (
+  watchSrc: string,
+  strapASrc: string,
+  strapBSrc: string
+): Promise<{ partA: PartTransform; partB: PartTransform }> => {
+  const [watch, partAImage, partBImage] = await Promise.all([
+    loadImage(watchSrc),
+    loadImage(strapASrc),
+    loadImage(strapBSrc)
+  ]);
+
+  const watchRect = getWatchRect(watch);
+  const targetStrapWidth = watchRect.w * 0.32;
+  const overlap = Math.max(10, watchRect.h * 0.035);
+
+  const scaleA = clamp((targetStrapWidth / partAImage.width) * 100, 30, 230);
+  const scaleB = clamp((targetStrapWidth / partBImage.width) * 100, 30, 230);
+
+  const scaledAH = partAImage.height * (scaleA / 100);
+  const scaledBH = partBImage.height * (scaleB / 100);
+
+  const topEdge = watchRect.y - CANVAS_SIZE / 2;
+  const bottomEdge = watchRect.y + watchRect.h - CANVAS_SIZE / 2;
+
+  const partA: PartTransform = {
+    scale: scaleA,
+    x: 0,
+    y: topEdge - scaledAH / 2 + overlap,
+    rotation: 0,
+    opacity: 1
+  };
+
+  const partB: PartTransform = {
+    scale: scaleB,
+    x: 0,
+    y: bottomEdge + scaledBH / 2 - overlap,
+    rotation: 180,
+    opacity: 1
+  };
+
+  return { partA, partB };
 };

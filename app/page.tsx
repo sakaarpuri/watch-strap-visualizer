@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import ImageUploader from "@/components/ImageUploader";
 import Stepper from "@/components/Stepper";
 import {
+  calculateAutoPlacement,
   combineStrapParts,
   DEFAULT_PART_A,
   DEFAULT_PART_B,
@@ -24,6 +26,8 @@ export default function Home() {
   const [partA, setPartA] = useState<PartTransform>(createPart(DEFAULT_PART_A));
   const [partB, setPartB] = useState<PartTransform>(createPart(DEFAULT_PART_B));
   const [combining, setCombining] = useState(false);
+  const [isAutoAligning, setIsAutoAligning] = useState(false);
+  const [dragTarget, setDragTarget] = useState<"a" | "b">("a");
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
 
@@ -63,10 +67,26 @@ export default function Home() {
     }
   };
 
-  const onReset = () => {
-    setPartA(createPart(DEFAULT_PART_A));
-    setPartB(createPart(DEFAULT_PART_B));
+  const autoAlignStraps = async () => {
+    setIsAutoAligning(true);
+    try {
+      const aligned = await calculateAutoPlacement(watchSrc, strapASrc, strapBSrc);
+      setPartA(aligned.partA);
+      setPartB(aligned.partB);
+    } finally {
+      setIsAutoAligning(false);
+    }
   };
+
+  const onReset = () => {
+    void autoAlignStraps();
+  };
+
+  useEffect(() => {
+    void autoAlignStraps();
+    // Recompute defaults when user uploads/replaces any base image.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchSrc, strapASrc, strapBSrc]);
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10 md:px-10 md:py-12">
@@ -113,6 +133,13 @@ export default function Home() {
           >
             {combining ? "Combining..." : "Combine strap parts"}
           </button>
+          <button
+            type="button"
+            onClick={() => void autoAlignStraps()}
+            className="rounded-lg border border-line px-4 py-2 text-sm text-ink transition hover:bg-canvas"
+          >
+            {isAutoAligning ? "Auto-aligning..." : "Auto-align straps"}
+          </button>
           <span className="text-xs text-muted">Creates a quick single strap reference.</span>
         </div>
         {combinedSrc ? (
@@ -132,6 +159,31 @@ export default function Home() {
           <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.15em] text-muted">
             3. Generate Preview
           </h2>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-xs text-muted">Drag on canvas:</span>
+            <button
+              type="button"
+              onClick={() => setDragTarget("a")}
+              className={`rounded-md border px-3 py-1.5 text-xs ${
+                dragTarget === "a"
+                  ? "border-ink bg-ink text-white"
+                  : "border-line bg-white text-ink hover:bg-canvas"
+              }`}
+            >
+              Part A
+            </button>
+            <button
+              type="button"
+              onClick={() => setDragTarget("b")}
+              className={`rounded-md border px-3 py-1.5 text-xs ${
+                dragTarget === "b"
+                  ? "border-ink bg-ink text-white"
+                  : "border-line bg-white text-ink hover:bg-canvas"
+              }`}
+            >
+              Part B
+            </button>
+          </div>
           <CanvasPreview
             ref={canvasRef}
             watchSrc={watchSrc}
@@ -140,6 +192,14 @@ export default function Home() {
             partA={partA}
             partB={partB}
             style={DEFAULT_STYLE}
+            dragTarget={dragTarget}
+            onDragPositionChange={(target, x, y) => {
+              if (target === "a") {
+                setPartA((prev) => ({ ...prev, x, y }));
+                return;
+              }
+              setPartB((prev) => ({ ...prev, x, y }));
+            }}
           />
           <p className="mt-3 text-sm text-muted">
             Visual inspiration only. Final fit depends on lug width &amp; strap model.
