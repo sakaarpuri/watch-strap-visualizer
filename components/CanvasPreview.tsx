@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CSSProperties,
   forwardRef,
   PointerEvent,
   ReactNode,
@@ -10,7 +11,13 @@ import {
   useState,
   WheelEvent
 } from "react";
-import { PartTransform, StrapStyle, renderComposition } from "@/lib/compose";
+import {
+  CANVAS_SIZE,
+  loadImage,
+  PartTransform,
+  StrapStyle,
+  renderComposition
+} from "@/lib/compose";
 
 interface CanvasPreviewProps {
   watchSrc: string;
@@ -28,6 +35,9 @@ interface CanvasPreviewProps {
 export interface CanvasPreviewRef {
   downloadAsPng: () => void;
 }
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
 
 const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
   (
@@ -48,16 +58,23 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [error, setError] = useState<string>("");
     const [isTicking, setIsTicking] = useState(false);
+    const [cursor, setCursor] = useState<CSSProperties["cursor"]>("grab");
     const lastTickAtRef = useRef(0);
     const wheelCarryRef = useRef(0);
+    const strapImageSizeRef = useRef<{ aW: number; aH: number; bW: number; bH: number } | null>(
+      null
+    );
     const dragStateRef = useRef<{
       pointerId: number;
+      mode: "move" | "resize";
       startCanvasX: number;
       startCanvasY: number;
       startPartAX: number;
       startPartAY: number;
       startPartBX: number;
       startPartBY: number;
+      startScaleA: number;
+      startScaleB: number;
     } | null>(null);
 
     useEffect(() => {
@@ -88,6 +105,28 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       };
     }, [watchSrc, strapASrc, strapBSrc, partA, partB, style, watchScale]);
 
+    useEffect(() => {
+      let active = true;
+      const loadSizes = async () => {
+        try {
+          const [a, b] = await Promise.all([loadImage(strapASrc), loadImage(strapBSrc)]);
+          if (!active) return;
+          strapImageSizeRef.current = {
+            aW: a.width,
+            aH: a.height,
+            bW: b.width,
+            bH: b.height
+          };
+        } catch {
+          strapImageSizeRef.current = null;
+        }
+      };
+      void loadSizes();
+      return () => {
+        active = false;
+      };
+    }, [strapASrc, strapBSrc]);
+
     useImperativeHandle(ref, () => ({
       downloadAsPng: () => {
         if (!canvasRef.current) return;
@@ -117,14 +156,54 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       const canvasPoint = getCanvasPoint(event);
       if (!canvasPoint || !canvasRef.current) return;
 
+      const size = strapImageSizeRef.current;
+      let mode: "move" | "resize" = "move";
+      if (size) {
+        const getRect = (part: PartTransform, imgW: number, imgH: number) => {
+          const w = imgW * (part.scale / 100);
+          const h = imgH * (part.scale / 100);
+          const cx = CANVAS_SIZE / 2 + part.x;
+          const cy = CANVAS_SIZE / 2 + part.y;
+          return { left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2 };
+        };
+        const inRect = (
+          p: { x: number; y: number },
+          r: { left: number; right: number; top: number; bottom: number }
+        ) => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
+        const nearEdge = (
+          p: { x: number; y: number },
+          r: { left: number; right: number; top: number; bottom: number }
+        ) => {
+          const edgeBand = 28;
+          return (
+            p.y >= r.top &&
+            p.y <= r.bottom &&
+            (Math.abs(p.x - r.left) <= edgeBand || Math.abs(p.x - r.right) <= edgeBand)
+          );
+        };
+
+        const rectA = getRect(partA, size.aW, size.aH);
+        const rectB = getRect(partB, size.bW, size.bH);
+        if (nearEdge(canvasPoint, rectA) || nearEdge(canvasPoint, rectB)) {
+          mode = "resize";
+          setCursor("ew-resize");
+        } else if (inRect(canvasPoint, rectA) || inRect(canvasPoint, rectB)) {
+          mode = "move";
+          setCursor("grabbing");
+        }
+      }
+
       dragStateRef.current = {
         pointerId: event.pointerId,
+        mode,
         startCanvasX: canvasPoint.x,
         startCanvasY: canvasPoint.y,
         startPartAX: partA.x,
         startPartAY: partA.y,
         startPartBX: partB.x,
-        startPartBY: partB.y
+        startPartBY: partB.y,
+        startScaleA: partA.scale,
+        startScaleB: partB.scale
       };
       canvasRef.current.setPointerCapture(event.pointerId);
     };
@@ -138,16 +217,27 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 
       const deltaX = canvasPoint.x - drag.startCanvasX;
       const deltaY = canvasPoint.y - drag.startCanvasY;
-      onDragPartsChange(
-        { ...partA, x: drag.startPartAX + deltaX, y: drag.startPartAY + deltaY },
-        { ...partB, x: drag.startPartBX + deltaX, y: drag.startPartBY + deltaY }
-      );
+      if (drag.mode === "resize") {
+        const scaleDelta = deltaX * 0.26;
+        const nextA = clamp(drag.startScaleA + scaleDelta, 30, 250);
+        const nextB = clamp(drag.startScaleB + scaleDelta, 30, 250);
+        onDragPartsChange(
+          { ...partA, scale: nextA },
+          { ...partB, scale: nextB }
+        );
+      } else {
+        onDragPartsChange(
+          { ...partA, x: drag.startPartAX + deltaX, y: drag.startPartAY + deltaY },
+          { ...partB, x: drag.startPartBX + deltaX, y: drag.startPartBY + deltaY }
+        );
+      }
     };
 
     const endDrag = (event: PointerEvent<HTMLCanvasElement>) => {
       if (dragStateRef.current?.pointerId !== event.pointerId) return;
       dragStateRef.current = null;
       canvasRef.current?.releasePointerCapture(event.pointerId);
+      setCursor("grab");
     };
 
     const onWheel = (event: WheelEvent<HTMLCanvasElement>) => {
@@ -173,18 +263,20 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
           isTicking ? "border-ink" : "border-line"
         }`}
       >
-        <canvas
-          ref={canvasRef}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-          onWheel={onWheel}
-          className="aspect-square w-full cursor-grab rounded-xl border border-line bg-white active:cursor-grabbing"
-          style={{ touchAction: "none" }}
-          aria-label="Preview canvas. Drag to move straps. Scroll to cycle strap designs."
-        />
-        {controls ? <div className="mt-3">{controls}</div> : null}
+        <div className={controls ? "grid gap-3 lg:grid-cols-[1fr,220px]" : ""}>
+          <canvas
+            ref={canvasRef}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onWheel={onWheel}
+            className="aspect-square w-full rounded-xl border border-line bg-white"
+            style={{ touchAction: "none", cursor }}
+            aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize. Scroll to cycle straps."
+          />
+          {controls ? <div className="self-start">{controls}</div> : null}
+        </div>
         {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
       </div>
     );

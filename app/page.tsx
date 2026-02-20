@@ -91,9 +91,9 @@ export default function Home() {
     if (!partA || !partB) return;
     const centerY = (partA.y + partB.y) / 2;
     const halfGap = (partB.y - partA.y) / 2;
-    const step = 18;
+    const step = 28;
     const minHalfGap = 250;
-    const maxHalfGap = 520;
+    const maxHalfGap = 700;
     const nextHalfGap = clamp(
       halfGap + (direction === "in" ? -step : step),
       minHalfGap,
@@ -226,7 +226,7 @@ export default function Home() {
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
                   Preview Controls
                 </p>
-                <div className="mt-2 grid gap-2 md:grid-cols-3">
+                <div className="mt-2 grid gap-2">
                   <ControlRow
                     label="Strap Gap"
                     onMinus={() => adjustGap("in")}
@@ -283,13 +283,13 @@ interface ControlRowProps {
 
 function ControlRow({ label, onMinus, onPlus }: ControlRowProps) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-line bg-white px-3 py-2">
-      <span className="text-sm text-ink">{label}</span>
+    <div className="rounded-lg border border-line bg-white p-3">
+      <span className="text-base font-medium text-ink">{label}</span>
       <div className="flex gap-2">
         <button
           type="button"
           onClick={onMinus}
-          className="rounded-md border border-line px-2 py-1 text-sm text-ink hover:bg-canvas"
+          className="mt-2 min-h-11 min-w-11 rounded-md border border-line px-3 py-2 text-xl font-semibold text-ink hover:bg-canvas"
           aria-label={`${label} decrease`}
         >
           -
@@ -297,7 +297,7 @@ function ControlRow({ label, onMinus, onPlus }: ControlRowProps) {
         <button
           type="button"
           onClick={onPlus}
-          className="rounded-md border border-line px-2 py-1 text-sm text-ink hover:bg-canvas"
+          className="mt-2 min-h-11 min-w-11 rounded-md border border-line px-3 py-2 text-xl font-semibold text-ink hover:bg-canvas"
           aria-label={`${label} increase`}
         >
           +
