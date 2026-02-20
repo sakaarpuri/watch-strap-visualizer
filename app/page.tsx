@@ -20,8 +20,8 @@ import {
 const STEPS = ["Upload Dial", "Select Strap Category", "Preview & Scroll"];
 
 export default function Home() {
-  const [watchSrc, setWatchSrc] = useState("/sample-watch.svg");
-  const [watchPreviewSrc, setWatchPreviewSrc] = useState("/sample-watch.svg");
+  const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
+  const [watchPreviewSrc, setWatchPreviewSrc] = useState("/mock-dial.svg");
   const [category, setCategory] = useState<StrapCategory>("All categories");
   const [strapIndex, setStrapIndex] = useState(0);
   const [partA, setPartA] = useState<PartTransform | null>(null);
