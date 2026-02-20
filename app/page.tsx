@@ -19,15 +19,15 @@ import {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
-const STRAP_SCALE_MIN = 55;
-const STRAP_SCALE_MAX = 175;
+const STRAP_SCALE_MIN = 60;
+const STRAP_SCALE_MAX = 165;
 const strapScaleToUi = (scale: number) => {
   const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
-  return Math.sqrt(t) * 100;
+  return Math.cbrt(t) * 100;
 };
 const uiToStrapScale = (uiValue: number) => {
   const t = clamp(uiValue / 100, 0, 1);
-  return STRAP_SCALE_MIN + t * t * (STRAP_SCALE_MAX - STRAP_SCALE_MIN);
+  return STRAP_SCALE_MIN + t * t * t * (STRAP_SCALE_MAX - STRAP_SCALE_MIN);
 };
 
 export default function Home() {
@@ -315,7 +315,7 @@ export default function Home() {
                     label="Strap Size"
                     min={0}
                     max={100}
-                    step={0.1}
+                    step={0.02}
                     value={strapSizeUi}
                     onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
                     displayValue={Math.round(strapScale).toString()}
@@ -436,8 +436,8 @@ function ToggleControl({ label, description, enabled, onToggle }: ToggleControlP
           }`}
         >
           <span
-            className={`absolute top-1 h-7 w-7 rounded-full bg-white shadow transition ${
-              enabled ? "left-8" : "left-1"
+            className={`absolute left-1 top-1 h-7 w-7 rounded-full bg-white shadow transition-transform ${
+              enabled ? "translate-x-7" : "translate-x-0"
             }`}
           />
         </button>
