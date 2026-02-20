@@ -332,7 +332,7 @@ export default function Home() {
                   />
                   <SliderControl
                     label="View Zoom"
-                    min={0.62}
+                    min={0.35}
                     max={1.05}
                     step={0.01}
                     value={sceneZoom}
