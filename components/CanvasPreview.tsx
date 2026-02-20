@@ -12,7 +12,7 @@ import {
 } from "react";
 import {
   CANVAS_SIZE,
-  loadImage,
+  loadStrapImage,
   PartTransform,
   StrapStyle,
   renderComposition
@@ -111,7 +111,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       let active = true;
       const loadSizes = async () => {
         try {
-          const [a, b] = await Promise.all([loadImage(strapASrc), loadImage(strapBSrc)]);
+          const [a, b] = await Promise.all([loadStrapImage(strapASrc), loadStrapImage(strapBSrc)]);
           if (!active) return;
           strapImageSizeRef.current = {
             aW: a.width,

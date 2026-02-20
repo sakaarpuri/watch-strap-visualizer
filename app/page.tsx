@@ -1,15 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import ImageUploader from "@/components/ImageUploader";
-import {
-  autoCleanDialImage,
-  calculateAutoPlacement,
-  enhanceDialImage,
-  PartTransform
-} from "@/lib/compose";
+import { calculateAutoPlacement, PartTransform } from "@/lib/compose";
 import {
   STRAP_CATEGORIES,
   getStrapsForCategory,
@@ -33,7 +27,6 @@ const uiToStrapScale = (uiValue: number) => {
 export default function Home() {
   const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
   const [watchPreviewSrc, setWatchPreviewSrc] = useState("/mock-dial.svg");
-  const [uploadedDialFile, setUploadedDialFile] = useState<File | null>(null);
   const [category, setCategory] = useState<StrapCategory>("All categories");
   const [strapIndex, setStrapIndex] = useState(0);
   const [partA, setPartA] = useState<PartTransform | null>(null);
@@ -43,43 +36,16 @@ export default function Home() {
   const [preserveSettings, setPreserveSettings] = useState(true);
   const [lockView, setLockView] = useState(false);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
-  const [isCleaningDial, setIsCleaningDial] = useState(false);
-  const [cleanMode, setCleanMode] = useState<"fast" | "enhanced">("fast");
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
 
   const strapsInCategory = getStrapsForCategory(category);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
 
-  const onUploadDial = async (
-    file: File,
-    previewSetter: Dispatch<SetStateAction<string>>
-  ) => {
-    previewSetter(URL.createObjectURL(file));
-    setUploadedDialFile(file);
-    setCleanMode("enhanced");
-    setIsCleaningDial(true);
-    try {
-      const cleaned = await enhanceDialImage(file);
-      setWatchSrc(cleaned);
-    } finally {
-      setIsCleaningDial(false);
-    }
-  };
-
-  const rerunDialClean = async (mode: "fast" | "enhanced") => {
-    if (!uploadedDialFile) return;
-    setCleanMode(mode);
-    setIsCleaningDial(true);
-    try {
-      const cleaned =
-        mode === "enhanced"
-          ? await enhanceDialImage(uploadedDialFile)
-          : await autoCleanDialImage(uploadedDialFile);
-      setWatchSrc(cleaned);
-    } finally {
-      setIsCleaningDial(false);
-    }
+  const onUploadDial = (file: File) => {
+    const uploadedUrl = URL.createObjectURL(file);
+    setWatchPreviewSrc(uploadedUrl);
+    setWatchSrc(uploadedUrl);
   };
 
   const autoAlignStraps = async () => {
@@ -162,8 +128,9 @@ export default function Home() {
           <ImageUploader
             id="watch"
             label="1. Upload Watch Dial Photo"
+            helperText="Best results come from clear, front-facing watch photos on a plain background. Product shots or retailer website screenshots usually work best because the dial is centered and well lit."
             previewUrl={watchPreviewSrc}
-            onFileSelect={(file) => void onUploadDial(file, setWatchPreviewSrc)}
+            onFileSelect={onUploadDial}
           />
 
           <div className="glass-card rounded-2xl p-6">
@@ -233,40 +200,6 @@ export default function Home() {
                 Download PNG
               </button>
             </div>
-
-            <div className="glass-card mt-4 rounded-xl p-4">
-              <p className="text-sm font-semibold text-ink">Dial Cleanup</p>
-              <p className="mt-1 text-xs text-muted">
-                Generate a cleaner dial cutout from your uploaded image.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={!uploadedDialFile || isCleaningDial}
-                  onClick={() => void rerunDialClean("fast")}
-                  className={`rounded-lg border px-3 py-2 text-sm ${
-                    cleanMode === "fast"
-                      ? "border-cyan-400 bg-cyan-50 text-cyan-900"
-                      : "border-slate-300 bg-white text-ink"
-                  } disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  Fast Clean
-                </button>
-                <button
-                  type="button"
-                  disabled={!uploadedDialFile || isCleaningDial}
-                  onClick={() => void rerunDialClean("enhanced")}
-                  className={`rounded-lg border px-3 py-2 text-sm ${
-                    cleanMode === "enhanced"
-                      ? "border-fuchsia-400 bg-fuchsia-50 text-fuchsia-900"
-                      : "border-slate-300 bg-white text-ink"
-                  } disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  Enhanced Clean (I2I)
-                </button>
-              </div>
-            </div>
-
           </div>
         </aside>
 
@@ -274,12 +207,6 @@ export default function Home() {
           <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
             3. Live Preview
           </h2>
-        {isCleaningDial ? (
-          <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
-            Cleaning uploaded dial background...
-          </div>
-        ) : null}
-
         {canRender ? (
           <CanvasPreview
             ref={canvasRef}
@@ -359,7 +286,7 @@ export default function Home() {
           Visual inspiration only. Final fit depends on lug width &amp; strap model.
         </p>
         <p className="mt-1 text-xs text-muted">
-          Auto background clean is best effort. Wrist/background photos may need manual crop for perfect results.
+          Upload a clean dial photo for best visual results.
         </p>
         </section>
       </section>

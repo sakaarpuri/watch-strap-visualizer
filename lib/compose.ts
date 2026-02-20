@@ -49,9 +49,158 @@ export const loadImage = (src: string): Promise<HTMLImageElement> =>
     img.src = src;
   });
 
+const strapRenderCache = new Map<string, HTMLCanvasElement>();
+
+const isCheckerboardStrap = (src: string) =>
+  src.includes("/strap-selection/") && /\.(jpe?g)$/i.test(src);
+
+const luma = (r: number, g: number, b: number) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+const isNearColor = (
+  r: number,
+  g: number,
+  b: number,
+  ref: { r: number; g: number; b: number },
+  maxDistance: number
+) => colorDistance(r, g, b, ref.r, ref.g, ref.b) <= maxDistance;
+
+const buildCheckerTransparentCanvas = (image: HTMLImageElement): HTMLCanvasElement => {
+  const canvas = document.createElement("canvas");
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+
+  ctx.drawImage(image, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const { data, width, height } = imageData;
+  const total = width * height;
+  const visited = new Uint8Array(total);
+  const queue: number[] = [];
+
+  const samplePoints = [
+    [0, 0],
+    [width - 1, 0],
+    [0, height - 1],
+    [width - 1, height - 1],
+    [Math.floor(width / 2), 0],
+    [Math.floor(width / 2), height - 1],
+    [0, Math.floor(height / 2)],
+    [width - 1, Math.floor(height / 2)]
+  ];
+
+  const samples = samplePoints.map(([x, y]) => {
+    const i = (y * width + x) * 4;
+    return { r: data[i], g: data[i + 1], b: data[i + 2] };
+  });
+  const sortedByLuma = samples.sort((a, b) => luma(a.r, a.g, a.b) - luma(b.r, b.g, b.b));
+  const bgDark = sortedByLuma[0];
+  const bgLight = sortedByLuma[sortedByLuma.length - 1];
+
+  const isBgPixel = (idx: number) => {
+    const i = idx * 4;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    if (a < 8) return true;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const lowSaturation = max - min < 42;
+    if (!lowSaturation) return false;
+    return (
+      isNearColor(r, g, b, bgDark, 68) ||
+      isNearColor(r, g, b, bgLight, 68)
+    );
+  };
+
+  const enqueue = (idx: number) => {
+    if (idx < 0 || idx >= total || visited[idx]) return;
+    if (!isBgPixel(idx)) return;
+    visited[idx] = 1;
+    queue.push(idx);
+  };
+
+  for (let x = 0; x < width; x += 1) {
+    enqueue(x);
+    enqueue((height - 1) * width + x);
+  }
+  for (let y = 0; y < height; y += 1) {
+    enqueue(y * width);
+    enqueue(y * width + (width - 1));
+  }
+
+  let head = 0;
+  while (head < queue.length) {
+    const idx = queue[head++];
+    const x = idx % width;
+    const y = Math.floor(idx / width);
+    if (x > 0) enqueue(idx - 1);
+    if (x < width - 1) enqueue(idx + 1);
+    if (y > 0) enqueue(idx - width);
+    if (y < height - 1) enqueue(idx + width);
+  }
+
+  for (const idx of queue) {
+    data[idx * 4 + 3] = 0;
+  }
+
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const alpha = data[(y * width + x) * 4 + 3];
+      if (alpha > 12) {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  if (maxX <= minX || maxY <= minY) {
+    return canvas;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+
+  const pad = 2;
+  const cropX = clamp(minX - pad, 0, width - 1);
+  const cropY = clamp(minY - pad, 0, height - 1);
+  const cropW = clamp(maxX - minX + 1 + pad * 2, 1, width - cropX);
+  const cropH = clamp(maxY - minY + 1 + pad * 2, 1, height - cropY);
+
+  const out = document.createElement("canvas");
+  out.width = cropW;
+  out.height = cropH;
+  const outCtx = out.getContext("2d");
+  if (!outCtx) return canvas;
+  outCtx.clearRect(0, 0, cropW, cropH);
+  outCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+  return out;
+};
+
+export const loadStrapImage = async (
+  src: string
+): Promise<HTMLImageElement | HTMLCanvasElement> => {
+  if (!isCheckerboardStrap(src)) {
+    return loadImage(src);
+  }
+  const cached = strapRenderCache.get(src);
+  if (cached) return cached;
+  const image = await loadImage(src);
+  const cleaned = buildCheckerTransparentCanvas(image);
+  strapRenderCache.set(src, cleaned);
+  return cleaned;
+};
+
 const drawPart = (
   ctx: CanvasRenderingContext2D,
-  image: HTMLImageElement,
+  image: HTMLImageElement | HTMLCanvasElement,
   transform: PartTransform,
   style: StrapStyle
 ) => {
@@ -109,8 +258,8 @@ export const renderComposition = async (
 ) => {
   const [watch, partA, partB] = await Promise.all([
     loadImage(watchSrc),
-    loadImage(strapASrc),
-    loadImage(strapBSrc)
+    loadStrapImage(strapASrc),
+    loadStrapImage(strapBSrc)
   ]);
 
   const ctx = canvas.getContext("2d");
@@ -137,7 +286,10 @@ export const combineStrapParts = async (
   strapASrc: string,
   strapBSrc: string
 ): Promise<string> => {
-  const [partA, partB] = await Promise.all([loadImage(strapASrc), loadImage(strapBSrc)]);
+  const [partA, partB] = await Promise.all([
+    loadStrapImage(strapASrc),
+    loadStrapImage(strapBSrc)
+  ]);
   const gap = 16;
   const targetWidth = Math.max(partA.width, partB.width);
   const aRatio = targetWidth / partA.width;
@@ -173,8 +325,8 @@ export const calculateAutoPlacement = async (
 ): Promise<{ partA: PartTransform; partB: PartTransform }> => {
   const [watch, partAImage, partBImage] = await Promise.all([
     loadImage(watchSrc),
-    loadImage(strapASrc),
-    loadImage(strapBSrc)
+    loadStrapImage(strapASrc),
+    loadStrapImage(strapBSrc)
   ]);
 
   const watchRect = getWatchRect(watch, 1);

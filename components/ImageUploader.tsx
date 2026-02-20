@@ -5,6 +5,7 @@ import { ChangeEvent, useId, useState } from "react";
 interface ImageUploaderProps {
   id: string;
   label: string;
+  helperText?: string;
   previewUrl?: string;
   onFileSelect: (file: File) => void;
 }
@@ -12,6 +13,7 @@ interface ImageUploaderProps {
 export default function ImageUploader({
   id,
   label,
+  helperText,
   previewUrl,
   onFileSelect
 }: ImageUploaderProps) {
@@ -33,6 +35,9 @@ export default function ImageUploader({
       <p id={id} className="text-lg font-medium text-ink">
         {label}
       </p>
+      {helperText ? (
+        <p className="mt-2 text-sm leading-relaxed text-muted">{helperText}</p>
+      ) : null}
       <div className="mt-3 flex items-center gap-3">
         <label
           htmlFor={inputId}
