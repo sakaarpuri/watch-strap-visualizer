@@ -163,8 +163,7 @@ const clamp = (value: number, min: number, max: number) =>
 export const calculateAutoPlacement = async (
   watchSrc: string,
   strapASrc: string,
-  strapBSrc: string,
-  watchScale = 1
+  strapBSrc: string
 ): Promise<{ partA: PartTransform; partB: PartTransform }> => {
   const [watch, partAImage, partBImage] = await Promise.all([
     loadImage(watchSrc),
@@ -172,9 +171,9 @@ export const calculateAutoPlacement = async (
     loadImage(strapBSrc)
   ]);
 
-  const watchRect = getWatchRect(watch, watchScale);
-  const targetStrapWidth = watchRect.w * 0.32;
-  const overlap = Math.max(10, watchRect.h * 0.035);
+  const watchRect = getWatchRect(watch, 1);
+  const targetStrapWidth = watchRect.w * 0.42;
+  const overlap = Math.max(12, watchRect.h * 0.075);
 
   const scaleA = clamp((targetStrapWidth / partAImage.width) * 100, 30, 230);
   const scaleB = clamp((targetStrapWidth / partBImage.width) * 100, 30, 230);

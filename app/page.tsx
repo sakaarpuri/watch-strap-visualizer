@@ -60,8 +60,7 @@ export default function Home() {
       const aligned = await calculateAutoPlacement(
         watchSrc,
         currentStrap.strapASrc,
-        currentStrap.strapBSrc,
-        dialScale
+        currentStrap.strapBSrc
       );
       setPartA(aligned.partA);
       setPartB(aligned.partB);
@@ -74,7 +73,7 @@ export default function Home() {
     void autoAlignStraps();
     // Recompute placement whenever dial or strap selection changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSrc, category, strapIndex, dialScale]);
+  }, [watchSrc, category, strapIndex]);
 
   const onCycleStrap = (direction: 1 | -1) => {
     setStrapIndex((prev) => {
@@ -93,7 +92,7 @@ export default function Home() {
     const centerY = (partA.y + partB.y) / 2;
     const halfGap = (partB.y - partA.y) / 2;
     const step = 18;
-    const minHalfGap = 300 * dialScale;
+    const minHalfGap = 250;
     const maxHalfGap = 520;
     const nextHalfGap = clamp(
       halfGap + (direction === "in" ? -step : step),
@@ -183,26 +182,6 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="mt-6 rounded-xl border border-line bg-canvas p-4">
-              <p className="text-sm font-semibold text-ink">Preview Controls</p>
-              <div className="mt-3 grid gap-3">
-                <ControlRow
-                  label="Strap Gap"
-                  onMinus={() => adjustGap("in")}
-                  onPlus={() => adjustGap("out")}
-                />
-                <ControlRow
-                  label="Strap Size"
-                  onMinus={() => adjustStrapScale("out")}
-                  onPlus={() => adjustStrapScale("in")}
-                />
-                <ControlRow
-                  label="Dial Size"
-                  onMinus={() => adjustDialScale("out")}
-                  onPlus={() => adjustDialScale("in")}
-                />
-              </div>
-            </div>
           </div>
         </aside>
 
@@ -242,6 +221,30 @@ export default function Home() {
               setPartB(nextB);
             }}
             onCycleStrap={onCycleStrap}
+            controls={
+              <div className="rounded-xl border border-line bg-canvas p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                  Preview Controls
+                </p>
+                <div className="mt-2 grid gap-2 md:grid-cols-3">
+                  <ControlRow
+                    label="Strap Gap"
+                    onMinus={() => adjustGap("in")}
+                    onPlus={() => adjustGap("out")}
+                  />
+                  <ControlRow
+                    label="Strap Size"
+                    onMinus={() => adjustStrapScale("out")}
+                    onPlus={() => adjustStrapScale("in")}
+                  />
+                  <ControlRow
+                    label="Dial Size"
+                    onMinus={() => adjustDialScale("out")}
+                    onPlus={() => adjustDialScale("in")}
+                  />
+                </div>
+              </div>
+            }
           />
         ) : (
           <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">

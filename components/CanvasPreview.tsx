@@ -3,6 +3,7 @@
 import {
   forwardRef,
   PointerEvent,
+  ReactNode,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -21,6 +22,7 @@ interface CanvasPreviewProps {
   watchScale: number;
   onDragPartsChange: (nextPartA: PartTransform, nextPartB: PartTransform) => void;
   onCycleStrap: (direction: 1 | -1) => void;
+  controls?: ReactNode;
 }
 
 export interface CanvasPreviewRef {
@@ -38,7 +40,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       style,
       watchScale,
       onDragPartsChange,
-      onCycleStrap
+      onCycleStrap,
+      controls
     },
     ref
   ) => {
@@ -181,6 +184,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
           style={{ touchAction: "none" }}
           aria-label="Preview canvas. Drag to move straps. Scroll to cycle strap designs."
         />
+        {controls ? <div className="mt-3">{controls}</div> : null}
         {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
       </div>
     );
