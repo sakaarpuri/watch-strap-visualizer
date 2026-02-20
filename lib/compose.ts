@@ -34,7 +34,7 @@ export const DEFAULT_PART_B: PartTransform = {
   scale: 85,
   x: 0,
   y: 240,
-  rotation: 180,
+  rotation: 0,
   opacity: 1
 };
 
@@ -190,7 +190,7 @@ export const calculateAutoPlacement = async (
     scale: scaleB,
     x: 0,
     y: bottomEdge + scaledBH / 2 - overlap,
-    rotation: 180,
+    rotation: 0,
     opacity: 1
   };
 
