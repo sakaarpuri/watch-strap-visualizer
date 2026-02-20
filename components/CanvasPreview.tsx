@@ -6,7 +6,8 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState
+  useState,
+  WheelEvent
 } from "react";
 import { PartTransform, StrapStyle, renderComposition } from "@/lib/compose";
 
@@ -17,8 +18,8 @@ interface CanvasPreviewProps {
   partA: PartTransform;
   partB: PartTransform;
   style: StrapStyle;
-  dragTarget: "a" | "b";
-  onDragPositionChange: (target: "a" | "b", x: number, y: number) => void;
+  onDragPartsChange: (nextPartA: PartTransform, nextPartB: PartTransform) => void;
+  onCycleStrap: (direction: 1 | -1) => void;
 }
 
 export interface CanvasPreviewRef {
@@ -34,20 +35,22 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       partA,
       partB,
       style,
-      dragTarget,
-      onDragPositionChange
+      onDragPartsChange,
+      onCycleStrap
     },
     ref
   ) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [error, setError] = useState<string>("");
+    const lastWheelAtRef = useRef(0);
     const dragStateRef = useRef<{
       pointerId: number;
-      target: "a" | "b";
       startCanvasX: number;
       startCanvasY: number;
-      originX: number;
-      originY: number;
+      startPartAX: number;
+      startPartAY: number;
+      startPartBX: number;
+      startPartBY: number;
     } | null>(null);
 
     useEffect(() => {
@@ -106,14 +109,14 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       const canvasPoint = getCanvasPoint(event);
       if (!canvasPoint || !canvasRef.current) return;
 
-      const origin = dragTarget === "a" ? partA : partB;
       dragStateRef.current = {
         pointerId: event.pointerId,
-        target: dragTarget,
         startCanvasX: canvasPoint.x,
         startCanvasY: canvasPoint.y,
-        originX: origin.x,
-        originY: origin.y
+        startPartAX: partA.x,
+        startPartAY: partA.y,
+        startPartBX: partB.x,
+        startPartBY: partB.y
       };
       canvasRef.current.setPointerCapture(event.pointerId);
     };
@@ -127,13 +130,26 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 
       const deltaX = canvasPoint.x - drag.startCanvasX;
       const deltaY = canvasPoint.y - drag.startCanvasY;
-      onDragPositionChange(drag.target, drag.originX + deltaX, drag.originY + deltaY);
+      onDragPartsChange(
+        { ...partA, x: drag.startPartAX + deltaX, y: drag.startPartAY + deltaY },
+        { ...partB, x: drag.startPartBX + deltaX, y: drag.startPartBY + deltaY }
+      );
     };
 
     const endDrag = (event: PointerEvent<HTMLCanvasElement>) => {
       if (dragStateRef.current?.pointerId !== event.pointerId) return;
       dragStateRef.current = null;
       canvasRef.current?.releasePointerCapture(event.pointerId);
+    };
+
+    const onWheel = (event: WheelEvent<HTMLCanvasElement>) => {
+      event.preventDefault();
+      const now = Date.now();
+      if (now - lastWheelAtRef.current < 160) return;
+      lastWheelAtRef.current = now;
+
+      const direction: 1 | -1 = event.deltaY > 0 ? 1 : -1;
+      onCycleStrap(direction);
     };
 
     return (
@@ -144,8 +160,10 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
+          onWheel={onWheel}
           className="aspect-square w-full cursor-grab rounded-xl border border-line bg-white active:cursor-grabbing"
           style={{ touchAction: "none" }}
+          aria-label="Preview canvas. Drag to move straps. Scroll to cycle strap designs."
         />
         {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
       </div>

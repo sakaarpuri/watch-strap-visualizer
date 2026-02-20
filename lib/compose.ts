@@ -196,3 +196,112 @@ export const calculateAutoPlacement = async (
 
   return { partA, partB };
 };
+
+const colorDistance = (r1: number, g1: number, b1: number, r2: number, g2: number, b2: number) =>
+  Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+
+const averageCornerColor = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number
+): { r: number; g: number; b: number } => {
+  const patch = Math.max(8, Math.floor(Math.min(width, height) * 0.03));
+  const corners = [
+    { x: 0, y: 0 },
+    { x: width - patch, y: 0 },
+    { x: 0, y: height - patch },
+    { x: width - patch, y: height - patch }
+  ];
+
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let count = 0;
+
+  for (const corner of corners) {
+    for (let y = corner.y; y < corner.y + patch; y += 1) {
+      for (let x = corner.x; x < corner.x + patch; x += 1) {
+        const i = (y * width + x) * 4;
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        count += 1;
+      }
+    }
+  }
+
+  return { r: r / count, g: g / count, b: b / count };
+};
+
+export const autoCleanDialImage = async (file: File): Promise<string> => {
+  const src = URL.createObjectURL(file);
+  try {
+    const image = await loadImage(src);
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return src;
+
+    ctx.drawImage(image, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const bg = averageCornerColor(data, canvas.width, canvas.height);
+    const threshold = 42;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const closeToBg = colorDistance(r, g, b, bg.r, bg.g, bg.b) < threshold;
+      const nearWhite = r > 245 && g > 245 && b > 245;
+      if (closeToBg || nearWhite) {
+        data[i + 3] = 0;
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    let minX = canvas.width;
+    let minY = canvas.height;
+    let maxX = 0;
+    let maxY = 0;
+    let hasOpaque = false;
+
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        const alpha = data[(y * canvas.width + x) * 4 + 3];
+        if (alpha > 20) {
+          hasOpaque = true;
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+
+    if (!hasOpaque) return src;
+
+    const pad = Math.round(Math.max(maxX - minX, maxY - minY) * 0.08);
+    minX = clamp(minX - pad, 0, canvas.width - 1);
+    minY = clamp(minY - pad, 0, canvas.height - 1);
+    maxX = clamp(maxX + pad, 0, canvas.width - 1);
+    maxY = clamp(maxY + pad, 0, canvas.height - 1);
+
+    const cropWidth = Math.max(1, maxX - minX + 1);
+    const cropHeight = Math.max(1, maxY - minY + 1);
+
+    const out = document.createElement("canvas");
+    out.width = cropWidth;
+    out.height = cropHeight;
+    const outCtx = out.getContext("2d");
+    if (!outCtx) return src;
+
+    outCtx.clearRect(0, 0, cropWidth, cropHeight);
+    outCtx.drawImage(canvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+    return out.toDataURL("image/png");
+  } finally {
+    URL.revokeObjectURL(src);
+  }
+};

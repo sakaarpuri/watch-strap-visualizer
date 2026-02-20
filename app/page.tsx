@@ -1,76 +1,64 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import ImageUploader from "@/components/ImageUploader";
 import Stepper from "@/components/Stepper";
 import {
+  autoCleanDialImage,
   calculateAutoPlacement,
-  combineStrapParts,
-  DEFAULT_PART_A,
-  DEFAULT_PART_B,
-  PartTransform,
-  STRAP_STYLES
+  PartTransform
 } from "@/lib/compose";
+import {
+  STRAP_CATEGORIES,
+  STRAP_LIBRARY,
+  StrapCategory,
+  StrapVariant
+} from "@/lib/strapLibrary";
 
-const createPart = (part: PartTransform): PartTransform => ({ ...part });
-const DEFAULT_STYLE = STRAP_STYLES[0];
+const STEPS = ["Upload Dial", "Select Strap Category", "Preview & Scroll"];
 
 export default function Home() {
   const [watchSrc, setWatchSrc] = useState("/sample-watch.svg");
-  const [strapASrc, setStrapASrc] = useState("/sample-strap-a.png");
-  const [strapBSrc, setStrapBSrc] = useState("/sample-strap-b.png");
-  const [combinedSrc, setCombinedSrc] = useState<string>("");
-  const [partA, setPartA] = useState<PartTransform>(createPart(DEFAULT_PART_A));
-  const [partB, setPartB] = useState<PartTransform>(createPart(DEFAULT_PART_B));
-  const [combining, setCombining] = useState(false);
+  const [watchPreviewSrc, setWatchPreviewSrc] = useState("/sample-watch.svg");
+  const [category, setCategory] = useState<StrapCategory>("Leather");
+  const [strapIndex, setStrapIndex] = useState(0);
+  const [partA, setPartA] = useState<PartTransform | null>(null);
+  const [partB, setPartB] = useState<PartTransform | null>(null);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
-  const [dragTarget, setDragTarget] = useState<"a" | "b">("a");
+  const [isCleaningDial, setIsCleaningDial] = useState(false);
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
 
-  const currentStep = !watchSrc
-    ? 1
-    : !strapASrc || !strapBSrc
-      ? 2
-      : 3;
+  const strapsInCategory = STRAP_LIBRARY[category];
+  const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
 
-  const onUpload = (
+  const currentStep = !watchSrc ? 1 : !currentStrap ? 2 : 3;
+
+  const onUploadDial = async (
     file: File,
-    setter: Dispatch<SetStateAction<string>>
+    previewSetter: Dispatch<SetStateAction<string>>
   ) => {
-    const url = URL.createObjectURL(file);
-    setter(url);
-  };
-
-  const updatePart = (
-    which: "a" | "b",
-    key: keyof PartTransform,
-    value: number
-  ) => {
-    if (which === "a") {
-      setPartA((prev) => ({ ...prev, [key]: value }));
-      return;
-    }
-    setPartB((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const onCombine = async () => {
-    setCombining(true);
+    previewSetter(URL.createObjectURL(file));
+    setIsCleaningDial(true);
     try {
-      const combined = await combineStrapParts(strapASrc, strapBSrc);
-      setCombinedSrc(combined);
+      const cleaned = await autoCleanDialImage(file);
+      setWatchSrc(cleaned);
     } finally {
-      setCombining(false);
+      setIsCleaningDial(false);
     }
   };
 
   const autoAlignStraps = async () => {
+    if (!currentStrap) return;
     setIsAutoAligning(true);
     try {
-      const aligned = await calculateAutoPlacement(watchSrc, strapASrc, strapBSrc);
+      const aligned = await calculateAutoPlacement(
+        watchSrc,
+        currentStrap.strapASrc,
+        currentStrap.strapBSrc
+      );
       setPartA(aligned.partA);
       setPartB(aligned.partB);
     } finally {
@@ -78,15 +66,23 @@ export default function Home() {
     }
   };
 
-  const onReset = () => {
-    void autoAlignStraps();
-  };
-
   useEffect(() => {
     void autoAlignStraps();
-    // Recompute defaults when user uploads/replaces any base image.
+    // Recompute placement whenever dial or strap selection changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSrc, strapASrc, strapBSrc]);
+  }, [watchSrc, category, strapIndex]);
+
+  const onCycleStrap = (direction: 1 | -1) => {
+    setStrapIndex((prev) => {
+      const total = strapsInCategory.length;
+      return (prev + direction + total) % total;
+    });
+  };
+
+  const canRender = useMemo(
+    () => Boolean(partA && partB && currentStrap),
+    [partA, partB, currentStrap]
+  );
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10 md:px-10 md:py-12">
@@ -98,186 +94,99 @@ export default function Home() {
       </header>
 
       <section className="mt-8">
-        <Stepper currentStep={currentStep} />
+        <Stepper currentStep={currentStep} steps={STEPS} />
       </section>
 
-      <section className="mt-8 grid gap-5 md:grid-cols-3">
+      <section className="mt-8 grid gap-5 md:grid-cols-2">
         <ImageUploader
           id="watch"
-          label="1. Upload / Select Watch"
-          previewUrl={watchSrc}
-          onFileSelect={(file) => onUpload(file, setWatchSrc)}
+          label="1. Upload Watch Dial Photo"
+          previewUrl={watchPreviewSrc}
+          onFileSelect={(file) => void onUploadDial(file, setWatchPreviewSrc)}
         />
 
-        <ImageUploader
-          id="strap-a"
-          label="2A. Upload Strap Part A (12 o'clock)"
-          previewUrl={strapASrc}
-          onFileSelect={(file) => onUpload(file, setStrapASrc)}
-        />
-
-        <ImageUploader
-          id="strap-b"
-          label="2B. Upload Strap Part B (6 o'clock)"
-          previewUrl={strapBSrc}
-          onFileSelect={(file) => onUpload(file, setStrapBSrc)}
-        />
-      </section>
-
-      <section className="mt-5 rounded-2xl border border-line p-5">
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={onCombine}
-            className="rounded-lg border border-ink px-4 py-2 text-sm text-ink transition hover:bg-ink hover:text-white"
-          >
-            {combining ? "Combining..." : "Combine strap parts"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void autoAlignStraps()}
-            className="rounded-lg border border-line px-4 py-2 text-sm text-ink transition hover:bg-canvas"
-          >
-            {isAutoAligning ? "Auto-aligning..." : "Auto-align straps"}
-          </button>
-          <span className="text-xs text-muted">Creates a quick single strap reference.</span>
-        </div>
-        {combinedSrc ? (
-          <div className="mt-4 flex items-center justify-center rounded-xl border border-line bg-canvas p-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={combinedSrc}
-              alt="Combined strap preview"
-              className="max-h-44 w-auto rounded-md object-contain"
-            />
-          </div>
-        ) : null}
-      </section>
-
-      <section className="mt-8 space-y-6">
-        <div>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.15em] text-muted">
-            3. Generate Preview
-          </h2>
-          <div className="mb-3 flex items-center gap-2">
-            <span className="text-xs text-muted">Drag on canvas:</span>
-            <button
-              type="button"
-              onClick={() => setDragTarget("a")}
-              className={`rounded-md border px-3 py-1.5 text-xs ${
-                dragTarget === "a"
-                  ? "border-ink bg-ink text-white"
-                  : "border-line bg-white text-ink hover:bg-canvas"
-              }`}
-            >
-              Part A
-            </button>
-            <button
-              type="button"
-              onClick={() => setDragTarget("b")}
-              className={`rounded-md border px-3 py-1.5 text-xs ${
-                dragTarget === "b"
-                  ? "border-ink bg-ink text-white"
-                  : "border-line bg-white text-ink hover:bg-canvas"
-              }`}
-            >
-              Part B
-            </button>
-          </div>
-          <CanvasPreview
-            ref={canvasRef}
-            watchSrc={watchSrc}
-            strapASrc={strapASrc}
-            strapBSrc={strapBSrc}
-            partA={partA}
-            partB={partB}
-            style={DEFAULT_STYLE}
-            dragTarget={dragTarget}
-            onDragPositionChange={(target, x, y) => {
-              if (target === "a") {
-                setPartA((prev) => ({ ...prev, x, y }));
-                return;
-              }
-              setPartB((prev) => ({ ...prev, x, y }));
+        <div className="rounded-2xl border border-line p-5">
+          <label htmlFor="strap-category" className="text-sm font-medium text-ink">
+            2. Select Strap Category
+          </label>
+          <select
+            id="strap-category"
+            value={category}
+            onChange={(event) => {
+              setCategory(event.target.value as StrapCategory);
+              setStrapIndex(0);
             }}
-          />
-          <p className="mt-3 text-sm text-muted">
-            Visual inspiration only. Final fit depends on lug width &amp; strap model.
-          </p>
+            className="mt-3 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink"
+          >
+            {STRAP_CATEGORIES.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+
+          <div className="mt-4 rounded-xl border border-line bg-canvas p-4">
+            <p className="text-xs uppercase tracking-[0.12em] text-muted">Current Strap</p>
+            <p className="mt-1 text-sm font-semibold text-ink">{currentStrap.label}</p>
+            <p className="mt-2 text-xs text-muted">
+              Hover preview and scroll mouse wheel to cycle strap options in this category.
+            </p>
+          </div>
+
           <div className="mt-4 flex gap-3">
             <button
               type="button"
-              onClick={onReset}
-              className="rounded-lg border border-line px-4 py-2 text-sm text-ink hover:bg-canvas"
+              onClick={() => void autoAlignStraps()}
+              className="rounded-lg border border-line px-4 py-2 text-sm text-ink transition hover:bg-canvas"
             >
-              Reset
+              {isAutoAligning ? "Auto-aligning..." : "Re-center Strap"}
             </button>
             <button
               type="button"
               onClick={() => canvasRef.current?.downloadAsPng()}
               className="rounded-lg border border-ink bg-ink px-4 py-2 text-sm text-white hover:opacity-90"
             >
-              Download Result as PNG
+              Download PNG
             </button>
           </div>
         </div>
+      </section>
 
-        <aside className="grid gap-5 md:grid-cols-2">
-          <ControlPanel
-            title="Strap Part A (12 o'clock)"
-            value={partA}
-            onChange={(key, value) => updatePart("a", key, value)}
+      <section className="mt-8">
+        <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.15em] text-muted">
+          3. Live Preview
+        </h2>
+        {isCleaningDial ? (
+          <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
+            Cleaning uploaded dial background...
+          </div>
+        ) : null}
+
+        {canRender ? (
+          <CanvasPreview
+            ref={canvasRef}
+            watchSrc={watchSrc}
+            strapASrc={currentStrap.strapASrc}
+            strapBSrc={currentStrap.strapBSrc}
+            partA={partA as PartTransform}
+            partB={partB as PartTransform}
+            style={currentStrap.tint}
+            onDragPartsChange={(nextA, nextB) => {
+              setPartA(nextA);
+              setPartB(nextB);
+            }}
+            onCycleStrap={onCycleStrap}
           />
-          <ControlPanel
-            title="Strap Part B (6 o'clock)"
-            value={partB}
-            onChange={(key, value) => updatePart("b", key, value)}
-          />
-        </aside>
+        ) : (
+          <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
+            Upload a watch image to start previewing straps.
+          </div>
+        )}
+
+        <p className="mt-3 text-sm text-muted">
+          Visual inspiration only. Final fit depends on lug width &amp; strap model.
+        </p>
       </section>
     </main>
-  );
-}
-
-interface ControlPanelProps {
-  title: string;
-  value: PartTransform;
-  onChange: (key: keyof PartTransform, value: number) => void;
-}
-
-function ControlPanel({ title, value, onChange }: ControlPanelProps) {
-  const controls: Array<{
-    key: keyof PartTransform;
-    label: string;
-    min: number;
-    max: number;
-    step: number;
-  }> = [
-    { key: "scale", label: "Scale", min: 30, max: 230, step: 1 },
-    { key: "x", label: "X Position", min: -340, max: 340, step: 1 },
-    { key: "y", label: "Y Position", min: -340, max: 340, step: 1 },
-    { key: "rotation", label: "Rotation", min: -180, max: 180, step: 1 },
-    { key: "opacity", label: "Opacity", min: 0.05, max: 1, step: 0.01 }
-  ];
-
-  return (
-    <div className="rounded-2xl border border-line p-5">
-      <h3 className="text-sm font-semibold">{title}</h3>
-      <div className="mt-4 space-y-3">
-        {controls.map((control) => (
-          <label key={control.key} className="block">
-            <div className="mb-1 text-xs">{control.label}</div>
-            <input
-              type="range"
-              min={control.min}
-              max={control.max}
-              step={control.step}
-              value={value[control.key]}
-              onChange={(e) => onChange(control.key, Number(e.target.value))}
-            />
-          </label>
-        ))}
-      </div>
-    </div>
   );
 }

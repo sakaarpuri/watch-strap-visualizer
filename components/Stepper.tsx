@@ -1,10 +1,11 @@
 interface StepperProps {
   currentStep: number;
+  steps?: string[];
 }
 
-const steps = ["Select Watch", "Upload Strap", "Preview"];
+const DEFAULT_STEPS = ["Select Watch", "Upload Strap", "Preview"];
 
-export default function Stepper({ currentStep }: StepperProps) {
+export default function Stepper({ currentStep, steps = DEFAULT_STEPS }: StepperProps) {
   return (
     <ol className="grid w-full grid-cols-3 gap-4">
       {steps.map((label, index) => {
