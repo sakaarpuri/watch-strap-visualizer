@@ -319,42 +319,116 @@ export const autoCleanDialImage = async (file: File): Promise<string> => {
 };
 
 export const enhanceDialImage = async (file: File): Promise<string> => {
-  const fast = await autoCleanDialImage(file);
-  const image = await loadImage(fast);
+  const src = URL.createObjectURL(file);
+  try {
+    const image = await loadImage(src);
+    const work = document.createElement("canvas");
+    work.width = image.width;
+    work.height = image.height;
+    const workCtx = work.getContext("2d");
+    if (!workCtx) return await autoCleanDialImage(file);
+    workCtx.drawImage(image, 0, 0);
 
-  const canvas = document.createElement("canvas");
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return fast;
+    const img = workCtx.getImageData(0, 0, work.width, work.height);
+    const d = img.data;
+    const gray = new Float32Array(work.width * work.height);
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(image, 0, 0);
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
-
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-  const halfW = canvas.width / 2;
-  const halfH = canvas.height / 2;
-
-  for (let y = 0; y < canvas.height; y += 1) {
-    for (let x = 0; x < canvas.width; x += 1) {
-      const i = (y * canvas.width + x) * 4;
-      const alpha = data[i + 3];
-      if (alpha === 0) continue;
-
-      const nx = (x - cx) / halfW;
-      const ny = (y - cy) / halfH;
-      const ellipse = (nx * nx) / (0.62 * 0.62) + (ny * ny) / (0.52 * 0.52);
-
-      // Soften likely strap spill in upper/lower center while protecting the watch head.
-      if (Math.abs(nx) < 0.5 && Math.abs(ny) > 0.5 && ellipse > 1.05) {
-        data[i + 3] = Math.min(alpha, 24);
+    for (let y = 1; y < work.height - 1; y += 1) {
+      for (let x = 1; x < work.width - 1; x += 1) {
+        const i = (y * work.width + x) * 4;
+        gray[y * work.width + x] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
       }
     }
-  }
 
-  ctx.putImageData(imageData, 0, 0);
-  return canvas.toDataURL("image/png");
+    const mag = new Float32Array(work.width * work.height);
+    for (let y = 1; y < work.height - 1; y += 1) {
+      for (let x = 1; x < work.width - 1; x += 1) {
+        const idx = y * work.width + x;
+        const gx =
+          -gray[idx - work.width - 1] + gray[idx - work.width + 1] -
+          2 * gray[idx - 1] +
+          2 * gray[idx + 1] -
+          gray[idx + work.width - 1] +
+          gray[idx + work.width + 1];
+        const gy =
+          -gray[idx - work.width - 1] -
+          2 * gray[idx - work.width] -
+          gray[idx - work.width + 1] +
+          gray[idx + work.width - 1] +
+          2 * gray[idx + work.width] +
+          gray[idx + work.width + 1];
+        mag[idx] = Math.sqrt(gx * gx + gy * gy);
+      }
+    }
+
+    let bestScore = -1;
+    let bestX = work.width / 2;
+    let bestY = work.height / 2;
+    let bestR = Math.min(work.width, work.height) * 0.2;
+    const minR = Math.min(work.width, work.height) * 0.09;
+    const maxR = Math.min(work.width, work.height) * 0.28;
+
+    for (let cy = Math.floor(work.height * 0.22); cy < Math.floor(work.height * 0.78); cy += 16) {
+      for (let cx = Math.floor(work.width * 0.22); cx < Math.floor(work.width * 0.78); cx += 16) {
+        for (let r = minR; r <= maxR; r += 8) {
+          let score = 0;
+          let samples = 0;
+          for (let a = 0; a < 360; a += 12) {
+            const rad = (a * Math.PI) / 180;
+            const x = Math.round(cx + Math.cos(rad) * r);
+            const y = Math.round(cy + Math.sin(rad) * r);
+            if (x < 1 || y < 1 || x >= work.width - 1 || y >= work.height - 1) continue;
+            score += mag[y * work.width + x];
+            samples += 1;
+          }
+          if (samples > 0) score /= samples;
+          if (score > bestScore) {
+            bestScore = score;
+            bestX = cx;
+            bestY = cy;
+            bestR = r;
+          }
+        }
+      }
+    }
+
+    const side = clamp(Math.round(bestR * 4.1), 320, Math.min(work.width, work.height));
+    const minX = clamp(Math.round(bestX - side / 2), 0, work.width - side);
+    const minY = clamp(Math.round(bestY - side / 2), 0, work.height - side);
+
+    const out = document.createElement("canvas");
+    out.width = side;
+    out.height = side;
+    const outCtx = out.getContext("2d");
+    if (!outCtx) return await autoCleanDialImage(file);
+    outCtx.drawImage(work, minX, minY, side, side, 0, 0, side, side);
+
+    const outData = outCtx.getImageData(0, 0, side, side);
+    const px = outData.data;
+    const bg = averageCornerColor(px, side, side);
+    const threshold = 55;
+    const c = side / 2;
+    const rKeep = side * 0.47;
+
+    for (let y = 0; y < side; y += 1) {
+      for (let x = 0; x < side; x += 1) {
+        const i = (y * side + x) * 4;
+        const r = px[i];
+        const g = px[i + 1];
+        const b = px[i + 2];
+        const distBg = colorDistance(r, g, b, bg.r, bg.g, bg.b);
+        const dx = x - c;
+        const dy = y - c;
+        const radial = Math.sqrt(dx * dx + dy * dy);
+        if (distBg < threshold || radial > rKeep * 1.08) {
+          px[i + 3] = 0;
+        }
+      }
+    }
+
+    outCtx.putImageData(outData, 0, 0);
+    return out.toDataURL("image/png");
+  } finally {
+    URL.revokeObjectURL(src);
+  }
 };

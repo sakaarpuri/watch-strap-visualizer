@@ -57,9 +57,10 @@ export default function Home() {
   ) => {
     previewSetter(URL.createObjectURL(file));
     setUploadedDialFile(file);
+    setCleanMode("enhanced");
     setIsCleaningDial(true);
     try {
-      const cleaned = await autoCleanDialImage(file);
+      const cleaned = await enhanceDialImage(file);
       setWatchSrc(cleaned);
     } finally {
       setIsCleaningDial(false);
