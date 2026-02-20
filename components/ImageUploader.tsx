@@ -29,18 +29,18 @@ export default function ImageUploader({
   };
 
   return (
-    <div className="rounded-2xl border border-line p-5">
-      <p id={id} className="text-sm font-medium text-ink">
+    <div className="rounded-2xl border border-line p-6">
+      <p id={id} className="text-lg font-medium text-ink">
         {label}
       </p>
       <div className="mt-3 flex items-center gap-3">
         <label
           htmlFor={inputId}
-          className="cursor-pointer rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink transition hover:bg-canvas"
+          className="cursor-pointer rounded-lg border border-line bg-white px-4 py-2.5 text-base text-ink transition hover:bg-canvas"
         >
           Choose File
         </label>
-        <span className="max-w-[160px] truncate text-sm text-muted md:max-w-[220px]">
+        <span className="max-w-[160px] truncate text-base text-muted md:max-w-[220px]">
           {fileName}
         </span>
       </div>

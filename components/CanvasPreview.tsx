@@ -42,7 +42,9 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
   ) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [error, setError] = useState<string>("");
-    const lastWheelAtRef = useRef(0);
+    const [isTicking, setIsTicking] = useState(false);
+    const lastTickAtRef = useRef(0);
+    const wheelCarryRef = useRef(0);
     const dragStateRef = useRef<{
       pointerId: number;
       startCanvasX: number;
@@ -145,15 +147,26 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const onWheel = (event: WheelEvent<HTMLCanvasElement>) => {
       event.preventDefault();
       const now = Date.now();
-      if (now - lastWheelAtRef.current < 160) return;
-      lastWheelAtRef.current = now;
+      wheelCarryRef.current += event.deltaY;
 
-      const direction: 1 | -1 = event.deltaY > 0 ? 1 : -1;
+      const threshold = 90;
+      const canTick = now - lastTickAtRef.current > 140;
+      if (Math.abs(wheelCarryRef.current) < threshold || !canTick) return;
+
+      const direction: 1 | -1 = wheelCarryRef.current > 0 ? 1 : -1;
+      wheelCarryRef.current = 0;
+      lastTickAtRef.current = now;
+      setIsTicking(true);
+      window.setTimeout(() => setIsTicking(false), 90);
       onCycleStrap(direction);
     };
 
     return (
-      <div className="rounded-2xl border border-line p-4">
+      <div
+        className={`rounded-2xl border p-4 transition ${
+          isTicking ? "border-ink" : "border-line"
+        }`}
+      >
         <canvas
           ref={canvasRef}
           onPointerDown={onPointerDown}
