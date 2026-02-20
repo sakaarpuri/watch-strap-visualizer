@@ -18,6 +18,7 @@ interface CanvasPreviewProps {
   partA: PartTransform;
   partB: PartTransform;
   style: StrapStyle;
+  watchScale: number;
   onDragPartsChange: (nextPartA: PartTransform, nextPartB: PartTransform) => void;
   onCycleStrap: (direction: 1 | -1) => void;
 }
@@ -35,6 +36,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       partA,
       partB,
       style,
+      watchScale,
       onDragPartsChange,
       onCycleStrap
     },
@@ -68,7 +70,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             strapBSrc,
             partA,
             partB,
-            style
+            style,
+            watchScale
           );
           if (active) setError("");
         } catch {
@@ -80,7 +83,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       return () => {
         active = false;
       };
-    }, [watchSrc, strapASrc, strapBSrc, partA, partB, style]);
+    }, [watchSrc, strapASrc, strapBSrc, partA, partB, style, watchScale]);
 
     useImperativeHandle(ref, () => ({
       downloadAsPng: () => {

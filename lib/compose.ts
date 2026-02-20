@@ -76,16 +76,20 @@ const drawPart = (
   ctx.restore();
 };
 
-const drawWatch = (ctx: CanvasRenderingContext2D, image: HTMLImageElement) => {
-  const { x, y, w, h } = getWatchRect(image);
+const drawWatch = (
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  watchScale = 1
+) => {
+  const { x, y, w, h } = getWatchRect(image, watchScale);
   ctx.drawImage(image, x, y, w, h);
 };
 
-const getWatchRect = (image: HTMLImageElement) => {
+const getWatchRect = (image: HTMLImageElement, watchScale = 1) => {
   const max = CANVAS_SIZE * 0.68;
   const ratio = Math.min(max / image.width, max / image.height);
-  const w = image.width * ratio;
-  const h = image.height * ratio;
+  const w = image.width * ratio * watchScale;
+  const h = image.height * ratio * watchScale;
   const x = CANVAS_SIZE / 2 - w / 2;
   const y = CANVAS_SIZE / 2 - h / 2;
 
@@ -99,7 +103,8 @@ export const renderComposition = async (
   strapBSrc: string,
   transformA: PartTransform,
   transformB: PartTransform,
-  style: StrapStyle
+  style: StrapStyle,
+  watchScale = 1
 ) => {
   const [watch, partA, partB] = await Promise.all([
     loadImage(watchSrc),
@@ -116,9 +121,10 @@ export const renderComposition = async (
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
+  // Draw watch first so new strap overlays old strap from uploaded photos.
+  drawWatch(ctx, watch, watchScale);
   drawPart(ctx, partA, transformA, style);
   drawPart(ctx, partB, transformB, style);
-  drawWatch(ctx, watch);
 };
 
 export const combineStrapParts = async (
@@ -157,7 +163,8 @@ const clamp = (value: number, min: number, max: number) =>
 export const calculateAutoPlacement = async (
   watchSrc: string,
   strapASrc: string,
-  strapBSrc: string
+  strapBSrc: string,
+  watchScale = 1
 ): Promise<{ partA: PartTransform; partB: PartTransform }> => {
   const [watch, partAImage, partBImage] = await Promise.all([
     loadImage(watchSrc),
@@ -165,7 +172,7 @@ export const calculateAutoPlacement = async (
     loadImage(strapBSrc)
   ]);
 
-  const watchRect = getWatchRect(watch);
+  const watchRect = getWatchRect(watch, watchScale);
   const targetStrapWidth = watchRect.w * 0.32;
   const overlap = Math.max(10, watchRect.h * 0.035);
 
