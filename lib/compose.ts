@@ -104,7 +104,8 @@ export const renderComposition = async (
   transformA: PartTransform,
   transformB: PartTransform,
   style: StrapStyle,
-  watchScale = 1
+  watchScale = 1,
+  sceneZoom = 1
 ) => {
   const [watch, partA, partB] = await Promise.all([
     loadImage(watchSrc),
@@ -121,10 +122,15 @@ export const renderComposition = async (
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
+  ctx.save();
+  ctx.translate(CANVAS_SIZE / 2, CANVAS_SIZE / 2);
+  ctx.scale(sceneZoom, sceneZoom);
+  ctx.translate(-CANVAS_SIZE / 2, -CANVAS_SIZE / 2);
   // Draw watch first so new strap overlays old strap from uploaded photos.
   drawWatch(ctx, watch, watchScale);
   drawPart(ctx, partA, transformA, style);
   drawPart(ctx, partB, transformB, style);
+  ctx.restore();
 };
 
 export const combineStrapParts = async (

@@ -26,6 +26,8 @@ interface CanvasPreviewProps {
   partB: PartTransform;
   style: StrapStyle;
   watchScale: number;
+  sceneZoom: number;
+  locked: boolean;
   onDragPartsChange: (nextPartA: PartTransform, nextPartB: PartTransform) => void;
   onCycleStrap: (direction: 1 | -1) => void;
   controls?: ReactNode;
@@ -48,6 +50,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       partB,
       style,
       watchScale,
+      sceneZoom,
+      locked,
       onDragPartsChange,
       onCycleStrap,
       controls
@@ -88,7 +92,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             partA,
             partB,
             style,
-            watchScale
+            watchScale,
+            sceneZoom
           );
           if (active) setError("");
         } catch {
@@ -100,7 +105,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       return () => {
         active = false;
       };
-    }, [watchSrc, strapASrc, strapBSrc, partA, partB, style, watchScale]);
+    }, [watchSrc, strapASrc, strapBSrc, partA, partB, style, watchScale, sceneZoom]);
 
     useEffect(() => {
       let active = true;
@@ -152,6 +157,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const onPointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
       const canvasPoint = getCanvasPoint(event);
       if (!canvasPoint || !canvasRef.current) return;
+      if (locked) return;
 
       const size = strapImageSizeRef.current;
       let mode: "move" | "resize" = "move";
@@ -208,6 +214,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const onPointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
       const drag = dragStateRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
+      if (locked) return;
 
       const canvasPoint = getCanvasPoint(event);
       if (!canvasPoint) return;
@@ -258,7 +265,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
                 window.setTimeout(() => setIsTicking(false), 90);
                 onCycleStrap(-1);
               }}
-              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/80 bg-white/90 px-3 py-2 text-lg text-ink shadow hover:bg-white"
+              disabled={locked}
+              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-cyan-200/80 bg-gradient-to-b from-white/95 to-cyan-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(59,130,246,.2)] hover:from-white hover:to-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Previous strap"
             >
               ←
@@ -269,10 +277,10 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
               onPointerMove={onPointerMove}
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
-              className="aspect-square w-full rounded-xl border border-line bg-white"
-              style={{ touchAction: "none", cursor }}
-              aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
-            />
+            className="aspect-square w-full rounded-xl border border-line bg-white"
+            style={{ touchAction: "none", cursor: locked ? "default" : cursor }}
+            aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
+          />
             <button
               type="button"
               onClick={() => {
@@ -280,7 +288,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
                 window.setTimeout(() => setIsTicking(false), 90);
                 onCycleStrap(1);
               }}
-              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/80 bg-white/90 px-3 py-2 text-lg text-ink shadow hover:bg-white"
+              disabled={locked}
+              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-fuchsia-200/80 bg-gradient-to-b from-white/95 to-fuchsia-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(217,70,239,.2)] hover:from-white hover:to-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Next strap"
             >
               →

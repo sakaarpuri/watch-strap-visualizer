@@ -18,6 +18,16 @@ import {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
+const STRAP_SCALE_MIN = 55;
+const STRAP_SCALE_MAX = 175;
+const strapScaleToUi = (scale: number) => {
+  const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
+  return Math.sqrt(t) * 100;
+};
+const uiToStrapScale = (uiValue: number) => {
+  const t = clamp(uiValue / 100, 0, 1);
+  return STRAP_SCALE_MIN + t * t * (STRAP_SCALE_MAX - STRAP_SCALE_MIN);
+};
 
 export default function Home() {
   const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
@@ -27,7 +37,9 @@ export default function Home() {
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
   const [dialScale, setDialScale] = useState(1);
+  const [sceneZoom, setSceneZoom] = useState(1);
   const [preserveSettings, setPreserveSettings] = useState(true);
+  const [lockView, setLockView] = useState(false);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [isCleaningDial, setIsCleaningDial] = useState(false);
 
@@ -114,9 +126,10 @@ export default function Home() {
 
   const strapGap = partA && partB ? (partB.y - partA.y) / 2 : 320;
   const strapScale = partA && partB ? (partA.scale + partB.scale) / 2 : 90;
+  const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-12">
+    <main className="mx-auto max-w-[96rem] px-6 py-10 md:px-10 md:py-12">
       <header>
         <h1 className="text-4xl font-semibold tracking-tight">
           Watch Strap Visualizer
@@ -124,7 +137,7 @@ export default function Home() {
         <p className="mt-2 text-base text-muted">Inspiration Mode</p>
       </header>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-[380px,1fr]">
+      <section className="mt-8 grid gap-6 lg:grid-cols-[320px,1fr]">
         <aside className="space-y-5">
           <ImageUploader
             id="watch"
@@ -224,6 +237,8 @@ export default function Home() {
             partB={partB as PartTransform}
             style={currentStrap.tint}
             watchScale={dialScale}
+            sceneZoom={sceneZoom}
+            locked={lockView}
             onDragPartsChange={(nextA, nextB) => {
               setPartA(nextA);
               setPartB(nextB);
@@ -242,14 +257,17 @@ export default function Home() {
                     step={1}
                     value={strapGap}
                     onChange={setGapHalf}
+                    disabled={lockView}
                   />
                   <SliderControl
                     label="Strap Size"
-                    min={55}
-                    max={175}
-                    step={0.05}
-                    value={strapScale}
-                    onChange={setStrapScale}
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    value={strapSizeUi}
+                    onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
+                    displayValue={Math.round(strapScale).toString()}
+                    disabled={lockView}
                   />
                   <SliderControl
                     label="Dial Size"
@@ -258,6 +276,22 @@ export default function Home() {
                     step={0.01}
                     value={dialScale}
                     onChange={setDialScaleValue}
+                    disabled={lockView}
+                  />
+                  <SliderControl
+                    label="View Zoom"
+                    min={0.62}
+                    max={1.05}
+                    step={0.01}
+                    value={sceneZoom}
+                    onChange={setSceneZoom}
+                    displayValue={`${Math.round(sceneZoom * 100)}%`}
+                  />
+                  <ToggleControl
+                    label="Lock View"
+                    description="Freeze strap/dial transforms and only allow view zoom"
+                    enabled={lockView}
+                    onToggle={() => setLockView((prev) => !prev)}
                   />
                 </div>
               </div>
@@ -287,15 +321,26 @@ interface SliderControlProps {
   step: number;
   value: number;
   onChange: (value: number) => void;
+  displayValue?: string;
+  disabled?: boolean;
 }
 
-function SliderControl({ label, min, max, step, value, onChange }: SliderControlProps) {
+function SliderControl({
+  label,
+  min,
+  max,
+  step,
+  value,
+  onChange,
+  displayValue,
+  disabled
+}: SliderControlProps) {
   return (
     <div className="rounded-lg border border-slate-300 bg-white p-3 shadow-sm">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-base font-medium text-ink">{label}</span>
         <span className="text-sm text-slate-600">
-          {label === "Dial Size" ? `${Math.round(value * 100)}%` : Math.round(value)}
+          {displayValue ?? (label === "Dial Size" ? `${Math.round(value * 100)}%` : Math.round(value))}
         </span>
       </div>
       <input
@@ -306,8 +351,45 @@ function SliderControl({ label, min, max, step, value, onChange }: SliderControl
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         className="h-2 w-full"
+        disabled={disabled}
         aria-label={label}
       />
+    </div>
+  );
+}
+
+interface ToggleControlProps {
+  label: string;
+  description: string;
+  enabled: boolean;
+  onToggle: () => void;
+}
+
+function ToggleControl({ label, description, enabled, onToggle }: ToggleControlProps) {
+  return (
+    <div className="rounded-lg border border-slate-300 bg-white p-3 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-base font-medium text-ink">{label}</p>
+          <p className="text-xs text-slate-600">{description}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-pressed={enabled}
+          className={`relative h-9 w-16 rounded-full border transition ${
+            enabled
+              ? "border-cyan-400/60 bg-gradient-to-r from-cyan-300/50 to-blue-300/50"
+              : "border-slate-300 bg-slate-100"
+          }`}
+        >
+          <span
+            className={`absolute top-1 h-7 w-7 rounded-full bg-white shadow transition ${
+              enabled ? "left-8" : "left-1"
+            }`}
+          />
+        </button>
+      </div>
     </div>
   );
 }
