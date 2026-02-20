@@ -322,66 +322,97 @@ export const enhanceDialImage = async (file: File): Promise<string> => {
   const src = URL.createObjectURL(file);
   try {
     const image = await loadImage(src);
-    const work = document.createElement("canvas");
-    work.width = image.width;
-    work.height = image.height;
-    const workCtx = work.getContext("2d");
-    if (!workCtx) return await autoCleanDialImage(file);
-    workCtx.drawImage(image, 0, 0);
+    const detectSide = 560;
+    const detectScale = Math.min(1, detectSide / Math.max(image.width, image.height));
+    const detectW = Math.max(120, Math.round(image.width * detectScale));
+    const detectH = Math.max(120, Math.round(image.height * detectScale));
 
-    const img = workCtx.getImageData(0, 0, work.width, work.height);
-    const d = img.data;
-    const gray = new Float32Array(work.width * work.height);
+    const detect = document.createElement("canvas");
+    detect.width = detectW;
+    detect.height = detectH;
+    const detectCtx = detect.getContext("2d");
+    if (!detectCtx) return await autoCleanDialImage(file);
+    detectCtx.drawImage(image, 0, 0, detectW, detectH);
+    const detectData = detectCtx.getImageData(0, 0, detectW, detectH).data;
 
-    for (let y = 1; y < work.height - 1; y += 1) {
-      for (let x = 1; x < work.width - 1; x += 1) {
-        const i = (y * work.width + x) * 4;
-        gray[y * work.width + x] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    const gray = new Float32Array(detectW * detectH);
+    for (let y = 0; y < detectH; y += 1) {
+      for (let x = 0; x < detectW; x += 1) {
+        const i = (y * detectW + x) * 4;
+        gray[y * detectW + x] = 0.299 * detectData[i] + 0.587 * detectData[i + 1] + 0.114 * detectData[i + 2];
       }
     }
 
-    const mag = new Float32Array(work.width * work.height);
-    for (let y = 1; y < work.height - 1; y += 1) {
-      for (let x = 1; x < work.width - 1; x += 1) {
-        const idx = y * work.width + x;
+    const mag = new Float32Array(detectW * detectH);
+    for (let y = 1; y < detectH - 1; y += 1) {
+      for (let x = 1; x < detectW - 1; x += 1) {
+        const idx = y * detectW + x;
         const gx =
-          -gray[idx - work.width - 1] + gray[idx - work.width + 1] -
+          -gray[idx - detectW - 1] + gray[idx - detectW + 1] -
           2 * gray[idx - 1] +
           2 * gray[idx + 1] -
-          gray[idx + work.width - 1] +
-          gray[idx + work.width + 1];
+          gray[idx + detectW - 1] +
+          gray[idx + detectW + 1];
         const gy =
-          -gray[idx - work.width - 1] -
-          2 * gray[idx - work.width] -
-          gray[idx - work.width + 1] +
-          gray[idx + work.width - 1] +
-          2 * gray[idx + work.width] +
-          gray[idx + work.width + 1];
+          -gray[idx - detectW - 1] -
+          2 * gray[idx - detectW] -
+          gray[idx - detectW + 1] +
+          gray[idx + detectW - 1] +
+          2 * gray[idx + detectW] +
+          gray[idx + detectW + 1];
         mag[idx] = Math.sqrt(gx * gx + gy * gy);
       }
     }
 
-    let bestScore = -1;
-    let bestX = work.width / 2;
-    let bestY = work.height / 2;
-    let bestR = Math.min(work.width, work.height) * 0.2;
-    const minR = Math.min(work.width, work.height) * 0.09;
-    const maxR = Math.min(work.width, work.height) * 0.28;
+    const integral = new Float32Array((detectW + 1) * (detectH + 1));
+    for (let y = 1; y <= detectH; y += 1) {
+      let row = 0;
+      for (let x = 1; x <= detectW; x += 1) {
+        row += gray[(y - 1) * detectW + (x - 1)];
+        integral[y * (detectW + 1) + x] = integral[(y - 1) * (detectW + 1) + x] + row;
+      }
+    }
 
-    for (let cy = Math.floor(work.height * 0.22); cy < Math.floor(work.height * 0.78); cy += 16) {
-      for (let cx = Math.floor(work.width * 0.22); cx < Math.floor(work.width * 0.78); cx += 16) {
-        for (let r = minR; r <= maxR; r += 8) {
-          let score = 0;
+    const rectMean = (cx: number, cy: number, half: number) => {
+      const x1 = clamp(Math.floor(cx - half), 0, detectW - 1);
+      const y1 = clamp(Math.floor(cy - half), 0, detectH - 1);
+      const x2 = clamp(Math.floor(cx + half), 0, detectW - 1);
+      const y2 = clamp(Math.floor(cy + half), 0, detectH - 1);
+      const a = integral[y1 * (detectW + 1) + x1];
+      const b = integral[y1 * (detectW + 1) + (x2 + 1)];
+      const c = integral[(y2 + 1) * (detectW + 1) + x1];
+      const dSum = integral[(y2 + 1) * (detectW + 1) + (x2 + 1)];
+      const area = Math.max(1, (x2 - x1 + 1) * (y2 - y1 + 1));
+      return (dSum - b - c + a) / area;
+    };
+
+    let bestScore = -1;
+    let bestX = detectW / 2;
+    let bestY = detectH / 2;
+    let bestR = Math.min(detectW, detectH) * 0.17;
+    const minR = Math.min(detectW, detectH) * 0.08;
+    const maxR = Math.min(detectW, detectH) * 0.24;
+
+    for (let cy = Math.floor(detectH * 0.16); cy < Math.floor(detectH * 0.84); cy += 8) {
+      for (let cx = Math.floor(detectW * 0.16); cx < Math.floor(detectW * 0.84); cx += 8) {
+        for (let r = minR; r <= maxR; r += 3) {
+          if (cx - r < 2 || cy - r < 2 || cx + r >= detectW - 2 || cy + r >= detectH - 2) continue;
+          let ring = 0;
           let samples = 0;
-          for (let a = 0; a < 360; a += 12) {
+          for (let a = 0; a < 360; a += 10) {
             const rad = (a * Math.PI) / 180;
             const x = Math.round(cx + Math.cos(rad) * r);
             const y = Math.round(cy + Math.sin(rad) * r);
-            if (x < 1 || y < 1 || x >= work.width - 1 || y >= work.height - 1) continue;
-            score += mag[y * work.width + x];
+            ring += mag[y * detectW + x];
             samples += 1;
           }
-          if (samples > 0) score /= samples;
+          ring /= Math.max(1, samples);
+
+          const inner = rectMean(cx, cy, r * 0.55);
+          const outer = rectMean(cx, cy, r * 1.18);
+          const contrast = outer - inner;
+          const score = ring * 0.75 + contrast * 0.9;
+
           if (score > bestScore) {
             bestScore = score;
             bestX = cx;
@@ -392,36 +423,55 @@ export const enhanceDialImage = async (file: File): Promise<string> => {
       }
     }
 
-    const side = clamp(Math.round(bestR * 4.1), 320, Math.min(work.width, work.height));
-    const minX = clamp(Math.round(bestX - side / 2), 0, work.width - side);
-    const minY = clamp(Math.round(bestY - side / 2), 0, work.height - side);
+    const sourceX = bestX / detectScale;
+    const sourceY = bestY / detectScale;
+    const sourceR = bestR / detectScale;
+
+    const cropSide = clamp(
+      Math.round(sourceR * 4.8),
+      380,
+      Math.min(image.width, image.height)
+    );
+    const minX = clamp(Math.round(sourceX - cropSide / 2), 0, image.width - cropSide);
+    const minY = clamp(Math.round(sourceY - cropSide / 2), 0, image.height - cropSide);
 
     const out = document.createElement("canvas");
-    out.width = side;
-    out.height = side;
+    out.width = cropSide;
+    out.height = cropSide;
     const outCtx = out.getContext("2d");
     if (!outCtx) return await autoCleanDialImage(file);
-    outCtx.drawImage(work, minX, minY, side, side, 0, 0, side, side);
+    outCtx.drawImage(image, minX, minY, cropSide, cropSide, 0, 0, cropSide, cropSide);
 
-    const outData = outCtx.getImageData(0, 0, side, side);
+    const outData = outCtx.getImageData(0, 0, cropSide, cropSide);
     const px = outData.data;
-    const bg = averageCornerColor(px, side, side);
-    const threshold = 55;
-    const c = side / 2;
-    const rKeep = side * 0.47;
+    const bg = averageCornerColor(px, cropSide, cropSide);
+    const bgThreshold = 52;
+    const cx = cropSide / 2;
+    const cy = cropSide / 2;
+    const keepR = cropSide * 0.45;
 
-    for (let y = 0; y < side; y += 1) {
-      for (let x = 0; x < side; x += 1) {
-        const i = (y * side + x) * 4;
+    for (let y = 0; y < cropSide; y += 1) {
+      for (let x = 0; x < cropSide; x += 1) {
+        const i = (y * cropSide + x) * 4;
         const r = px[i];
         const g = px[i + 1];
         const b = px[i + 2];
         const distBg = colorDistance(r, g, b, bg.r, bg.g, bg.b);
-        const dx = x - c;
-        const dy = y - c;
+        const dx = x - cx;
+        const dy = y - cy;
         const radial = Math.sqrt(dx * dx + dy * dy);
-        if (distBg < threshold || radial > rKeep * 1.08) {
+
+        if (radial > keepR * 1.2) {
           px[i + 3] = 0;
+          continue;
+        }
+        if (distBg < bgThreshold && radial > keepR * 0.72) {
+          px[i + 3] = 0;
+          continue;
+        }
+        if (radial > keepR) {
+          const fade = clamp((keepR * 1.2 - radial) / (keepR * 0.2), 0, 1);
+          px[i + 3] = Math.min(px[i + 3], Math.round(px[i + 3] * fade));
         }
       }
     }
