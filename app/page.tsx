@@ -127,7 +127,7 @@ export default function Home() {
         ) : null}
       </section>
 
-      <section className="mt-8 grid gap-8 lg:grid-cols-[1.1fr,0.9fr]">
+      <section className="mt-8 space-y-6">
         <div>
           <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.15em] text-muted">
             3. Generate Preview
@@ -162,14 +162,7 @@ export default function Home() {
           </div>
         </div>
 
-        <aside className="space-y-5">
-          <div className="rounded-2xl border border-line p-5">
-            <h3 className="text-sm font-semibold">Adjust Strap Placement</h3>
-            <p className="mt-1 text-xs text-muted">
-              Use the controls below to tune strap fit, angle, and transparency.
-            </p>
-          </div>
-
+        <aside className="grid gap-5 md:grid-cols-2">
           <ControlPanel
             title="Strap Part A (12 o'clock)"
             value={partA}
