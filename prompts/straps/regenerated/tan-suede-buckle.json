@@ -1,0 +1,9 @@
+{
+  "prompt": "Create a premium tan suede leather buckle-half watch strap with a straight tapered profile matching its tail-half counterpart. Front-facing orthographic product view, centered, isolated on transparent background. Soft suede nap texture, neat stitching, realistic material depth, silver buckle visible at the top, clean product-catalog look. No watch attached, no logo, no branding, no shadow.",
+  "negative_prompt": "full strap pair, mismatched width, different suede tone tail, watch attached, wrist, hand, background scene, props, table, perspective distortion, angled view, curved strap, folded strap, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, blurry edges, cartoon, illustration, checkerboard background, fake transparency pattern, colored backdrop",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  }
+}

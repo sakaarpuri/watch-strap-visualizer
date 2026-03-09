@@ -1,0 +1,9 @@
+{
+  "prompt": "Create a premium dark brown smooth leather tail-half watch strap with a straight tapered profile matching its buckle-half counterpart. Front-facing orthographic product view, centered, isolated on transparent background. Fine stitching, smooth leather surface, subtle realistic texture, edge-painted sides, evenly spaced sizing holes, clean pointed tip. No watch attached, no logo, no branding, no shadow.",
+  "negative_prompt": "full strap pair, mismatched width, narrow tail with different strap family, watch attached, wrist, hand, background scene, props, table, perspective distortion, angled view, curved strap, folded strap, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, blurry edges, cartoon, illustration, checkerboard background, fake transparency pattern, colored backdrop",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  }
+}

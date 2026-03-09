@@ -59,7 +59,7 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       label: "Tan Suede Leather",
       category: "Leather",
       strapASrc: `${SEL}/tan-suede-buckle.png`,
-      strapBSrc: `${SEL}/sand-suede-tail.png`,
+      strapBSrc: `${SEL}/tan-suede-tail.png`,
       tint: ORIG_TINT
     },
     {
@@ -94,7 +94,7 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       label: "Black Performance Rubber",
       category: "Rubber",
       strapASrc: `${SEL}/black-performance-rubber-buckle.png`,
-      strapBSrc: `${SEL}/black-rubber-tail.png`,
+      strapBSrc: `${SEL}/black-performance-rubber-tail.png`,
       tint: ORIG_TINT
     },
     {

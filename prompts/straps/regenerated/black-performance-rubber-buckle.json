@@ -1,0 +1,9 @@
+{
+  "prompt": "Create a premium black performance rubber buckle-half watch strap with a straight tapered profile matching its tail-half counterpart. Front-facing orthographic product view, centered, isolated on transparent background. Matte rubber texture, clean molded edges, subtle sport detailing, silver buckle visible at the top, realistic product-catalog lighting. No watch attached, no logo, no branding, no shadow.",
+  "negative_prompt": "full strap pair, mismatched width, leather tail, different strap family, watch attached, wrist, hand, background scene, props, table, perspective distortion, angled view, curved strap, folded strap, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, blurry edges, cartoon, illustration, checkerboard background, fake transparency pattern, colored backdrop",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  }
+}
