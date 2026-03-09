@@ -35,6 +35,7 @@ interface CanvasPreviewProps {
 
 export interface CanvasPreviewRef {
   downloadAsPng: () => void;
+  getPngBlob: () => Promise<Blob | null>;
 }
 
 const clamp = (value: number, min: number, max: number) =>
@@ -137,7 +138,15 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
         anchor.href = url;
         anchor.download = "watch-strap-preview.png";
         anchor.click();
-      }
+      },
+      getPngBlob: () =>
+        new Promise((resolve) => {
+          if (!canvasRef.current) {
+            resolve(null);
+            return;
+          }
+          canvasRef.current.toBlob((blob) => resolve(blob), "image/png");
+        })
     }));
 
     const getCanvasPoint = (
@@ -246,17 +255,17 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 
     return (
       <div
-        className={`rounded-2xl border p-4 transition ${
+        className={`rounded-2xl border p-3 transition sm:p-4 ${
           isTicking ? "border-slate-500" : "border-white/70"
         }`}
         style={{
           background:
-            "linear-gradient(150deg, rgba(255,255,255,0.72), rgba(248,250,252,0.64))",
+            "linear-gradient(150deg, color-mix(in srgb, var(--canvas-bg) 62%, white 38%), color-mix(in srgb, var(--canvas-bg) 84%, white 16%))",
           boxShadow: "inset 0 1px 0 rgba(255,255,255,.8), 0 12px 30px rgba(15,23,42,.08)",
           backdropFilter: "blur(8px)"
         }}
       >
-        <div className={controls ? "grid gap-3 lg:grid-cols-[1fr,280px]" : ""}>
+        <div className={controls ? "grid gap-3 xl:grid-cols-[1fr,300px]" : ""}>
           <div className="relative">
             <button
               type="button"
@@ -277,7 +286,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
               onPointerMove={onPointerMove}
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
-            className="aspect-square w-full rounded-xl border border-line bg-white"
+            className="aspect-square w-full rounded-xl border border-line bg-canvas"
             style={{ touchAction: "none", cursor: locked ? "default" : cursor }}
             aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
           />

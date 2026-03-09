@@ -1,0 +1,9 @@
+{
+  "prompt": "Create a premium black PVD metal bracelet buckle-half watch strap, realistic brushed and polished link surfaces, clean link articulation, isolated on transparent background, front view, clasp side visible at the top, no watch attached, no logo, no branding.",
+  "negative_prompt": "full strap pair, watch attached, wrist, hand, background scene, props, table, perspective distortion, angled view, curved strap, folded strap, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, blurry edges, cartoon, illustration, checkerboard background, fake transparency pattern, colored backdrop",
+  "api_parameters": {
+    "resolution": "2K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  }
+}

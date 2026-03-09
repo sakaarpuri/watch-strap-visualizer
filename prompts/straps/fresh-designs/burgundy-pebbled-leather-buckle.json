@@ -1,0 +1,9 @@
+{
+  "prompt": "Create a premium burgundy pebbled leather buckle-half watch strap, visible natural grain texture, edge-painted sides, fine stitching, realistic leather depth and soft highlights, isolated on transparent background, front view, metal buckle visible at the top, no watch attached, no logo, no branding.",
+  "negative_prompt": "full strap pair, watch attached, wrist, hand, background scene, props, table, perspective distortion, angled view, curved strap, folded strap, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, blurry edges, cartoon, illustration, checkerboard background, fake transparency pattern, colored backdrop",
+  "api_parameters": {
+    "resolution": "2K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  }
+}
