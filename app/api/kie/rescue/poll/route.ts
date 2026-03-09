@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRemoveBackgroundTaskFromUrl, getKieTaskSnapshot } from "@/lib/kie";
+import { getKieTaskSnapshot } from "@/lib/kie";
 
 export const maxDuration = 60;
 
@@ -11,7 +11,6 @@ interface RescueErrorPayload {
 
 type PollBody = {
   generationTaskId?: string;
-  removeTaskId?: string;
 };
 
 const toStr = (value: unknown) => (typeof value === "string" ? value.trim() : "");
@@ -20,7 +19,6 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as PollBody;
     const generationTaskId = toStr(body.generationTaskId);
-    const removeTaskId = toStr(body.removeTaskId);
 
     if (!generationTaskId) {
       return NextResponse.json(
@@ -32,49 +30,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (removeTaskId) {
-      const removeSnapshot = await getKieTaskSnapshot(removeTaskId);
-      if (removeSnapshot.state === "running") {
-        return NextResponse.json({
-          status: "running",
-          stage: "remove-bg",
-          generationTaskId,
-          removeTaskId
-        });
-      }
-      if (removeSnapshot.state === "failed") {
-        return NextResponse.json(
-          {
-            error: "Rescue mode failed during background removal stage.",
-            code: "RESCUE_REMOVE_BG_FAILED",
-            details: removeSnapshot.details
-          } satisfies RescueErrorPayload,
-          { status: 502 }
-        );
-      }
-      if (!removeSnapshot.resultUrl) {
-        return NextResponse.json(
-          {
-            error: "Rescue mode completed without a valid output image URL.",
-            code: "RESCUE_RESULT_URL_MISSING"
-          } satisfies RescueErrorPayload,
-          { status: 502 }
-        );
-      }
-      return NextResponse.json({
-        status: "completed",
-        stage: "completed",
-        generationTaskId,
-        removeTaskId,
-        imageUrl: removeSnapshot.resultUrl
-      });
-    }
-
     const generationSnapshot = await getKieTaskSnapshot(generationTaskId);
     if (generationSnapshot.state === "running") {
       return NextResponse.json({
         status: "running",
-        stage: "generation",
+        stage: "regenerating",
         generationTaskId
       });
     }
@@ -98,12 +58,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const createdRemoveTaskId = await createRemoveBackgroundTaskFromUrl(generationSnapshot.resultUrl);
     return NextResponse.json({
-      status: "running",
-      stage: "remove-bg",
+      status: "completed",
+      stage: "completed",
       generationTaskId,
-      removeTaskId: createdRemoveTaskId
+      imageUrl: generationSnapshot.resultUrl
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Rescue poll failed";

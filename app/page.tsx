@@ -46,6 +46,44 @@ const fileFromSrc = async (src: string, filename: string) => {
   return new File([blob], filename, { type: blob.type || "image/png" });
 };
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+const isImageFile = (file: File) => file.type.startsWith("image/");
+const isTransientTimeoutLike = (message: string) => {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("inactivity timeout") ||
+    lower.includes("timed out") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("network error")
+  );
+};
+const prepareAiInput = async (
+  file: File,
+  { maxSide, quality }: { maxSide: number; quality: number }
+) => {
+  if (!isImageFile(file)) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const largest = Math.max(bitmap.width, bitmap.height);
+    if (largest <= maxSide) return file;
+    const ratio = maxSide / largest;
+    const targetW = Math.max(1, Math.round(bitmap.width * ratio));
+    const targetH = Math.max(1, Math.round(bitmap.height * ratio));
+    const canvas = document.createElement("canvas");
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((nextBlob) => resolve(nextBlob), "image/jpeg", quality)
+    );
+    if (!blob) return file;
+    const stem = file.name.replace(/\.[^.]+$/, "") || "ai-upload";
+    return new File([blob], `${stem}-ai.jpg`, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+};
 
 const toSnippet = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 240);
 const toProxyPreviewSrc = (imageUrl: string) => {
@@ -260,8 +298,12 @@ export default function Home() {
     if (!uploadedWatchFile) return;
     setToolLoading("cleanup", true);
     try {
+      const preparedFile = await prepareAiInput(uploadedWatchFile, {
+        maxSide: 1200,
+        quality: 0.86
+      });
       const formData = new FormData();
-      formData.append("image", uploadedWatchFile);
+      formData.append("image", preparedFile);
       const imageUrl = await postToolForm("/api/kie/cleanup", formData);
       applyProcessedWatch(imageUrl);
       setToolLoading("cleanup", false);
@@ -274,18 +316,40 @@ export default function Home() {
     if (!uploadedWatchFile) return;
     setToolLoading("rescue", true);
     try {
-      const startForm = new FormData();
-      startForm.append("image", uploadedWatchFile);
-      const startResponse = await fetch("/api/kie/rescue/start", {
-        method: "POST",
-        body: startForm
+      const preparedFile = await prepareAiInput(uploadedWatchFile, {
+        maxSide: 1024,
+        quality: 0.84
       });
-      const startParsed = await parseApiResponse(startResponse);
-      if (!startResponse.ok) {
+      let startPayload: Record<string, unknown> = {};
+      let startSucceeded = false;
+      let lastStartError = "Rescue start failed.";
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const startForm = new FormData();
+        startForm.append("image", preparedFile);
+        const startResponse = await fetch("/api/kie/rescue/start", {
+          method: "POST",
+          body: startForm
+        });
+        const startParsed = await parseApiResponse(startResponse);
+        if (startResponse.ok) {
+          startPayload = (startParsed.payload || {}) as Record<string, unknown>;
+          startSucceeded = true;
+          break;
+        }
+
+        lastStartError = startParsed.bestError;
+        if (attempt < 2 && isTransientTimeoutLike(startParsed.bestError)) {
+          await sleep(1200 * (attempt + 1));
+          continue;
+        }
         throw new Error(`Rescue API: ${startParsed.bestError}`);
       }
 
-      const startPayload = startParsed.payload || {};
+      if (!startSucceeded) {
+        throw new Error(`Rescue API: ${lastStartError}`);
+      }
+
       const generationTaskId =
         typeof startPayload.generationTaskId === "string"
           ? startPayload.generationTaskId
@@ -294,29 +358,38 @@ export default function Home() {
         throw new Error("Rescue API: Missing generation task id.");
       }
 
-      let removeTaskId = "";
       let imageUrl = "";
       const maxPolls = 180;
+      let transientPollErrors = 0;
       for (let attempt = 0; attempt < maxPolls; attempt += 1) {
         await sleep(2000);
-        const pollResponse = await fetch("/api/kie/rescue/poll", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ generationTaskId, removeTaskId })
-        });
+        let pollResponse: Response;
+        try {
+          pollResponse = await fetch("/api/kie/rescue/poll", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ generationTaskId })
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Network error";
+          if (isTransientTimeoutLike(message) && transientPollErrors < 6) {
+            transientPollErrors += 1;
+            continue;
+          }
+          throw new Error(`Rescue API: ${message}`);
+        }
+
         const pollParsed = await parseApiResponse(pollResponse);
         if (!pollResponse.ok) {
+          if (isTransientTimeoutLike(pollParsed.bestError) && transientPollErrors < 6) {
+            transientPollErrors += 1;
+            continue;
+          }
           throw new Error(`Rescue API: ${pollParsed.bestError}`);
         }
+        transientPollErrors = 0;
         const pollPayload = pollParsed.payload || {};
         const status = typeof pollPayload.status === "string" ? pollPayload.status : "";
-
-        if (
-          typeof pollPayload.removeTaskId === "string" &&
-          pollPayload.removeTaskId.trim()
-        ) {
-          removeTaskId = pollPayload.removeTaskId.trim();
-        }
 
         if (status === "completed" && typeof pollPayload.imageUrl === "string") {
           imageUrl = pollPayload.imageUrl.trim();

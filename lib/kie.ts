@@ -4,6 +4,25 @@ const TASK_STATUS_URL = "https://api.kie.ai/api/v1/jobs/recordInfo";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const toSnippet = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 240);
+const fetchWithTimeout = async (
+  input: string,
+  init: RequestInit,
+  timeoutMs: number,
+  label: string
+) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`[network-timeout] ${label} timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 const getApiKey = () => {
   const apiKey = process.env.KIE_API_KEY;
@@ -86,13 +105,18 @@ export const uploadFileToKie = async (
   form.append("file", file, file.name);
   form.append("uploadPath", uploadPath);
 
-  const response = await fetch(UPLOAD_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${getApiKey()}`
+  const response = await fetchWithTimeout(
+    UPLOAD_URL,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${getApiKey()}`
+      },
+      body: form
     },
-    body: form
-  });
+    45000,
+    "Kie upload"
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -113,14 +137,19 @@ export const uploadFileToKie = async (
 };
 
 export const createKieTask = async (model: string, input: Record<string, unknown>) => {
-  const response = await fetch(CREATE_TASK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getApiKey()}`
+  const response = await fetchWithTimeout(
+    CREATE_TASK_URL,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getApiKey()}`
+      },
+      body: JSON.stringify({ model, input })
     },
-    body: JSON.stringify({ model, input })
-  });
+    30000,
+    `Kie createTask (${model})`
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -139,12 +168,17 @@ export const createKieTask = async (model: string, input: Record<string, unknown
 };
 
 export const getKieTaskSnapshot = async (taskId: string): Promise<KieTaskSnapshot> => {
-  const response = await fetch(`${TASK_STATUS_URL}?taskId=${encodeURIComponent(taskId)}`, {
-    headers: {
-      Authorization: `Bearer ${getApiKey()}`
+  const response = await fetchWithTimeout(
+    `${TASK_STATUS_URL}?taskId=${encodeURIComponent(taskId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${getApiKey()}`
+      },
+      cache: "no-store"
     },
-    cache: "no-store"
-  });
+    20000,
+    "Kie status poll"
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -195,12 +229,17 @@ export const waitForKieResult = async (taskId: string, maxAttempts = 90, delayMs
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     await sleep(delayMs);
 
-    const response = await fetch(`${TASK_STATUS_URL}?taskId=${encodeURIComponent(taskId)}`, {
-      headers: {
-        Authorization: `Bearer ${getApiKey()}`
+    const response = await fetchWithTimeout(
+      `${TASK_STATUS_URL}?taskId=${encodeURIComponent(taskId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${getApiKey()}`
+        },
+        cache: "no-store"
       },
-      cache: "no-store"
-    });
+      20000,
+      "Kie status poll"
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -249,7 +288,7 @@ export const runNanoBananaImageTask = async ({
   prompt,
   files,
   aspectRatio = "1:1",
-  resolution = "2K",
+  resolution = "1K",
   outputFormat = "png"
 }: {
   prompt: string;
@@ -273,7 +312,7 @@ export const createNanoBananaTaskFromFiles = async ({
   prompt,
   files,
   aspectRatio = "1:1",
-  resolution = "2K",
+  resolution = "1K",
   outputFormat = "png"
 }: {
   prompt: string;
@@ -307,7 +346,7 @@ export const runNanoBananaThenRemoveBackground = async ({
     const generateTaskId = await createKieTask("nano-banana-2", {
       prompt,
       aspect_ratio: "1:1",
-      resolution: "2K",
+      resolution: "1K",
       output_format: "png",
       image_input: imageInput
     });

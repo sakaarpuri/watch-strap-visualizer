@@ -30,8 +30,9 @@ export async function POST(request: Request) {
 
     const generationTaskId = await createNanoBananaTaskFromFiles({
       prompt:
-        "Create a clean, centered, front-facing product-style cutout of only the watch head from the reference image. Preserve the dial color, hands, markers, bezel, crown, and case shape. Remove the wrist, arm, original strap, and background. Keep the watch realistic, isolated, and suitable for a watch strap preview tool.",
-      files: [image]
+        "Create a clean, centered, front-facing product-style cutout of only the watch head from the reference image. Preserve the dial color, hands, markers, bezel, crown, and case shape. Remove the wrist, arm, original strap, and background. Return only the isolated watch head on a transparent or plain clean background, with no extra props or text.",
+      files: [image],
+      resolution: "1K"
     });
 
     return NextResponse.json({
