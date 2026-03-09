@@ -317,8 +317,8 @@ export default function Home() {
     setToolLoading("rescue", true);
     try {
       const preparedFile = await prepareAiInput(uploadedWatchFile, {
-        maxSide: 1024,
-        quality: 0.84
+        maxSide: 768,
+        quality: 0.8
       });
       let startPayload: Record<string, unknown> = {};
       let startSucceeded = false;
