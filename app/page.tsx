@@ -101,6 +101,7 @@ export default function Home() {
   const strapsInCategory = getStrapsForCategory(category);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
+  const isAnyToolRunning = Object.values(aiTools).some((tool) => tool.loading);
 
   const onUploadDial = (file: File) => {
     const uploadedUrl = URL.createObjectURL(file);
@@ -319,33 +320,37 @@ export default function Home() {
 
       <section className="mt-6 grid gap-5 lg:mt-8 lg:grid-cols-[340px,1fr]">
         <aside className="space-y-5">
-          <ImageUploader
-            id="watch"
-            label="1. Upload Watch Dial Photo"
-            helperText="Best results come from clear, front-facing watch photos on a plain background. Product shots or retailer website screenshots usually work best because the dial is centered and well lit."
-            previewUrl={watchPreviewSrc}
-            onFileSelect={onUploadDial}
-          />
-
           <div className="glass-card rounded-2xl p-4 sm:p-6">
-            <label htmlFor="strap-category" className="text-lg font-medium text-ink">
+            <p className="text-lg font-medium text-ink">
               2. Select Strap Category
-            </label>
-            <select
-              id="strap-category"
-              value={category}
-              onChange={(event) => {
-                setCategory(event.target.value as StrapCategory);
-                setStrapIndex(0);
-              }}
-              className="mt-3 w-full rounded-lg border border-line bg-canvas px-3 py-3 text-base text-ink"
-            >
-              {STRAP_CATEGORIES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {STRAP_CATEGORIES.map((option) => {
+                const active = option === category;
+                const count = getStrapsForCategory(option).length;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setCategory(option);
+                      setStrapIndex(0);
+                    }}
+                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                      active
+                        ? "border-slate-900 bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
+                        : "border-line bg-canvas text-ink hover:border-slate-300 hover:bg-white"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    {option}
+                    <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
             <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
               <p className="text-sm uppercase tracking-[0.12em] text-muted">Current Strap</p>
@@ -545,8 +550,8 @@ export default function Home() {
                         title="Style Explore"
                         description="Create one adjacent strap concept based on the current library selection."
                         disabled={!currentStrap}
-                        loading={aiTools.explore.loading}
-                        onClick={() => void runStyleExploration()}
+                          loading={aiTools.explore.loading}
+                          onClick={() => void runStyleExploration()}
                       />
                       {aiTools.explore.error ? <ErrorText message={aiTools.explore.error} /> : null}
                     </div>
@@ -559,6 +564,33 @@ export default function Home() {
               Upload a watch image to start previewing straps.
             </div>
           )}
+          <div className="mt-4">
+            <ImageUploader
+              id="watch"
+              label="1. Upload Watch Dial Photo"
+              helperText="Best results come from clear, front-facing watch photos on a plain background. Product shots or retailer website screenshots usually work best because the dial is centered and well lit."
+              previewUrl={watchPreviewSrc}
+              onFileSelect={onUploadDial}
+              compact
+            />
+          </div>
+          {isAnyToolRunning ? (
+            <div className="glass-card ai-pulse mt-4 rounded-2xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="ai-orbit" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-ink">AI tool running</p>
+                  <p className="text-xs text-muted">
+                    Generating the next result. This can take a few seconds.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <p className="mt-3 text-sm text-muted">
             Visual inspiration only. Final fit depends on lug width &amp; strap model.
           </p>
@@ -599,7 +631,11 @@ function ToolButton({
           type="button"
           onClick={onClick}
           disabled={disabled || loading}
-          className="rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-ink transition hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
+          className={`rounded-lg border px-3 py-2 text-sm font-medium text-ink transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            loading
+              ? "ai-pulse border-slate-300 bg-slate-100"
+              : "border-line bg-white hover:bg-canvas"
+          }`}
         >
           {loading ? "Running..." : "Run"}
         </button>

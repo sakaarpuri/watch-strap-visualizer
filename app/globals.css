@@ -100,3 +100,61 @@ input[type="range"]::-moz-range-thumb {
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 14px 32px rgba(0, 0, 0, 0.42);
 }
+
+.ai-pulse {
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: translateX(-100%);
+  animation: ai-shimmer 1.4s ease-in-out infinite;
+}
+
+.ai-orbit {
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+
+.ai-orbit span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  transform-origin: -10px 0;
+  animation: ai-orbit 1.15s linear infinite;
+}
+
+.ai-orbit span:nth-child(1) {
+  background: #22c55e;
+  transform: rotate(0deg) translateX(10px);
+}
+
+.ai-orbit span:nth-child(2) {
+  background: #38bdf8;
+  transform: rotate(120deg) translateX(10px);
+}
+
+.ai-orbit span:nth-child(3) {
+  background: #f59e0b;
+  transform: rotate(240deg) translateX(10px);
+}
+
+@keyframes ai-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ai-orbit {
+  100% {
+    transform: rotate(360deg) translateX(10px);
+  }
+}

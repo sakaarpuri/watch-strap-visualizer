@@ -8,6 +8,7 @@ interface ImageUploaderProps {
   helperText?: string;
   previewUrl?: string;
   onFileSelect: (file: File) => void;
+  compact?: boolean;
 }
 
 export default function ImageUploader({
@@ -15,7 +16,8 @@ export default function ImageUploader({
   label,
   helperText,
   previewUrl,
-  onFileSelect
+  onFileSelect,
+  compact = false
 }: ImageUploaderProps) {
   const inputId = useId();
   const [fileName, setFileName] = useState<string>("No file selected");
@@ -31,21 +33,21 @@ export default function ImageUploader({
   };
 
   return (
-    <div className="rounded-2xl border border-line p-6">
+    <div className={`rounded-2xl border border-line ${compact ? "p-4 sm:p-5" : "p-6"}`}>
       <p id={id} className="text-lg font-medium text-ink">
         {label}
       </p>
       {helperText ? (
         <p className="mt-2 text-sm leading-relaxed text-muted">{helperText}</p>
       ) : null}
-      <div className="mt-3 flex items-center gap-3">
+      <div className={`mt-3 ${compact ? "flex flex-col gap-3 sm:flex-row sm:items-center" : "flex items-center gap-3"}`}>
         <label
           htmlFor={inputId}
           className="cursor-pointer rounded-lg border border-line bg-white px-4 py-2.5 text-base text-ink transition hover:bg-canvas"
         >
           Choose File
         </label>
-        <span className="max-w-[160px] truncate text-base text-muted md:max-w-[220px]">
+        <span className={`truncate text-base text-muted ${compact ? "max-w-full" : "max-w-[160px] md:max-w-[220px]"}`}>
           {fileName}
         </span>
       </div>
@@ -57,7 +59,7 @@ export default function ImageUploader({
         onChange={handleChange}
         className="sr-only"
       />
-      <div className="mt-4 flex h-24 items-center justify-center rounded-xl border border-dashed border-line bg-canvas">
+      <div className={`mt-4 flex items-center justify-center rounded-xl border border-dashed border-line bg-canvas ${compact ? "h-28 sm:h-24" : "h-24"}`}>
         {previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
