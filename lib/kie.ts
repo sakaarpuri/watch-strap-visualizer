@@ -3,6 +3,7 @@ const CREATE_TASK_URL = "https://api.kie.ai/api/v1/jobs/createTask";
 const TASK_STATUS_URL = "https://api.kie.ai/api/v1/jobs/recordInfo";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const toSnippet = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 240);
 
 const getApiKey = () => {
   const apiKey = process.env.KIE_API_KEY;
@@ -87,14 +88,19 @@ export const uploadFileToKie = async (
   });
 
   if (!response.ok) {
-    throw new Error(`Kie upload failed: ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(
+      `[upload] Kie upload failed: ${response.status}${
+        errorText ? ` ${toSnippet(errorText)}` : ""
+      }`
+    );
   }
 
   const payload = await response.json();
   const data = payload?.data ?? {};
   const fileUrl = data.downloadUrl ?? data.url ?? data.fileUrl;
   if (!fileUrl) {
-    throw new Error("Kie upload did not return a file URL");
+    throw new Error("[upload] Kie upload did not return a file URL");
   }
   return fileUrl as string;
 };
@@ -111,13 +117,15 @@ export const createKieTask = async (model: string, input: Record<string, unknown
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Kie createTask failed: ${response.status} ${errorText.slice(0, 200)}`);
+    throw new Error(
+      `[createTask] Kie createTask failed (${model}): ${response.status} ${toSnippet(errorText)}`
+    );
   }
 
   const payload = await response.json();
   const taskId = payload?.data?.taskId;
   if (!taskId) {
-    throw new Error("Kie createTask did not return a taskId");
+    throw new Error(`[createTask] Kie createTask did not return a taskId (${model})`);
   }
 
   return taskId as string;
@@ -135,7 +143,12 @@ export const waitForKieResult = async (taskId: string, maxAttempts = 90, delayMs
     });
 
     if (!response.ok) {
-      throw new Error(`Kie status poll failed: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(
+        `[poll] Kie status poll failed: ${response.status}${
+          errorText ? ` ${toSnippet(errorText)}` : ""
+        }`
+      );
     }
 
     const payload = await response.json();
@@ -153,17 +166,17 @@ export const waitForKieResult = async (taskId: string, maxAttempts = 90, delayMs
         })
         .filter((candidate): candidate is string => Boolean(candidate));
       if (!resultUrls.length) {
-        throw new Error("Kie task completed without result URLs");
+        throw new Error("[poll] Kie task completed without result URLs");
       }
       return resultUrls[0];
     }
 
     if (state === "failed" || state === "error") {
-      throw new Error(`Kie task failed: ${JSON.stringify(data)}`);
+      throw new Error(`[poll] Kie task failed: ${toSnippet(JSON.stringify(data))}`);
     }
   }
 
-  throw new Error("Kie task timed out");
+  throw new Error("[poll] Kie task timed out");
 };
 
 export const runRemoveBackground = async (file: File) => {
@@ -203,17 +216,34 @@ export const runNanoBananaThenRemoveBackground = async ({
   prompt: string;
   files: File[];
 }) => {
-  const imageInput = await Promise.all(files.map((file) => uploadFileToKie(file)));
-  const generateTaskId = await createKieTask("nano-banana-2", {
-    prompt,
-    aspect_ratio: "1:1",
-    resolution: "2K",
-    output_format: "png",
-    image_input: imageInput
-  });
-  const generatedUrl = await waitForKieResult(generateTaskId);
-  const removeTaskId = await createKieTask("recraft/remove-background", {
-    image: generatedUrl
-  });
-  return waitForKieResult(removeTaskId);
+  try {
+    const imageInput = await Promise.all(files.map((file) => uploadFileToKie(file)));
+    const generateTaskId = await createKieTask("nano-banana-2", {
+      prompt,
+      aspect_ratio: "1:1",
+      resolution: "2K",
+      output_format: "png",
+      image_input: imageInput
+    });
+    const generatedUrl = await waitForKieResult(generateTaskId);
+    if (!generatedUrl) {
+      throw new Error("Kie generation returned an empty URL");
+    }
+
+    try {
+      const removeTaskId = await createKieTask("recraft/remove-background", {
+        image: generatedUrl
+      });
+      return await waitForKieResult(removeTaskId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown remove-bg failure";
+      throw new Error(`[remove-bg] ${message}`);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown generation failure";
+    if (message.startsWith("[remove-bg]")) {
+      throw error;
+    }
+    throw new Error(`[generation] ${message}`);
+  }
 };

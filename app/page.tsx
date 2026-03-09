@@ -13,8 +13,10 @@ import {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
-const STRAP_SCALE_MIN = 60;
-const STRAP_SCALE_MAX = 165;
+const STRAP_SCALE_MIN = 20;
+const STRAP_SCALE_MAX = 220;
+const DIAL_SCALE_MIN = 0.7;
+const DIAL_SCALE_MAX = 1.8;
 const strapScaleToUi = (scale: number) => {
   const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
   return Math.cbrt(t) * 100;
@@ -44,16 +46,59 @@ const fileFromSrc = async (src: string, filename: string) => {
   return new File([blob], filename, { type: blob.type || "image/png" });
 };
 
+const toSnippet = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 240);
+
+const getEndpointLabel = (url: string) => {
+  if (url.includes("/rescue")) return "Rescue API";
+  if (url.includes("/cleanup")) return "Cleanup API";
+  if (url.includes("/final-render")) return "Final Render API";
+  if (url.includes("/style-explore")) return "Style Explore API";
+  return "AI API";
+};
+
 const postToolForm = async (url: string, formData: FormData) => {
   const response = await fetch(url, {
     method: "POST",
     body: formData
   });
-  const payload = (await response.json()) as { error?: string; imageUrl?: string };
-  if (!response.ok || !payload.imageUrl) {
-    throw new Error(payload.error || "AI tool failed");
+  const endpointLabel = getEndpointLabel(url);
+  const rawBody = await response.text();
+  let payload: { error?: unknown; message?: unknown; imageUrl?: unknown } | null = null;
+
+  if (rawBody) {
+    try {
+      payload = JSON.parse(rawBody) as { error?: unknown; message?: unknown; imageUrl?: unknown };
+    } catch {
+      payload = null;
+    }
   }
-  return payload.imageUrl;
+
+  const payloadError =
+    payload && typeof payload.error === "string" && payload.error.trim()
+      ? payload.error.trim()
+      : null;
+  const payloadMessage =
+    payload && typeof payload.message === "string" && payload.message.trim()
+      ? payload.message.trim()
+      : null;
+  const textFallback = rawBody.trim() ? toSnippet(rawBody) : null;
+  const httpFallback = response.status
+    ? `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ""}`
+    : null;
+
+  const bestError =
+    payloadError || payloadMessage || textFallback || httpFallback || "AI tool failed";
+
+  if (!response.ok) {
+    throw new Error(`${endpointLabel}: ${bestError}`);
+  }
+
+  const imageUrl =
+    payload && typeof payload.imageUrl === "string" ? payload.imageUrl.trim() : "";
+  if (!imageUrl) {
+    throw new Error(`${endpointLabel}: ${bestError}`);
+  }
+  return imageUrl;
 };
 
 const formatAiError = (error: unknown) => {
@@ -150,13 +195,13 @@ export default function Home() {
   };
 
   const setStrapScale = (nextScale: number) => {
-    const boundedScale = clamp(nextScale, 30, 250);
+    const boundedScale = clamp(nextScale, STRAP_SCALE_MIN, STRAP_SCALE_MAX);
     setPartA((prev) => (prev ? { ...prev, scale: boundedScale } : prev));
     setPartB((prev) => (prev ? { ...prev, scale: boundedScale } : prev));
   };
 
   const setDialScaleValue = (nextScale: number) => {
-    setDialScale(clamp(nextScale, 0.7, 1.35));
+    setDialScale(clamp(nextScale, DIAL_SCALE_MIN, DIAL_SCALE_MAX));
   };
 
   const setToolLoading = (tool: AiToolKey, loading: boolean, error: string | null = null) => {
@@ -464,8 +509,8 @@ export default function Home() {
                       />
                       <SliderControl
                         label="Dial Size"
-                        min={0.7}
-                        max={1.35}
+                        min={DIAL_SCALE_MIN}
+                        max={DIAL_SCALE_MAX}
                         step={0.01}
                         value={dialScale}
                         onChange={setDialScaleValue}
