@@ -12,16 +12,57 @@ const getApiKey = () => {
   return apiKey;
 };
 
+const normalizeExternalUrl = (raw: string) => {
+  let value = raw.trim().replace(/^['"]|['"]$/g, "");
+  if (!value) {
+    throw new Error("Empty URL returned by Kie");
+  }
+  if (value.startsWith("//")) {
+    value = `https:${value}`;
+  } else if (value.startsWith("/")) {
+    value = `https://tempfile.aiquickdraw.com${value}`;
+  } else if (!/^https?:\/\//i.test(value)) {
+    value = `https://${value}`;
+  }
+  // Validate the final URL shape before use.
+  // eslint-disable-next-line no-new
+  new URL(value);
+  return value;
+};
+
 const extractResultUrls = (data: { resultJson?: string | { resultUrls?: string[] } }) => {
   if (typeof data.resultJson === "object" && data.resultJson) {
-    return data.resultJson.resultUrls ?? [];
+    const objectPayload = data.resultJson as {
+      resultUrls?: string[];
+      resultUrl?: string;
+      imageUrl?: string;
+      url?: string;
+    };
+    if (Array.isArray(objectPayload.resultUrls) && objectPayload.resultUrls.length) {
+      return objectPayload.resultUrls;
+    }
+    const singleCandidate =
+      objectPayload.resultUrl || objectPayload.imageUrl || objectPayload.url;
+    return singleCandidate ? [singleCandidate] : [];
   }
 
   if (typeof data.resultJson === "string") {
     try {
-      const parsed = JSON.parse(data.resultJson) as { resultUrls?: string[] };
-      return parsed.resultUrls ?? [];
+      const parsed = JSON.parse(data.resultJson) as {
+        resultUrls?: string[];
+        resultUrl?: string;
+        imageUrl?: string;
+        url?: string;
+      };
+      if (Array.isArray(parsed.resultUrls) && parsed.resultUrls.length) {
+        return parsed.resultUrls;
+      }
+      const singleCandidate = parsed.resultUrl || parsed.imageUrl || parsed.url;
+      return singleCandidate ? [singleCandidate] : [];
     } catch {
+      if (/^\/\//.test(data.resultJson) || /^https?:\/\//i.test(data.resultJson) || /^\//.test(data.resultJson)) {
+        return [data.resultJson];
+      }
       return [];
     }
   }
@@ -69,7 +110,8 @@ export const createKieTask = async (model: string, input: Record<string, unknown
   });
 
   if (!response.ok) {
-    throw new Error(`Kie createTask failed: ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`Kie createTask failed: ${response.status} ${errorText.slice(0, 200)}`);
   }
 
   const payload = await response.json();
@@ -101,7 +143,15 @@ export const waitForKieResult = async (taskId: string, maxAttempts = 90, delayMs
     const state = data.state as string | undefined;
 
     if (state === "success" || state === "completed") {
-      const resultUrls = extractResultUrls(data);
+      const resultUrls = extractResultUrls(data)
+        .map((candidate) => {
+          try {
+            return normalizeExternalUrl(candidate);
+          } catch {
+            return null;
+          }
+        })
+        .filter((candidate): candidate is string => Boolean(candidate));
       if (!resultUrls.length) {
         throw new Error("Kie task completed without result URLs");
       }

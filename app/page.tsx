@@ -68,6 +68,9 @@ const formatAiError = (error: unknown) => {
   if (message.includes("KIE_API_KEY is not configured")) {
     return "Kie API key is missing on this deployment. Add KIE_API_KEY in Netlify environment variables and redeploy.";
   }
+  if (message.includes("did not match the expected pattern")) {
+    return "The AI provider returned an invalid image URL format. Please retry once; if it repeats, the provider response needs fallback handling.";
+  }
   return message;
 };
 
