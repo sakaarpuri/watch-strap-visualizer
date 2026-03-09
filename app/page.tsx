@@ -63,6 +63,14 @@ const postToolForm = async (url: string, formData: FormData) => {
   return payload.imageDataUrl;
 };
 
+const formatAiError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : "AI tool failed";
+  if (message.includes("KIE_API_KEY is not configured")) {
+    return "Kie API key is missing on this deployment. Add KIE_API_KEY in Netlify environment variables and redeploy.";
+  }
+  return message;
+};
+
 const downloadDataUrl = (dataUrl: string, fileName: string) => {
   const anchor = document.createElement("a");
   anchor.href = dataUrl;
@@ -195,11 +203,7 @@ export default function Home() {
       );
       setToolLoading("cleanup", false);
     } catch (error) {
-      setToolLoading(
-        "cleanup",
-        false,
-        error instanceof Error ? error.message : "Dial cleanup failed"
-      );
+      setToolLoading("cleanup", false, formatAiError(error));
     }
   };
 
@@ -217,11 +221,7 @@ export default function Home() {
       );
       setToolLoading("rescue", false);
     } catch (error) {
-      setToolLoading(
-        "rescue",
-        false,
-        error instanceof Error ? error.message : "Rescue mode failed"
-      );
+      setToolLoading("rescue", false, formatAiError(error));
     }
   };
 
@@ -251,11 +251,7 @@ export default function Home() {
       });
       setToolLoading("final", false);
     } catch (error) {
-      setToolLoading(
-        "final",
-        false,
-        error instanceof Error ? error.message : "Final render failed"
-      );
+      setToolLoading("final", false, formatAiError(error));
     }
   };
 
@@ -278,11 +274,7 @@ export default function Home() {
       });
       setToolLoading("explore", false);
     } catch (error) {
-      setToolLoading(
-        "explore",
-        false,
-        error instanceof Error ? error.message : "Style exploration failed"
-      );
+      setToolLoading("explore", false, formatAiError(error));
     }
   };
 
@@ -416,52 +408,6 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="glass-card rounded-2xl p-4 sm:p-6">
-            <p className="text-lg font-medium text-ink">3. AI Tools</p>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              These run asynchronously through Kie. Cleanup and rescue replace the active dial
-              source. Final render and style exploration create separate result images.
-            </p>
-
-            <div className="mt-4 grid gap-3">
-              <ToolButton
-                title="Dial Cleanup Fallback"
-                description="Background-removal pass for cleaner retailer screenshots or isolated product photos."
-                disabled={!hasUserUpload}
-                loading={aiTools.cleanup.loading}
-                onClick={() => void runCleanupFallback()}
-              />
-              {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
-
-              <ToolButton
-                title="User Upload Rescue Mode"
-                description="Use Nano Banana to rebuild a cleaner watch-head cutout from a messy wrist shot."
-                disabled={!hasUserUpload}
-                loading={aiTools.rescue.loading}
-                onClick={() => void runRescueMode()}
-              />
-              {aiTools.rescue.error ? <ErrorText message={aiTools.rescue.error} /> : null}
-
-              <ToolButton
-                title="Final Photoreal Render"
-                description="Generate a polished hero mockup from the current preview composition."
-                disabled={!canRender}
-                loading={aiTools.final.loading}
-                onClick={() => void runFinalRender()}
-              />
-              {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
-
-              <ToolButton
-                title="Style Exploration"
-                description="Ask Nano Banana for one adjacent strap concept based on the current library selection."
-                disabled={!currentStrap}
-                loading={aiTools.explore.loading}
-                onClick={() => void runStyleExploration()}
-              />
-              {aiTools.explore.error ? <ErrorText message={aiTools.explore.error} /> : null}
-            </div>
-          </div>
-
           {aiResult ? (
             <div className="glass-card rounded-2xl p-4 sm:p-6">
               <p className="text-lg font-medium text-ink">{aiResult.title}</p>
@@ -507,54 +453,103 @@ export default function Home() {
               }}
               onCycleStrap={onCycleStrap}
               controls={
-                <div className="glass-card rounded-xl p-3">
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Preview Controls
-                  </p>
-                  <div className="mt-2 grid gap-2">
-                    <SliderControl
-                      label="Strap Gap"
-                      min={250}
-                      max={900}
-                      step={1}
-                      value={strapGap}
-                      onChange={setGapHalf}
-                      disabled={lockView}
-                    />
-                    <SliderControl
-                      label="Strap Size"
-                      min={0}
-                      max={100}
-                      step={0.02}
-                      value={strapSizeUi}
-                      onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
-                      displayValue={Math.round(strapScale).toString()}
-                      disabled={lockView}
-                    />
-                    <SliderControl
-                      label="Dial Size"
-                      min={0.7}
-                      max={1.35}
-                      step={0.01}
-                      value={dialScale}
-                      onChange={setDialScaleValue}
-                      disabled={lockView}
-                    />
-                    <SliderControl
-                      label="View Zoom"
-                      min={0.35}
-                      max={1.05}
-                      step={0.01}
-                      value={sceneZoom}
-                      onChange={setSceneZoom}
-                      displayValue={`${Math.round(sceneZoom * 100)}%`}
-                    />
-                    <ToggleControl
-                      label="Lock View"
-                      description="Freeze strap/dial transforms and only allow view zoom"
-                      enabled={lockView}
-                      onToggle={() => setLockView((prev) => !prev)}
-                    />
+                <div className="space-y-3">
+                  <div className="glass-card rounded-xl p-3">
+                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                      Preview Controls
+                    </p>
+                    <div className="mt-2 grid gap-2">
+                      <SliderControl
+                        label="Strap Gap"
+                        min={250}
+                        max={900}
+                        step={1}
+                        value={strapGap}
+                        onChange={setGapHalf}
+                        disabled={lockView}
+                      />
+                      <SliderControl
+                        label="Strap Size"
+                        min={0}
+                        max={100}
+                        step={0.02}
+                        value={strapSizeUi}
+                        onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
+                        displayValue={Math.round(strapScale).toString()}
+                        disabled={lockView}
+                      />
+                      <SliderControl
+                        label="Dial Size"
+                        min={0.7}
+                        max={1.35}
+                        step={0.01}
+                        value={dialScale}
+                        onChange={setDialScaleValue}
+                        disabled={lockView}
+                      />
+                      <SliderControl
+                        label="View Zoom"
+                        min={0.35}
+                        max={1.05}
+                        step={0.01}
+                        value={sceneZoom}
+                        onChange={setSceneZoom}
+                        displayValue={`${Math.round(sceneZoom * 100)}%`}
+                      />
+                      <ToggleControl
+                        label="Lock View"
+                        description="Freeze strap/dial transforms and only allow view zoom"
+                        enabled={lockView}
+                        onToggle={() => setLockView((prev) => !prev)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="glass-card rounded-xl p-3">
+                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                      AI Tools
+                    </p>
+                    <p className="mt-2 text-xs leading-relaxed text-muted">
+                      Cleanup and rescue replace the active dial source. Final render and style
+                      exploration create separate result images.
+                    </p>
+                    <div className="mt-3 grid gap-2">
+                      <ToolButton
+                        title="Dial Cleanup"
+                        description="Background-removal pass for cleaner retailer screenshots or isolated product photos."
+                        disabled={!hasUserUpload}
+                        loading={aiTools.cleanup.loading}
+                        onClick={() => void runCleanupFallback()}
+                      />
+                      {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
+
+                      <ToolButton
+                        title="Rescue Mode"
+                        description="Rebuild a cleaner watch-head cutout from a messy wrist shot."
+                        disabled={!hasUserUpload}
+                        loading={aiTools.rescue.loading}
+                        onClick={() => void runRescueMode()}
+                      />
+                      {aiTools.rescue.error ? <ErrorText message={aiTools.rescue.error} /> : null}
+
+                      <ToolButton
+                        title="Final Render"
+                        description="Generate a polished hero mockup from the current preview composition."
+                        disabled={!canRender}
+                        loading={aiTools.final.loading}
+                        onClick={() => void runFinalRender()}
+                      />
+                      {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
+
+                      <ToolButton
+                        title="Style Explore"
+                        description="Create one adjacent strap concept based on the current library selection."
+                        disabled={!currentStrap}
+                        loading={aiTools.explore.loading}
+                        onClick={() => void runStyleExploration()}
+                      />
+                      {aiTools.explore.error ? <ErrorText message={aiTools.explore.error} /> : null}
+                    </div>
                   </div>
                 </div>
               }
