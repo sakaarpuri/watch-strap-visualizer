@@ -45,6 +45,7 @@ const fileFromSrc = async (src: string, filename: string) => {
   const blob = await response.blob();
   return new File([blob], filename, { type: blob.type || "image/png" });
 };
+const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 const toSnippet = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 240);
 const toProxyPreviewSrc = (imageUrl: string) => {
@@ -104,6 +105,36 @@ const postToolForm = async (url: string, formData: FormData) => {
     throw new Error(`${endpointLabel}: ${bestError}`);
   }
   return imageUrl;
+};
+
+const parseApiResponse = async (response: Response) => {
+  const rawBody = await response.text();
+  let payload: Record<string, unknown> | null = null;
+
+  if (rawBody) {
+    try {
+      payload = JSON.parse(rawBody) as Record<string, unknown>;
+    } catch {
+      payload = null;
+    }
+  }
+
+  const payloadError =
+    payload && typeof payload.error === "string" && payload.error.trim()
+      ? payload.error.trim()
+      : null;
+  const payloadMessage =
+    payload && typeof payload.message === "string" && payload.message.trim()
+      ? payload.message.trim()
+      : null;
+  const textFallback = rawBody.trim() ? toSnippet(rawBody) : null;
+  const httpFallback = response.status
+    ? `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ""}`
+    : null;
+
+  const bestError =
+    payloadError || payloadMessage || textFallback || httpFallback || "AI tool failed";
+  return { payload, bestError };
 };
 
 const formatAiError = (error: unknown) => {
@@ -243,9 +274,62 @@ export default function Home() {
     if (!uploadedWatchFile) return;
     setToolLoading("rescue", true);
     try {
-      const formData = new FormData();
-      formData.append("image", uploadedWatchFile);
-      const imageUrl = await postToolForm("/api/kie/rescue", formData);
+      const startForm = new FormData();
+      startForm.append("image", uploadedWatchFile);
+      const startResponse = await fetch("/api/kie/rescue/start", {
+        method: "POST",
+        body: startForm
+      });
+      const startParsed = await parseApiResponse(startResponse);
+      if (!startResponse.ok) {
+        throw new Error(`Rescue API: ${startParsed.bestError}`);
+      }
+
+      const startPayload = startParsed.payload || {};
+      const generationTaskId =
+        typeof startPayload.generationTaskId === "string"
+          ? startPayload.generationTaskId
+          : "";
+      if (!generationTaskId) {
+        throw new Error("Rescue API: Missing generation task id.");
+      }
+
+      let removeTaskId = "";
+      let imageUrl = "";
+      const maxPolls = 180;
+      for (let attempt = 0; attempt < maxPolls; attempt += 1) {
+        await sleep(2000);
+        const pollResponse = await fetch("/api/kie/rescue/poll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ generationTaskId, removeTaskId })
+        });
+        const pollParsed = await parseApiResponse(pollResponse);
+        if (!pollResponse.ok) {
+          throw new Error(`Rescue API: ${pollParsed.bestError}`);
+        }
+        const pollPayload = pollParsed.payload || {};
+        const status = typeof pollPayload.status === "string" ? pollPayload.status : "";
+
+        if (
+          typeof pollPayload.removeTaskId === "string" &&
+          pollPayload.removeTaskId.trim()
+        ) {
+          removeTaskId = pollPayload.removeTaskId.trim();
+        }
+
+        if (status === "completed" && typeof pollPayload.imageUrl === "string") {
+          imageUrl = pollPayload.imageUrl.trim();
+          break;
+        }
+      }
+
+      if (!imageUrl) {
+        throw new Error(
+          "Rescue API: Timed out waiting for AI output. Please retry with a cleaner front-facing photo."
+        );
+      }
+
       applyProcessedWatch(imageUrl);
       setToolLoading("rescue", false);
     } catch (error) {

@@ -71,6 +71,13 @@ const extractResultUrls = (data: { resultJson?: string | { resultUrls?: string[]
   return [];
 };
 
+export interface KieTaskSnapshot {
+  state: "running" | "succeeded" | "failed";
+  rawState: string;
+  resultUrl?: string;
+  details?: string;
+}
+
 export const uploadFileToKie = async (
   file: File,
   uploadPath = "images/watch-strap-visualizer"
@@ -129,6 +136,59 @@ export const createKieTask = async (model: string, input: Record<string, unknown
   }
 
   return taskId as string;
+};
+
+export const getKieTaskSnapshot = async (taskId: string): Promise<KieTaskSnapshot> => {
+  const response = await fetch(`${TASK_STATUS_URL}?taskId=${encodeURIComponent(taskId)}`, {
+    headers: {
+      Authorization: `Bearer ${getApiKey()}`
+    },
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `[poll] Kie status poll failed: ${response.status}${
+        errorText ? ` ${toSnippet(errorText)}` : ""
+      }`
+    );
+  }
+
+  const payload = await response.json();
+  const data = payload?.data ?? {};
+  const rawState = String(data.state || "unknown").toLowerCase();
+
+  if (rawState === "failed" || rawState === "error") {
+    return {
+      state: "failed",
+      rawState,
+      details: toSnippet(JSON.stringify(data))
+    };
+  }
+
+  if (rawState === "success" || rawState === "completed") {
+    const resultUrl = extractResultUrls(data)
+      .map((candidate) => {
+        try {
+          return normalizeExternalUrl(candidate);
+        } catch {
+          return null;
+        }
+      })
+      .find((candidate): candidate is string => Boolean(candidate));
+
+    return {
+      state: "succeeded",
+      rawState,
+      resultUrl
+    };
+  }
+
+  return {
+    state: "running",
+    rawState
+  };
 };
 
 export const waitForKieResult = async (taskId: string, maxAttempts = 90, delayMs = 3000) => {
@@ -208,6 +268,32 @@ export const runNanoBananaImageTask = async ({
   });
   return waitForKieResult(taskId);
 };
+
+export const createNanoBananaTaskFromFiles = async ({
+  prompt,
+  files,
+  aspectRatio = "1:1",
+  resolution = "2K",
+  outputFormat = "png"
+}: {
+  prompt: string;
+  files: File[];
+  aspectRatio?: string;
+  resolution?: string;
+  outputFormat?: string;
+}) => {
+  const imageInput = await Promise.all(files.map((file) => uploadFileToKie(file)));
+  return createKieTask("nano-banana-2", {
+    prompt,
+    aspect_ratio: aspectRatio,
+    resolution,
+    output_format: outputFormat,
+    image_input: imageInput
+  });
+};
+
+export const createRemoveBackgroundTaskFromUrl = async (imageUrl: string) =>
+  createKieTask("recraft/remove-background", { image: imageUrl });
 
 export const runNanoBananaThenRemoveBackground = async ({
   prompt,
