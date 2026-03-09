@@ -40,7 +40,7 @@ export default function ImageUploader({
         {label}
       </p>
       {helperText ? (
-        <p className="mt-2 text-sm leading-relaxed text-muted">{helperText}</p>
+        <p className="mt-2 text-base leading-relaxed text-ink/80">{helperText}</p>
       ) : null}
       {showOrientationHints ? (
         <div className="mt-3 rounded-xl border border-line bg-canvas/60 p-3">

@@ -31,13 +31,6 @@ interface AiToolState {
   error: string | null;
 }
 
-interface AiResult {
-  title: string;
-  description: string;
-  imageUrl: string;
-  downloadName: string;
-}
-
 const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
   cleanup: { loading: false, error: null },
   rescue: { loading: false, error: null },
@@ -74,13 +67,6 @@ const formatAiError = (error: unknown) => {
   return message;
 };
 
-const downloadImageUrl = (imageUrl: string, fileName: string) => {
-  const anchor = document.createElement("a");
-  anchor.href = imageUrl;
-  anchor.download = fileName;
-  anchor.click();
-};
-
 export default function Home() {
   const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
   const [watchPreviewSrc, setWatchPreviewSrc] = useState("/mock-dial.svg");
@@ -97,7 +83,6 @@ export default function Home() {
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [aiTools, setAiTools] = useState<Record<AiToolKey, AiToolState>>(defaultToolState);
-  const [aiResult, setAiResult] = useState<AiResult | null>(null);
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
 
@@ -112,7 +97,6 @@ export default function Home() {
     setOriginalWatchSrc(uploadedUrl);
     setWatchPreviewSrc(uploadedUrl);
     setWatchSrc(uploadedUrl);
-    setAiResult(null);
   };
 
   const autoAlignStraps = async () => {
@@ -182,15 +166,9 @@ export default function Home() {
     }));
   };
 
-  const applyProcessedWatch = (nextSrc: string, title: string, description: string) => {
+  const applyProcessedWatch = (nextSrc: string) => {
     setWatchSrc(nextSrc);
     setWatchPreviewSrc(nextSrc);
-    setAiResult({
-      title,
-      description,
-      imageUrl: nextSrc,
-      downloadName: `${title.toLowerCase().replace(/\s+/g, "-")}.png`
-    });
   };
 
   const runCleanupFallback = async () => {
@@ -200,11 +178,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append("image", uploadedWatchFile);
       const imageUrl = await postToolForm("/api/kie/cleanup", formData);
-      applyProcessedWatch(
-        imageUrl,
-        "Dial Cleanup Fallback",
-        "AI removed as much background as possible from the uploaded watch photo."
-      );
+      applyProcessedWatch(imageUrl);
       setToolLoading("cleanup", false);
     } catch (error) {
       setToolLoading("cleanup", false, formatAiError(error));
@@ -218,11 +192,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append("image", uploadedWatchFile);
       const imageUrl = await postToolForm("/api/kie/rescue", formData);
-      applyProcessedWatch(
-        imageUrl,
-        "User Upload Rescue Mode",
-        "AI rebuilt a cleaner watch-head cutout for a better strap preview source."
-      );
+      applyProcessedWatch(imageUrl);
       setToolLoading("rescue", false);
     } catch (error) {
       setToolLoading("rescue", false, formatAiError(error));
@@ -245,14 +215,7 @@ export default function Home() {
       formData.append("strapB", await fileFromSrc(currentStrap.strapBSrc, "strap-b.png"));
       formData.append("strapLabel", currentStrap.label);
 
-      const imageUrl = await postToolForm("/api/kie/final-render", formData);
-      setAiResult({
-        title: "Final Photoreal Render",
-        description:
-          "AI generated a polished hero mockup using the current preview composition as the reference.",
-        imageUrl,
-        downloadName: "watch-strap-final-render.png"
-      });
+      await postToolForm("/api/kie/final-render", formData);
       setToolLoading("final", false);
     } catch (error) {
       setToolLoading("final", false, formatAiError(error));
@@ -268,14 +231,7 @@ export default function Home() {
       formData.append("strapLabel", currentStrap.label);
       formData.append("category", currentStrap.category);
 
-      const imageUrl = await postToolForm("/api/kie/style-explore", formData);
-      setAiResult({
-        title: "Style Exploration",
-        description:
-          "AI proposed one adjacent strap concept inspired by the currently selected library style.",
-        imageUrl,
-        downloadName: "watch-strap-style-exploration.png"
-      });
+      await postToolForm("/api/kie/style-explore", formData);
       setToolLoading("explore", false);
     } catch (error) {
       setToolLoading("explore", false, formatAiError(error));
@@ -325,11 +281,10 @@ export default function Home() {
         <ImageUploader
           id="watch"
           label="1. Upload Watch Dial Photo"
-          helperText="Use a straight, front-facing watch photo. Avoid strong left/right/up/down tilt for best strap alignment and cleaner visualization."
+          helperText="Use a straight, front-facing watch photo for the cleanest strap alignment."
           previewUrl={watchPreviewSrc}
           onFileSelect={onUploadDial}
           compact
-          showOrientationHints
         />
       </section>
 
@@ -373,6 +328,37 @@ export default function Home() {
               <p className="mt-2 text-sm text-muted">
                 Use left/right arrows in preview to switch straps.
               </p>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+              <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                Straps In {category}
+              </p>
+              <div className="mt-2 max-h-72 space-y-2 overflow-y-auto pr-1">
+                {strapsInCategory.map((strap, index) => {
+                  const active = index === strapIndex;
+                  return (
+                    <button
+                      key={strap.id}
+                      type="button"
+                      onClick={() => setStrapIndex(index)}
+                      className={`w-full rounded-lg border px-3 py-2 text-left transition ${
+                        active
+                          ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)]"
+                          : "border-line bg-white/70 text-ink hover:bg-white"
+                      }`}
+                      aria-pressed={active}
+                    >
+                      <p className="text-sm font-medium">{strap.label}</p>
+                      {category === "All categories" ? (
+                        <p className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
+                          {strap.category}
+                        </p>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="neo-toggle mt-4 flex items-center justify-between">
@@ -487,8 +473,8 @@ export default function Home() {
                       />
                       <SliderControl
                         label="View Zoom"
-                        min={0.35}
-                        max={1.05}
+                        min={0.2}
+                        max={1.4}
                         step={0.01}
                         value={sceneZoom}
                         onChange={setSceneZoom}
@@ -548,19 +534,6 @@ export default function Home() {
                       />
                       {aiTools.explore.error ? <ErrorText message={aiTools.explore.error} /> : null}
                     </div>
-                    {aiResult ? (
-                      <div className="mt-3 rounded-lg border border-line bg-canvas p-3">
-                        <p className="text-sm font-medium text-ink">{aiResult.title}</p>
-                        <p className="mt-1 text-xs text-muted">{aiResult.description}</p>
-                        <button
-                          type="button"
-                          onClick={() => downloadImageUrl(aiResult.imageUrl, aiResult.downloadName)}
-                          className="mt-2 rounded-md border border-ink bg-ink px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                        >
-                          Download AI Result
-                        </button>
-                      </div>
-                    ) : null}
                   </div>
                 </div>
               }
