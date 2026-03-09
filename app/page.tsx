@@ -517,6 +517,7 @@ export default function Home() {
                       setCategory(option);
                       setStrapIndex(0);
                     }}
+                    data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
                     className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                       active
                         ? "border-slate-900 bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
@@ -553,6 +554,7 @@ export default function Home() {
                       key={strap.id}
                       type="button"
                       onClick={() => setStrapIndex(index)}
+                      data-testid={`strap-${strap.id}`}
                       className={`w-full rounded-lg border px-3 py-2 text-left transition ${
                         active
                           ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)]"

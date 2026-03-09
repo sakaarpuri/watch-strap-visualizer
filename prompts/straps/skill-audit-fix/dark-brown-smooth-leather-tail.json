@@ -1,0 +1,17 @@
+{
+  "prompt": "Create a premium dark brown smooth leather tail-side watch strap half as a full-length product catalog image. Show the complete tail-side piece from the straight lug-end at the very top all the way down to the pointed tip at the bottom. The strap must be long, narrow, vertically centered, front-facing, and occupy about 90 percent of the image height. Smooth dark brown leather, subtle natural grain, fine dark stitching, evenly spaced sizing holes, realistic proportions, plain neutral studio background for easy cutout. No watch attached, no logo, no branding, no text, no watermark.",
+  "negative_prompt": "short strap stub, tiny strap in frame, cropped strap, missing lug end, missing tip, full strap pair, mismatched width, reversed part, watch attached, wrist, hand, table, props, perspective distortion, angled view, curved strap, folded strap, duplicate object, extra hardware, branding, logo, text, watermark, checkerboard background, fake transparency pattern, busy background, shadow-heavy scene, illustration, cartoon",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "1024x1024",
+    "style": "photorealistic luxury product photography",
+    "lighting": "soft even studio lighting on a plain neutral background",
+    "camera_angle": "front-facing orthographic product view",
+    "depth_of_field": "deep focus",
+    "quality": "realistic material texture and clean edges"
+  }
+}

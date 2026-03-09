@@ -1,0 +1,17 @@
+{
+  "prompt": "Create a premium olive green performance rubber watch strap tail half for a two-piece strap set. Front-facing orthographic product catalog image, centered, straight, and vertically aligned. The strap should fill most of the frame height with minimal margin and a realistic width at the lug end. Matte olive green performance rubber with subtle sport texture, crisp molded edges, and evenly spaced sizing holes. No buckle visible. Use a plain clean studio background for easy cutout. No watch attached, no logo, no branding, no text, no watermark.",
+  "negative_prompt": "full strap pair, mismatched width, tiny strap in frame, reversed part, watch attached, wrist, hand, table, props, perspective distortion, angled view, curved strap, folded strap, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, checkerboard background, fake transparency pattern, busy background, shadow-heavy scene, illustration, cartoon",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "1024x1024",
+    "style": "photorealistic luxury product photography",
+    "lighting": "soft even studio lighting on a plain neutral background",
+    "camera_angle": "front-facing orthographic product view",
+    "depth_of_field": "deep focus",
+    "quality": "realistic material texture and clean edges"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "prompt": "Create a premium burgundy pebbled leather buckle-side watch strap half as a full-length product catalog image. Show the complete buckle-side piece from the silver buckle at the very top all the way down to the straight lug-end at the bottom. The strap must be long, narrow, vertically centered, front-facing, and occupy about 85 to 90 percent of the image height. Burgundy pebbled leather with visible natural grain, fine stitching, keeper loops near the buckle, and realistic leather depth. This buckle-side piece must have no sizing holes. Plain neutral studio background for easy cutout. No watch attached, no logo, no branding, no text, no watermark.",
+  "negative_prompt": "sizing holes, pointed tip, short strap stub, tiny strap in frame, cropped strap, missing lug end, missing buckle, full strap pair, reversed part, watch attached, wrist, hand, table, props, perspective distortion, angled view, curved strap, folded strap, duplicate object, extra hardware, branding, logo, text, watermark, checkerboard background, fake transparency pattern, busy background, shadow-heavy scene, illustration, cartoon",
+  "api_parameters": { "resolution": "1K", "output_format": "png", "aspect_ratio": "1:1" },
+  "settings": {
+    "resolution": "1024x1024",
+    "style": "photorealistic luxury product photography",
+    "lighting": "soft even studio lighting on a plain neutral background",
+    "camera_angle": "front-facing orthographic product view",
+    "depth_of_field": "deep focus",
+    "quality": "realistic material texture and clean edges"
+  }
+}

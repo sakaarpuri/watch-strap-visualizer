@@ -282,6 +282,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             </button>
             <canvas
               ref={canvasRef}
+              data-testid="preview-canvas"
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={endDrag}
