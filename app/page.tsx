@@ -34,7 +34,7 @@ interface AiToolState {
 interface AiResult {
   title: string;
   description: string;
-  imageDataUrl: string;
+  imageUrl: string;
   downloadName: string;
 }
 
@@ -56,11 +56,11 @@ const postToolForm = async (url: string, formData: FormData) => {
     method: "POST",
     body: formData
   });
-  const payload = (await response.json()) as { error?: string; imageDataUrl?: string };
-  if (!response.ok || !payload.imageDataUrl) {
+  const payload = (await response.json()) as { error?: string; imageUrl?: string };
+  if (!response.ok || !payload.imageUrl) {
     throw new Error(payload.error || "AI tool failed");
   }
-  return payload.imageDataUrl;
+  return payload.imageUrl;
 };
 
 const formatAiError = (error: unknown) => {
@@ -71,9 +71,9 @@ const formatAiError = (error: unknown) => {
   return message;
 };
 
-const downloadDataUrl = (dataUrl: string, fileName: string) => {
+const downloadImageUrl = (imageUrl: string, fileName: string) => {
   const anchor = document.createElement("a");
-  anchor.href = dataUrl;
+  anchor.href = imageUrl;
   anchor.download = fileName;
   anchor.click();
 };
@@ -185,7 +185,7 @@ export default function Home() {
     setAiResult({
       title,
       description,
-      imageDataUrl: nextSrc,
+      imageUrl: nextSrc,
       downloadName: `${title.toLowerCase().replace(/\s+/g, "-")}.png`
     });
   };
@@ -196,9 +196,9 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append("image", uploadedWatchFile);
-      const imageDataUrl = await postToolForm("/api/kie/cleanup", formData);
+      const imageUrl = await postToolForm("/api/kie/cleanup", formData);
       applyProcessedWatch(
-        imageDataUrl,
+        imageUrl,
         "Dial Cleanup Fallback",
         "AI removed as much background as possible from the uploaded watch photo."
       );
@@ -214,9 +214,9 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append("image", uploadedWatchFile);
-      const imageDataUrl = await postToolForm("/api/kie/rescue", formData);
+      const imageUrl = await postToolForm("/api/kie/rescue", formData);
       applyProcessedWatch(
-        imageDataUrl,
+        imageUrl,
         "User Upload Rescue Mode",
         "AI rebuilt a cleaner watch-head cutout for a better strap preview source."
       );
@@ -242,12 +242,12 @@ export default function Home() {
       formData.append("strapB", await fileFromSrc(currentStrap.strapBSrc, "strap-b.png"));
       formData.append("strapLabel", currentStrap.label);
 
-      const imageDataUrl = await postToolForm("/api/kie/final-render", formData);
+      const imageUrl = await postToolForm("/api/kie/final-render", formData);
       setAiResult({
         title: "Final Photoreal Render",
         description:
           "AI generated a polished hero mockup using the current preview composition as the reference.",
-        imageDataUrl,
+        imageUrl,
         downloadName: "watch-strap-final-render.png"
       });
       setToolLoading("final", false);
@@ -265,12 +265,12 @@ export default function Home() {
       formData.append("strapLabel", currentStrap.label);
       formData.append("category", currentStrap.category);
 
-      const imageDataUrl = await postToolForm("/api/kie/style-explore", formData);
+      const imageUrl = await postToolForm("/api/kie/style-explore", formData);
       setAiResult({
         title: "Style Exploration",
         description:
           "AI proposed one adjacent strap concept inspired by the currently selected library style.",
-        imageDataUrl,
+        imageUrl,
         downloadName: "watch-strap-style-exploration.png"
       });
       setToolLoading("explore", false);
@@ -419,15 +419,15 @@ export default function Home() {
               <p className="mt-2 text-sm leading-relaxed text-muted">{aiResult.description}</p>
               <div className="mt-4 overflow-hidden rounded-xl border border-line bg-canvas">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={aiResult.imageDataUrl}
+                  <img
+                  src={aiResult.imageUrl}
                   alt={aiResult.title}
                   className="h-auto w-full object-contain"
                 />
               </div>
               <button
                 type="button"
-                onClick={() => downloadDataUrl(aiResult.imageDataUrl, aiResult.downloadName)}
+                onClick={() => downloadImageUrl(aiResult.imageUrl, aiResult.downloadName)}
                 className="mt-4 rounded-lg border border-ink bg-ink px-4 py-2.5 text-base text-white hover:opacity-90"
               >
                 Download AI Result

@@ -116,22 +116,10 @@ export const waitForKieResult = async (taskId: string, maxAttempts = 90, delayMs
   throw new Error("Kie task timed out");
 };
 
-export const downloadAsDataUrl = async (url: string) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download result: ${response.status}`);
-  }
-  const arrayBuffer = await response.arrayBuffer();
-  const contentType = response.headers.get("content-type") || "image/png";
-  const base64 = Buffer.from(arrayBuffer).toString("base64");
-  return `data:${contentType};base64,${base64}`;
-};
-
 export const runRemoveBackground = async (file: File) => {
   const imageUrl = await uploadFileToKie(file);
   const taskId = await createKieTask("recraft/remove-background", { image: imageUrl });
-  const resultUrl = await waitForKieResult(taskId);
-  return downloadAsDataUrl(resultUrl);
+  return waitForKieResult(taskId);
 };
 
 export const runNanoBananaImageTask = async ({
@@ -155,8 +143,7 @@ export const runNanoBananaImageTask = async ({
     output_format: outputFormat,
     image_input: imageInput
   });
-  const resultUrl = await waitForKieResult(taskId);
-  return downloadAsDataUrl(resultUrl);
+  return waitForKieResult(taskId);
 };
 
 export const runNanoBananaThenRemoveBackground = async ({
@@ -178,6 +165,5 @@ export const runNanoBananaThenRemoveBackground = async ({
   const removeTaskId = await createKieTask("recraft/remove-background", {
     image: generatedUrl
   });
-  const cleanedUrl = await waitForKieResult(removeTaskId);
-  return downloadAsDataUrl(cleanedUrl);
+  return waitForKieResult(removeTaskId);
 };

@@ -17,12 +17,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing preview references" }, { status: 400 });
     }
 
-    const imageDataUrl = await runNanoBananaImageTask({
+    const imageUrl = await runNanoBananaImageTask({
       prompt: `Create a premium photoreal watch mockup based on these reference images. Keep the watch identity faithful and keep the strap consistent with ${strapLabel}. Preserve the chosen composition, refine the lighting, strap attachment, shadows, and edges, and place the result on a clean luxury product background. Do not add extra text, props, logos, or new watch features.`,
       files
     });
 
-    return NextResponse.json({ imageDataUrl });
+    return NextResponse.json({ imageUrl });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Final render failed";
     return NextResponse.json({ error: message }, { status: 500 });

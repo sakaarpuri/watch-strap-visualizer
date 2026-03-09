@@ -11,8 +11,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing image file" }, { status: 400 });
     }
 
-    const dataUrl = await runRemoveBackground(image);
-    return NextResponse.json({ imageDataUrl: dataUrl });
+    const imageUrl = await runRemoveBackground(image);
+    return NextResponse.json({ imageUrl });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Dial cleanup failed";
     return NextResponse.json({ error: message }, { status: 500 });

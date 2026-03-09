@@ -16,12 +16,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing strap references" }, { status: 400 });
     }
 
-    const imageDataUrl = await runNanoBananaImageTask({
+    const imageUrl = await runNanoBananaImageTask({
       prompt: `Create a new premium watch strap concept inspired by the attached ${strapLabel} references. Keep it in the ${category.toLowerCase()} family, preserve realistic strap proportions, and propose one adjacent color or finish that feels commercially viable. Show the strap as a clean product image on a transparent or neutral isolated background, with no watch attached, no branding, and no text.`,
       files
     });
 
-    return NextResponse.json({ imageDataUrl });
+    return NextResponse.json({ imageUrl });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Style exploration failed";
     return NextResponse.json({ error: message }, { status: 500 });
