@@ -318,6 +318,18 @@ export default function Home() {
         </button>
       </header>
 
+      <section className="mt-4">
+        <ImageUploader
+          id="watch"
+          label="1. Upload Watch Dial Photo"
+          helperText="Use a straight, front-facing watch photo. Avoid strong left/right/up/down tilt for best strap alignment and cleaner visualization."
+          previewUrl={watchPreviewSrc}
+          onFileSelect={onUploadDial}
+          compact
+          showOrientationHints
+        />
+      </section>
+
       <section className="mt-6 grid gap-5 lg:mt-8 lg:grid-cols-[340px,1fr]">
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
@@ -412,28 +424,6 @@ export default function Home() {
               ) : null}
             </div>
           </div>
-
-          {aiResult ? (
-            <div className="glass-card rounded-2xl p-4 sm:p-6">
-              <p className="text-lg font-medium text-ink">{aiResult.title}</p>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{aiResult.description}</p>
-              <div className="mt-4 overflow-hidden rounded-xl border border-line bg-canvas">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                  src={aiResult.imageUrl}
-                  alt={aiResult.title}
-                  className="h-auto w-full object-contain"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => downloadImageUrl(aiResult.imageUrl, aiResult.downloadName)}
-                className="mt-4 rounded-lg border border-ink bg-ink px-4 py-2.5 text-base text-white hover:opacity-90"
-              >
-                Download AI Result
-              </button>
-            </div>
-          ) : null}
         </aside>
 
         <section className="min-w-0">
@@ -550,11 +540,24 @@ export default function Home() {
                         title="Style Explore"
                         description="Create one adjacent strap concept based on the current library selection."
                         disabled={!currentStrap}
-                          loading={aiTools.explore.loading}
-                          onClick={() => void runStyleExploration()}
+                        loading={aiTools.explore.loading}
+                        onClick={() => void runStyleExploration()}
                       />
                       {aiTools.explore.error ? <ErrorText message={aiTools.explore.error} /> : null}
                     </div>
+                    {aiResult ? (
+                      <div className="mt-3 rounded-lg border border-line bg-canvas p-3">
+                        <p className="text-sm font-medium text-ink">{aiResult.title}</p>
+                        <p className="mt-1 text-xs text-muted">{aiResult.description}</p>
+                        <button
+                          type="button"
+                          onClick={() => downloadImageUrl(aiResult.imageUrl, aiResult.downloadName)}
+                          className="mt-2 rounded-md border border-ink bg-ink px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                        >
+                          Download AI Result
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               }
@@ -564,16 +567,6 @@ export default function Home() {
               Upload a watch image to start previewing straps.
             </div>
           )}
-          <div className="mt-4">
-            <ImageUploader
-              id="watch"
-              label="1. Upload Watch Dial Photo"
-              helperText="Best results come from clear, front-facing watch photos on a plain background. Product shots or retailer website screenshots usually work best because the dial is centered and well lit."
-              previewUrl={watchPreviewSrc}
-              onFileSelect={onUploadDial}
-              compact
-            />
-          </div>
           {isAnyToolRunning ? (
             <div className="glass-card ai-pulse mt-4 rounded-2xl p-4">
               <div className="flex items-center gap-3">
