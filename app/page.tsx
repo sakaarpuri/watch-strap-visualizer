@@ -47,6 +47,11 @@ const fileFromSrc = async (src: string, filename: string) => {
 };
 
 const toSnippet = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 240);
+const toProxyPreviewSrc = (imageUrl: string) => {
+  const value = imageUrl.trim();
+  if (!/^https?:\/\//i.test(value)) return value;
+  return `/api/kie/proxy-image?url=${encodeURIComponent(value)}`;
+};
 
 const getEndpointLabel = (url: string) => {
   if (url.includes("/rescue")) return "Rescue API";
@@ -105,6 +110,9 @@ const formatAiError = (error: unknown) => {
   const message = error instanceof Error ? error.message : "AI tool failed";
   if (message.includes("KIE_API_KEY is not configured")) {
     return "Kie API key is missing on this deployment. Add KIE_API_KEY in Netlify environment variables and redeploy.";
+  }
+  if (message.includes("Failed to fetch")) {
+    return "Network error while contacting AI service. Please retry once.";
   }
   if (message.includes("did not match the expected pattern")) {
     return "The AI provider returned an invalid image URL format. Please retry once; if it repeats, the provider response needs fallback handling.";
@@ -212,8 +220,9 @@ export default function Home() {
   };
 
   const applyProcessedWatch = (nextSrc: string) => {
-    setWatchSrc(nextSrc);
-    setWatchPreviewSrc(nextSrc);
+    const previewSrc = toProxyPreviewSrc(nextSrc);
+    setWatchSrc(previewSrc);
+    setWatchPreviewSrc(previewSrc);
   };
 
   const runCleanupFallback = async () => {
