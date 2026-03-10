@@ -9,6 +9,7 @@ export interface StrapVariant {
   strapASrc: string;
   strapBSrc: string;
   tint: StrapStyle;
+  autoFitWidthFactor?: number;
 }
 
 const BASE_A = "/sample-strap-a.png";
@@ -178,14 +179,23 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
     }
   ],
   Fabric: [
-    { id: "fabric-nato", label: "NATO Fabric", category: "Fabric", strapASrc: BASE_A, strapBSrc: BASE_B, tint: ORIG_TINT },
+    {
+      id: "fabric-nato",
+      label: "NATO Fabric",
+      category: "Fabric",
+      strapASrc: `${SEL}/olive-nato-buckle.png`,
+      strapBSrc: `${SEL}/olive-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.11
+    },
     {
       id: "fabric-grey-canvas",
       label: "Grey Canvas",
       category: "Fabric",
       strapASrc: `${SEL}/grey-canvas-buckle.png`,
       strapBSrc: `${SEL}/grey-canvas-tail.png`,
-      tint: ORIG_TINT
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.12
     },
     {
       id: "fabric-navy-canvas",
@@ -193,7 +203,8 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       category: "Fabric",
       strapASrc: `${SEL}/navy-canvas-buckle.png`,
       strapBSrc: `${SEL}/navy-canvas-tail.png`,
-      tint: ORIG_TINT
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.12
     },
     {
       id: "fabric-olive-nato",
@@ -201,18 +212,28 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       category: "Fabric",
       strapASrc: `${SEL}/olive-nato-buckle.png`,
       strapBSrc: `${SEL}/olive-nato-tail.png`,
-      tint: ORIG_TINT
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.11
     }
   ],
   Metal: [
-    { id: "metal-bracelet", label: "Steel Bracelet", category: "Metal", strapASrc: METAL_A, strapBSrc: METAL_B, tint: ORIG_TINT },
+    {
+      id: "metal-bracelet",
+      label: "Steel Bracelet",
+      category: "Metal",
+      strapASrc: METAL_A,
+      strapBSrc: METAL_B,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.14
+    },
     {
       id: "metal-steel-link",
       label: "Steel Link Bracelet",
       category: "Metal",
       strapASrc: `${SEL}/steel-bracelet-buckle.png`,
       strapBSrc: `${SEL}/steel-bracelet-tail.png`,
-      tint: ORIG_TINT
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.14
     },
     {
       id: "metal-black-pvd-bracelet",
@@ -220,7 +241,8 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       category: "Metal",
       strapASrc: `${SEL}/black-pvd-bracelet-buckle.png`,
       strapBSrc: `${SEL}/black-pvd-bracelet-tail.png`,
-      tint: ORIG_TINT
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.14
     }
   ]
 };

@@ -249,13 +249,15 @@ const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetr
     };
   }
 
-  const sampleDepth = Math.max(6, Math.round(height * 0.03));
+  const opaqueHeight = bottomY - topY + 1;
+  const sampleFractions = [0.05, 0.08, 0.12, 0.16, 0.2];
   const sampledTopWidths: number[] = [];
   const sampledBottomWidths: number[] = [];
 
-  for (let offset = 0; offset < sampleDepth; offset += 1) {
-    const topSampleY = Math.min(bottomY, topY + offset);
-    const bottomSampleY = Math.max(topY, bottomY - offset);
+  for (const fraction of sampleFractions) {
+    const depth = Math.round(opaqueHeight * fraction);
+    const topSampleY = Math.min(bottomY, topY + depth);
+    const bottomSampleY = Math.max(topY, bottomY - depth);
     const topSampleWidth = rowWidth(topSampleY);
     const bottomSampleWidth = rowWidth(bottomSampleY);
     if (topSampleWidth > 0) sampledTopWidths.push(topSampleWidth);
@@ -396,7 +398,8 @@ const clamp = (value: number, min: number, max: number) =>
 export const calculateAutoPlacement = async (
   watchSrc: string,
   strapASrc: string,
-  strapBSrc: string
+  strapBSrc: string,
+  targetWidthFactor = 0.32
 ): Promise<{ partA: PartTransform; partB: PartTransform }> => {
   const [watch, partAImage, partBImage] = await Promise.all([
     loadImage(watchSrc),
@@ -405,7 +408,7 @@ export const calculateAutoPlacement = async (
   ]);
 
   const watchRect = getWatchRect(watch, 1);
-  const targetStrapWidth = watchRect.w * 0.32;
+  const targetStrapWidth = watchRect.w * targetWidthFactor;
   const visualGap = Math.max(18, watchRect.h * 0.045);
   const metricsA = getImageMetrics(partAImage);
   const metricsB = getImageMetrics(partBImage);

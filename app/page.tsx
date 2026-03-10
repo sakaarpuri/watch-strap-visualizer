@@ -313,7 +313,8 @@ export default function Home() {
       let aligned = await calculateAutoPlacement(
         watchSrc,
         currentStrap.strapASrc,
-        currentStrap.strapBSrc
+        currentStrap.strapBSrc,
+        currentStrap.autoFitWidthFactor
       );
 
       if (partA && partB && preserveSettings) {
