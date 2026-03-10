@@ -757,8 +757,8 @@ export default function Home() {
                       AI Tools
                     </p>
                     <p className="mt-2 text-xs leading-relaxed text-muted">
-                      Cleanup and rescue replace the active dial source. Final render and style
-                      exploration create separate result images.
+                      Cleanup and fast rescue replace the active dial source. Final render and
+                      style exploration create separate result images.
                     </p>
                     <div className="mt-3 grid gap-2">
                       <ToolButton
@@ -771,8 +771,8 @@ export default function Home() {
                       {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
 
                       <ToolButton
-                        title="Rescue Mode"
-                        description="Rebuild a cleaner watch-head cutout from a messy wrist shot."
+                        title="Fast Rescue"
+                        description="Use gempix-2 to rebuild a cleaner watch-head cutout from a messy wrist shot."
                         disabled={!hasUserUpload}
                         loading={aiTools.rescue.loading}
                         onClick={() => void runRescueMode()}

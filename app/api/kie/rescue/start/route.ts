@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createNanoBananaTaskFromFiles } from "@/lib/kie";
+import { createGempixTaskFromFiles } from "@/lib/kie";
 
 export const maxDuration = 60;
 
@@ -28,9 +28,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const generationTaskId = await createNanoBananaTaskFromFiles({
+    const generationTaskId = await createGempixTaskFromFiles({
       prompt:
-        "Create a clean centered cutout of only the watch head from the reference image. Remove the wrist, strap, and background. Keep the dial and case recognizable. No text, props, or extra objects.",
+        "Create a clean, centered watch-head cutout from the reference image. Keep only the case and dial visible. Remove the wrist, original strap, and background. Preserve the watch shape and front-facing look. No extra objects or text.",
       files: [image],
       resolution: "1K"
     });

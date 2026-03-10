@@ -331,6 +331,47 @@ export const createNanoBananaTaskFromFiles = async ({
   });
 };
 
+export const createGempixTaskFromFiles = async ({
+  prompt,
+  files,
+  resolution = "1K",
+  outputFormat = "png"
+}: {
+  prompt: string;
+  files: File[];
+  resolution?: string;
+  outputFormat?: string;
+}) => {
+  const uploadedUrls = await Promise.all(files.map((file) => uploadFileToKie(file)));
+  const primaryUrl = uploadedUrls[0];
+
+  try {
+    return await createKieTask("gempix-2", {
+      prompt,
+      resolution,
+      output_format: outputFormat,
+      image_url: primaryUrl
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown gempix createTask failure";
+    const shouldFallback =
+      message.includes("[createTask]") ||
+      message.includes("taskId") ||
+      message.includes("Bad Request");
+
+    if (!shouldFallback) {
+      throw error;
+    }
+
+    return createKieTask("gempix-2", {
+      prompt,
+      resolution,
+      output_format: outputFormat,
+      image_input: uploadedUrls
+    });
+  }
+};
+
 export const createRemoveBackgroundTaskFromUrl = async (imageUrl: string) =>
   createKieTask("recraft/remove-background", { image: imageUrl });
 

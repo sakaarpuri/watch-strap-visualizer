@@ -23,6 +23,14 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
   Leather: [
     { id: "leather-classic", label: "Classic Leather", category: "Leather", strapASrc: BASE_A, strapBSrc: BASE_B, tint: ORIG_TINT },
     {
+      id: "leather-black-smooth",
+      label: "Black Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/black-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/black-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
       id: "leather-black-grain",
       label: "Black Grain Leather",
       category: "Leather",
@@ -39,11 +47,27 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       tint: ORIG_TINT
     },
     {
+      id: "leather-espresso-smooth",
+      label: "Espresso Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/espresso-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/espresso-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
       id: "leather-cognac-grain",
       label: "Cognac Grain Leather",
       category: "Leather",
       strapASrc: `${SEL}/cognac-grain-leather-buckle.png`,
       strapBSrc: `${SEL}/cognac-grain-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-cognac-smooth",
+      label: "Cognac Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/cognac-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/cognac-smooth-leather-tail.png`,
       tint: ORIG_TINT
     },
     {
@@ -63,6 +87,14 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       tint: ORIG_TINT
     },
     {
+      id: "leather-tan-smooth",
+      label: "Tan Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/tan-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/tan-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
       id: "leather-beige-suede",
       label: "Beige Suede Leather",
       category: "Leather",
@@ -71,11 +103,59 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       tint: ORIG_TINT
     },
     {
+      id: "leather-beige-smooth",
+      label: "Beige Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/beige-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/beige-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
       id: "leather-burgundy-pebbled",
       label: "Burgundy Pebbled Leather",
       category: "Leather",
       strapASrc: `${SEL}/burgundy-pebbled-leather-buckle.png`,
       strapBSrc: `${SEL}/burgundy-pebbled-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-burgundy-smooth",
+      label: "Burgundy Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/burgundy-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/burgundy-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-navy-smooth",
+      label: "Navy Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/navy-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/navy-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-olive-smooth",
+      label: "Olive Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/olive-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/olive-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-gray-smooth",
+      label: "Gray Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/gray-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/gray-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-chocolate-smooth",
+      label: "Chocolate Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/chocolate-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/chocolate-smooth-leather-tail.png`,
       tint: ORIG_TINT
     }
   ],

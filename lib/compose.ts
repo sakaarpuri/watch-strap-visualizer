@@ -434,6 +434,21 @@ export const calculateAutoPlacement = async (
     opacity: 1
   };
 
+  const viewportMargin = 28;
+  const topViewport = -CANVAS_SIZE / 2 + viewportMargin;
+  const bottomViewport = CANVAS_SIZE / 2 - viewportMargin;
+
+  const visibleTopA = partA.y + (metricsA.topY - partAImage.height / 2) * (scaleA / 100);
+  if (visibleTopA < topViewport) {
+    partA.y += topViewport - visibleTopA;
+  }
+
+  const visibleBottomB =
+    partB.y + (metricsB.bottomY - partBImage.height / 2) * (scaleB / 100);
+  if (visibleBottomB > bottomViewport) {
+    partB.y -= visibleBottomB - bottomViewport;
+  }
+
   return { partA, partB };
 };
 
