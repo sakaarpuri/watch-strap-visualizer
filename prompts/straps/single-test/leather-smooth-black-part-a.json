@@ -1,0 +1,17 @@
+{
+  "prompt": "Global requirements: output one PNG for part-a only (12 o'clock side, buckle side) with transparent background. Product-only image: no watch case, no dial, no hands, no wrist, no person, no props, no text, no logo, no watermark. Flat front view, perfectly centered, vertical orientation, realistic texture, soft studio lighting, crisp edges. Keep camera angle, framing, scale, and lighting consistent with the matching part-b image of the same style and color. Create a premium smooth calf leather two-piece watch strap style, part-a only, minimal grain, edge-painted sides, subtle stitching, realistic natural leather sheen, luxury product photography. Color variant: deep black smooth leather with black stitching. Show buckle and keeper loops clearly at the top. Full-length strap half from buckle to straight lug-end, realistic proportions, no sizing holes on buckle side.",
+  "negative_prompt": "part-b, tail side, sizing holes on buckle side, full strap pair in one image, watch attached, hand, wrist, person, props, text, logo, watermark, perspective angle, curved strap, folded strap, duplicate strap, metallic bracelet links, pattern artifacts, checkerboard pattern, busy background",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "3:4"
+  },
+  "settings": {
+    "resolution": "1024x1365",
+    "style": "photorealistic luxury product photography",
+    "lighting": "soft even studio lighting",
+    "camera_angle": "flat front orthographic view",
+    "depth_of_field": "deep focus",
+    "quality": "high detail leather texture and crisp edges"
+  }
+}
