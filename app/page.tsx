@@ -775,15 +775,15 @@ export default function Home() {
                 type="button"
                 onClick={() => setPreserveSettings((prev) => !prev)}
                 aria-pressed={preserveSettings}
-                className={`relative h-8 w-14 rounded-full border transition ${
+                className={`relative h-8 w-14 shrink-0 overflow-hidden rounded-full border transition ${
                   preserveSettings
                     ? "border-emerald-500/40 bg-emerald-400/30"
                     : "border-line bg-canvas"
                 }`}
               >
                 <span
-                  className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
-                    preserveSettings ? "left-7" : "left-1"
+                  className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                    preserveSettings ? "translate-x-6" : "translate-x-0"
                   }`}
                 />
               </button>
@@ -1163,7 +1163,7 @@ function ToggleControl({
           type="button"
           onClick={onToggle}
           aria-pressed={enabled}
-          className={`relative h-12 w-20 rounded-full border transition ${
+          className={`relative h-12 w-20 shrink-0 overflow-hidden rounded-full border transition ${
             enabled
               ? "border-cyan-400/60 bg-gradient-to-r from-cyan-300/60 to-blue-300/60"
               : "border-line bg-canvas shadow-[inset_6px_6px_12px_rgba(15,23,42,0.12),inset_-6px_-6px_12px_rgba(255,255,255,0.45)]"
