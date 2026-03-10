@@ -1,0 +1,5 @@
+{
+  "prompt": "Create a premium olive performance rubber tail-half watch strap for a two-piece strap set. Front-facing orthographic product view, perfectly centered, isolated on transparent background. Keep the lug-end width consistent with the matching buckle-half and fill most of the frame vertically with minimal transparent margin. Matte olive rubber, subtle performance texture, clean molded edges, evenly spaced sizing holes, clean pointed tip. No watch attached, no logo, no branding, no shadow.",
+  "negative_prompt": "full strap pair, mismatched width, oversized canvas margin, tiny strap in frame, reversed part, watch attached, wrist, hand, background scene, props, table, perspective distortion, angled view, curved strap, folded strap, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, blurry edges, cartoon, illustration, checkerboard background, fake transparency pattern, colored backdrop",
+  "api_parameters": { "resolution": "1K", "output_format": "png", "aspect_ratio": "1:1" }
+}

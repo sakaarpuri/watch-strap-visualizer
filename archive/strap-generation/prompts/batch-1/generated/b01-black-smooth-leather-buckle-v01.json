@@ -1,0 +1,17 @@
+{
+  "prompt": "Create a high resolution product catalog image of a black smooth leather watch strap, laid flat vertically, perfectly straight, front-facing orthographic view, no perspective distortion. Isolated object, centered in frame, transparent background, no shadow, no watch attached, no logo, no branding. Studio lighting, even soft lighting, realistic leather texture, subtle natural grain detail, clean edge stitching, metal buckle visible at the top. Minimalistic e-commerce product style. Square format, 2048x2048. Just create the buckle part of strap.",
+  "negative_prompt": "watch attached, wrist, hand, background scene, props, surface, table, reflection, drop shadow, perspective distortion, angled view, bent strap, curved strap, folded strap, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, busy composition, low detail, blurry edges, cartoon, CGI, illustration",
+  "api_parameters": {
+    "resolution": "2K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "2048x2048",
+    "style": "photorealistic product photography",
+    "lighting": "even soft studio light, neutral white balance, clean product lighting",
+    "camera_angle": "front-facing orthographic catalog shot",
+    "depth_of_field": "deep focus, full strap detail sharp",
+    "quality": "high detail, realistic materials, crisp cutout edges"
+  }
+}

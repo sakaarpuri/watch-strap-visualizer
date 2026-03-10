@@ -937,6 +937,18 @@ function ErrorText({ message }: { message: string }) {
   return <p className="text-xs text-rose-600">{message}</p>;
 }
 
+const snapToStep = (value: number, min: number, step: number) => {
+  if (step <= 0) return value;
+  const snapped = Math.round((value - min) / step) * step + min;
+  return Number(snapped.toFixed(4));
+};
+
+const pulseHaptic = () => {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(8);
+  }
+};
+
 function ToolButton({
   title,
   description,
@@ -995,6 +1007,21 @@ function SliderControl({
   displayValue,
   disabled
 }: SliderControlProps) {
+  const lastSnapRef = useRef<number>(snapToStep(value, min, step));
+
+  useEffect(() => {
+    lastSnapRef.current = snapToStep(value, min, step);
+  }, [value, min, step]);
+
+  const handleValueChange = (nextRawValue: number) => {
+    const snapped = clamp(snapToStep(nextRawValue, min, step), min, max);
+    if (snapped !== lastSnapRef.current) {
+      pulseHaptic();
+      lastSnapRef.current = snapped;
+    }
+    onChange(snapped);
+  };
+
   return (
     <div className="neo-control rounded-2xl p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -1009,7 +1036,8 @@ function SliderControl({
         max={max}
         step={step}
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
+        onChange={(event) => handleValueChange(Number(event.target.value))}
+        onPointerUp={() => pulseHaptic()}
         className="range-slider range-slider--stepped"
         disabled={disabled}
         aria-label={label}

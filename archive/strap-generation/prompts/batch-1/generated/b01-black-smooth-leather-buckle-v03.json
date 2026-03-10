@@ -1,0 +1,17 @@
+{
+  "prompt": "Create a high resolution product catalog cutout of the buckle half of a black smooth leather watch strap. Show the full buckle-side strap piece only, from the metal buckle at the very top down to the leather end at the bottom. The entire buckle half must be fully visible in frame, vertically centered, front-facing orthographic view, no perspective distortion, no shortening, no crop, no missing bottom section. Use realistic watch strap proportions with a natural slight taper or widening consistent with a real leather strap, not a rigid perfectly straight-sided strip. The strap should occupy about 88 percent of the canvas height. Isolated object only, centered in frame, exported as a true transparent PNG with real alpha transparency, no checkerboard pattern, no pink background, no colored matte, no shadow, no watch attached, no logo, no branding. Studio lighting, even soft lighting, realistic black smooth leather texture, subtle natural grain detail, crisp edge stitching, polished silver metal buckle visible at the top. Minimalistic e-commerce product style. Square format, 2048x2048.",
+  "negative_prompt": "tail part, full strap pair, watch attached, wrist, hand, background scene, props, surface, table, reflection, drop shadow, perspective distortion, angled view, bent strap, curved strap, folded strap, shortened strap, stubby strap, cropped object, object cut off, missing bottom section, duplicate object, extra hardware, branding, logo, text, watermark, busy composition, low detail, blurry edges, cartoon, CGI, illustration, checkerboard transparency pattern, pink background, magenta background, fake transparent background, colored backdrop",
+  "api_parameters": {
+    "resolution": "2K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "2048x2048",
+    "style": "photorealistic product photography",
+    "lighting": "even soft studio light, neutral white balance, clean product lighting",
+    "camera_angle": "front-facing orthographic catalog shot",
+    "depth_of_field": "deep focus, full strap detail sharp",
+    "quality": "high detail, realistic materials, crisp cutout edges, exact product proportions"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "prompt": "Using the attached reference image of the tail half of a silver metal watch bracelet, create the matching buckle half only. Match the exact steel finish, taper, link style, proportions, width, and bracelet character of the reference. Show a premium product image, front view, isolated on transparent background, no watch attached, no text, no logo, no extra objects.",
+  "negative_prompt": "tail half, full strap pair, watch attached, wrist, hand, background scene, props, table, perspective distortion, cropped object, duplicate object, extra hardware, branding, logo, text, watermark, blurry edges, cartoon, illustration, checkerboard background, fake transparency pattern, colored backdrop",
+  "api_parameters": {
+    "resolution": "2K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "reference_files": [
+    "/Users/sakaarpuri/Pictures/Watchsrap app/Strap Selection/Create_High_resolution_product_Nano_Banana_Pro_49159.jpg"
+  ]
+}

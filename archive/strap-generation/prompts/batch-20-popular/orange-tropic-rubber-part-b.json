@@ -1,0 +1,17 @@
+{
+  "prompt": "Output PNG for part-b only (6 o'clock tail side) with transparent background. Product-only watch strap part: no watch case/dial/hands/wrist/person/props/text/logo/watermark. Flat front view, centered, vertical, realistic texture, soft studio lighting, crisp edges. Keep camera angle, framing, scale, lighting consistent with matching part-a of same style/color. Create a premium tropic rubber watch strap strap part-b, matte texture, vented tropic pattern, precise molded edges, realistic rubber surface detail. Color: bright orange vulcanized rubber, no stitching. Full-length strap half from straight lug end to pointed tip with evenly spaced sizing holes. Minimum 768px height.",
+  "negative_prompt": "watch case, dial, hands, wrist, hand, person, props, text, logo, watermark, full strap pair in one image, duplicate object, perspective distortion, angled view, curved strap, folded strap, checkerboard pattern, busy background, illustration, cartoon, part-a buckle side, buckle hardware on tail side, missing sizing holes on tail side",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "3:4"
+  },
+  "settings": {
+    "resolution": "1024x1365",
+    "style": "photorealistic luxury product photography",
+    "lighting": "soft even studio lighting",
+    "camera_angle": "flat front orthographic view",
+    "depth_of_field": "deep focus",
+    "quality": "high detail texture and crisp edges"
+  }
+}
