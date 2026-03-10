@@ -43,15 +43,26 @@ export const DEFAULT_PART_B: PartTransform = {
 export const CANVAS_SIZE = 900;
 
 export const loadImage = (src: string): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    img.src = src;
-  });
+  {
+    const cached = imagePromiseCache.get(src);
+    if (cached) return cached;
+    const nextPromise = new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+      img.src = src;
+    });
+    imagePromiseCache.set(src, nextPromise);
+    nextPromise.catch(() => {
+      imagePromiseCache.delete(src);
+    });
+    return nextPromise;
+  };
 
 const strapRenderCache = new Map<string, HTMLCanvasElement>();
+const strapRenderPromiseCache = new Map<string, Promise<HTMLCanvasElement>>();
+const imagePromiseCache = new Map<string, Promise<HTMLImageElement>>();
 
 const isCheckerboardStrap = (src: string) =>
   (src.includes("/strap-selection/") && /\.(jpe?g)$/i.test(src)) ||
@@ -195,10 +206,17 @@ export const loadStrapImage = async (
   }
   const cached = strapRenderCache.get(src);
   if (cached) return cached;
-  const image = await loadImage(src);
-  const cleaned = buildCheckerTransparentCanvas(image);
-  strapRenderCache.set(src, cleaned);
-  return cleaned;
+  const inFlight = strapRenderPromiseCache.get(src);
+  if (inFlight) return inFlight;
+  const nextPromise = (async () => {
+    const image = await loadImage(src);
+    const cleaned = buildCheckerTransparentCanvas(image);
+    strapRenderCache.set(src, cleaned);
+    strapRenderPromiseCache.delete(src);
+    return cleaned;
+  })();
+  strapRenderPromiseCache.set(src, nextPromise);
+  return nextPromise;
 };
 
 interface StrapMetrics {

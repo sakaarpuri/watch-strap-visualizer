@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import CropEditor from "@/components/CropEditor";
 import ImageUploader from "@/components/ImageUploader";
-import { calculateAutoPlacement, PartTransform } from "@/lib/compose";
+import { calculateAutoPlacement, loadStrapImage, PartTransform } from "@/lib/compose";
 import {
   STRAP_CATEGORIES,
   getStrapsForCategory,
@@ -409,6 +409,24 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, strapIndex, preserveSettings]);
 
+  useEffect(() => {
+    const total = strapsInCategory.length;
+    if (!total) return;
+    const neighborIndices = [
+      strapIndex,
+      (strapIndex + 1) % total,
+      (strapIndex - 1 + total) % total
+    ];
+    const uniqueIndices = [...new Set(neighborIndices)];
+    void Promise.all(
+      uniqueIndices.flatMap((index) => {
+        const strap = strapsInCategory[index];
+        if (!strap) return [];
+        return [loadStrapImage(strap.strapASrc), loadStrapImage(strap.strapBSrc)];
+      })
+    ).catch(() => undefined);
+  }, [category, strapIndex]);
+
   const onCycleStrap = (direction: 1 | -1) => {
     setStrapIndex((prev) => {
       const total = strapsInCategory.length;
@@ -652,7 +670,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mt-4">
+      <section className="mt-4 w-full max-w-[340px]">
         <ImageUploader
           id="watch"
           label="1. Upload Watch Dial Photo"

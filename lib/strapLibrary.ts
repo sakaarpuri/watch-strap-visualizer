@@ -16,8 +16,6 @@ export interface StrapVariant {
 
 const BASE_A = "/sample-strap-a.png";
 const BASE_B = "/sample-strap-b.png";
-const METAL_A = "/metal-strap-a.png";
-const METAL_B = "/metal-strap-b.png";
 const SEL = "/strap-selection-kie";
 
 const ORIG_TINT: StrapStyle = { name: "Original", color: "#000000", alpha: 0 };
@@ -342,8 +340,8 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       id: "metal-bracelet",
       label: "Steel Bracelet",
       category: "Metal",
-      strapASrc: METAL_A,
-      strapBSrc: METAL_B,
+      strapASrc: `${SEL}/steel-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/steel-bracelet-tail.png`,
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.08,
       autoGapFactor: 1.55,
@@ -353,8 +351,8 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       id: "metal-steel-link",
       label: "Steel Link Bracelet",
       category: "Metal",
-      strapASrc: `${SEL}/steel-bracelet-buckle.png`,
-      strapBSrc: `${SEL}/steel-bracelet-tail.png`,
+      strapASrc: `${SEL}/steel-link-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/steel-link-bracelet-tail.png`,
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.078,
       autoGapFactor: 1.6,
