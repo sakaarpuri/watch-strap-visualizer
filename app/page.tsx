@@ -505,8 +505,8 @@ export default function Home() {
     try {
       setAiStage("rescue", "Fix Wrist Photo", "Uploading");
       const preparedFile = await prepareAiInput(uploadedWatchFile, {
-        maxSide: 768,
-        quality: 0.8
+        maxSide: 640,
+        quality: 0.72
       });
       let startPayload: Record<string, unknown> = {};
       let startSucceeded = false;
@@ -597,7 +597,22 @@ export default function Home() {
       applyProcessedWatch(imageUrl);
       setToolLoading("rescue", false);
     } catch (error) {
-      setToolLoading("rescue", false, formatAiError(error));
+      try {
+        // Fallback path for transient start/poll issues in serverless runtime.
+        setAiStage("rescue", "Fix Wrist Photo", "Retrying with fallback");
+        const preparedFallbackFile = await prepareAiInput(uploadedWatchFile, {
+          maxSide: 640,
+          quality: 0.72
+        });
+        const fallbackFormData = new FormData();
+        fallbackFormData.append("image", preparedFallbackFile);
+        const fallbackUrl = await postToolForm("/api/kie/rescue", fallbackFormData);
+        setAiStage("rescue", "Fix Wrist Photo", "Applying result");
+        applyProcessedWatch(fallbackUrl);
+        setToolLoading("rescue", false);
+      } catch (fallbackError) {
+        setToolLoading("rescue", false, formatAiError(fallbackError || error));
+      }
     }
   };
 
