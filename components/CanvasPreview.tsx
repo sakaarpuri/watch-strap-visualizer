@@ -41,6 +41,25 @@ export interface CanvasPreviewRef {
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
+const scalePairByAverage = (
+  startScaleA: number,
+  startScaleB: number,
+  targetAverageScale: number
+) => {
+  const currentAverage = (startScaleA + startScaleB) / 2;
+  if (currentAverage <= 0) {
+    const bounded = clamp(targetAverageScale, 30, 250);
+    return { nextA: bounded, nextB: bounded };
+  }
+
+  const boundedTarget = clamp(targetAverageScale, 30, 250);
+  const factor = boundedTarget / currentAverage;
+  return {
+    nextA: clamp(startScaleA * factor, 30, 250),
+    nextB: clamp(startScaleB * factor, 30, 250)
+  };
+};
+
 const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
   (
     {
@@ -232,8 +251,12 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       const deltaY = canvasPoint.y - drag.startCanvasY;
       if (drag.mode === "resize") {
         const scaleDelta = deltaX * 0.09;
-        const nextA = clamp(drag.startScaleA + scaleDelta, 30, 250);
-        const nextB = clamp(drag.startScaleB + scaleDelta, 30, 250);
+        const targetAverageScale = (drag.startScaleA + drag.startScaleB) / 2 + scaleDelta;
+        const { nextA, nextB } = scalePairByAverage(
+          drag.startScaleA,
+          drag.startScaleB,
+          targetAverageScale
+        );
         onDragPartsChange(
           { ...partA, scale: nextA },
           { ...partB, scale: nextB }

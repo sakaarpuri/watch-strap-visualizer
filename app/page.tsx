@@ -26,6 +26,49 @@ const uiToStrapScale = (uiValue: number) => {
   return STRAP_SCALE_MIN + t * t * t * (STRAP_SCALE_MAX - STRAP_SCALE_MIN);
 };
 
+const getAverageScale = (partA: PartTransform, partB: PartTransform) =>
+  (partA.scale + partB.scale) / 2;
+
+const applyScaleToPair = (
+  partA: PartTransform,
+  partB: PartTransform,
+  targetAverageScale: number
+) => {
+  const boundedTarget = clamp(targetAverageScale, STRAP_SCALE_MIN, STRAP_SCALE_MAX);
+  const currentAverage = getAverageScale(partA, partB);
+  if (currentAverage <= 0) {
+    return {
+      partA: { ...partA, scale: boundedTarget },
+      partB: { ...partB, scale: boundedTarget }
+    };
+  }
+
+  const factor = boundedTarget / currentAverage;
+  return {
+    partA: {
+      ...partA,
+      scale: clamp(partA.scale * factor, STRAP_SCALE_MIN, STRAP_SCALE_MAX)
+    },
+    partB: {
+      ...partB,
+      scale: clamp(partB.scale * factor, STRAP_SCALE_MIN, STRAP_SCALE_MAX)
+    }
+  };
+};
+
+const applyGapToPair = (
+  partA: PartTransform,
+  partB: PartTransform,
+  nextHalfGap: number
+) => {
+  const centerY = (partA.y + partB.y) / 2;
+  const boundedGap = clamp(nextHalfGap, 250, 900);
+  return {
+    partA: { ...partA, y: centerY - boundedGap },
+    partB: { ...partB, y: centerY + boundedGap }
+  };
+};
+
 type AiToolKey = "cleanup" | "rescue" | "final" | "explore";
 
 interface AiToolState {
@@ -225,11 +268,19 @@ export default function Home() {
     if (!currentStrap) return;
     setIsAutoAligning(true);
     try {
-      const aligned = await calculateAutoPlacement(
+      let aligned = await calculateAutoPlacement(
         watchSrc,
         currentStrap.strapASrc,
         currentStrap.strapBSrc
       );
+
+      if (partA && partB && preserveSettings) {
+        const preservedHalfGap = (partB.y - partA.y) / 2;
+        const preservedAverageScale = getAverageScale(partA, partB);
+        aligned = applyScaleToPair(aligned.partA, aligned.partB, preservedAverageScale);
+        aligned = applyGapToPair(aligned.partA, aligned.partB, preservedHalfGap);
+      }
+
       setPartA(aligned.partA);
       setPartB(aligned.partB);
     } finally {
@@ -243,9 +294,7 @@ export default function Home() {
   }, [watchSrc]);
 
   useEffect(() => {
-    if (!partA || !partB || !preserveSettings) {
-      void autoAlignStraps();
-    }
+    void autoAlignStraps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, strapIndex, preserveSettings]);
 
@@ -263,18 +312,16 @@ export default function Home() {
 
   const setGapHalf = (nextHalfGap: number) => {
     if (!partA || !partB) return;
-    const centerY = (partA.y + partB.y) / 2;
-    const minHalfGap = 250;
-    const maxHalfGap = 900;
-    const boundedGap = clamp(nextHalfGap, minHalfGap, maxHalfGap);
-    setPartA((prev) => (prev ? { ...prev, y: centerY - boundedGap } : prev));
-    setPartB((prev) => (prev ? { ...prev, y: centerY + boundedGap } : prev));
+    const nextPair = applyGapToPair(partA, partB, nextHalfGap);
+    setPartA(nextPair.partA);
+    setPartB(nextPair.partB);
   };
 
   const setStrapScale = (nextScale: number) => {
-    const boundedScale = clamp(nextScale, STRAP_SCALE_MIN, STRAP_SCALE_MAX);
-    setPartA((prev) => (prev ? { ...prev, scale: boundedScale } : prev));
-    setPartB((prev) => (prev ? { ...prev, scale: boundedScale } : prev));
+    if (!partA || !partB) return;
+    const nextPair = applyScaleToPair(partA, partB, nextScale);
+    setPartA(nextPair.partA);
+    setPartB(nextPair.partB);
   };
 
   const setDialScaleValue = (nextScale: number) => {
