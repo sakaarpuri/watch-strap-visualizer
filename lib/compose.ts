@@ -198,6 +198,81 @@ export const loadStrapImage = async (
   return cleaned;
 };
 
+interface StrapMetrics {
+  topY: number;
+  bottomY: number;
+  topWidth: number;
+  bottomWidth: number;
+}
+
+const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetrics => {
+  const canvas = document.createElement("canvas");
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return {
+      topY: 0,
+      bottomY: Math.max(0, image.height - 1),
+      topWidth: image.width,
+      bottomWidth: image.width
+    };
+  }
+
+  ctx.drawImage(image, 0, 0);
+  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const alphaAt = (x: number, y: number) => data[(y * width + x) * 4 + 3];
+  const rowWidth = (y: number) => {
+    let minX = width;
+    let maxX = -1;
+    for (let x = 0; x < width; x += 1) {
+      if (alphaAt(x, y) > 12) {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+      }
+    }
+    return maxX >= minX ? maxX - minX + 1 : 0;
+  };
+
+  let topY = 0;
+  while (topY < height && rowWidth(topY) === 0) topY += 1;
+
+  let bottomY = height - 1;
+  while (bottomY >= 0 && rowWidth(bottomY) === 0) bottomY -= 1;
+
+  if (topY >= height || bottomY < 0 || bottomY <= topY) {
+    return {
+      topY: 0,
+      bottomY: Math.max(0, image.height - 1),
+      topWidth: image.width,
+      bottomWidth: image.width
+    };
+  }
+
+  const sampleDepth = Math.max(6, Math.round(height * 0.03));
+  const sampledTopWidths: number[] = [];
+  const sampledBottomWidths: number[] = [];
+
+  for (let offset = 0; offset < sampleDepth; offset += 1) {
+    const topSampleY = Math.min(bottomY, topY + offset);
+    const bottomSampleY = Math.max(topY, bottomY - offset);
+    const topSampleWidth = rowWidth(topSampleY);
+    const bottomSampleWidth = rowWidth(bottomSampleY);
+    if (topSampleWidth > 0) sampledTopWidths.push(topSampleWidth);
+    if (bottomSampleWidth > 0) sampledBottomWidths.push(bottomSampleWidth);
+  }
+
+  const average = (values: number[]) =>
+    values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : image.width;
+
+  return {
+    topY,
+    bottomY,
+    topWidth: average(sampledTopWidths),
+    bottomWidth: average(sampledBottomWidths)
+  };
+};
+
 const drawPart = (
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement | HTMLCanvasElement,
@@ -332,20 +407,21 @@ export const calculateAutoPlacement = async (
   const watchRect = getWatchRect(watch, 1);
   const targetStrapWidth = watchRect.w * 0.42;
   const overlap = Math.max(12, watchRect.h * 0.075);
+  const metricsA = getImageMetrics(partAImage);
+  const metricsB = getImageMetrics(partBImage);
 
-  const scaleA = clamp((targetStrapWidth / partAImage.width) * 100, 30, 230);
-  const scaleB = clamp((targetStrapWidth / partBImage.width) * 100, 30, 230);
-
-  const scaledAH = partAImage.height * (scaleA / 100);
-  const scaledBH = partBImage.height * (scaleB / 100);
+  const scaleA = clamp((targetStrapWidth / metricsA.bottomWidth) * 100, 30, 230);
+  const scaleB = clamp((targetStrapWidth / metricsB.topWidth) * 100, 30, 230);
 
   const topEdge = watchRect.y - CANVAS_SIZE / 2;
   const bottomEdge = watchRect.y + watchRect.h - CANVAS_SIZE / 2;
+  const visibleBottomOffsetA = (partAImage.height / 2 - metricsA.bottomY) * (scaleA / 100);
+  const visibleTopOffsetB = (metricsB.topY - partBImage.height / 2) * (scaleB / 100);
 
   const partA: PartTransform = {
     scale: scaleA,
     x: 0,
-    y: topEdge - scaledAH / 2 + overlap,
+    y: topEdge + visibleBottomOffsetA + overlap,
     rotation: 0,
     opacity: 1
   };
@@ -353,7 +429,7 @@ export const calculateAutoPlacement = async (
   const partB: PartTransform = {
     scale: scaleB,
     x: 0,
-    y: bottomEdge + scaledBH / 2 - overlap,
+    y: bottomEdge + visibleTopOffsetB - overlap,
     rotation: 0,
     opacity: 1
   };
