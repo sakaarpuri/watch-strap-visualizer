@@ -332,6 +332,7 @@ export default function Home() {
     final: null,
     explore: null
   });
+  const [inlineMockupUrl, setInlineMockupUrl] = useState<string | null>(null);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
     tool: null,
     label: "",
@@ -625,6 +626,7 @@ export default function Home() {
         delayMs: 2500
       });
       setGeneratedResults((prev) => ({ ...prev, final: imageUrl }));
+      setInlineMockupUrl(imageUrl);
       setToolLoading("final", false);
     } catch (error) {
       setToolLoading("final", false, formatAiError(error));
@@ -953,7 +955,11 @@ export default function Home() {
                   onClick={() => void runFinalRender()}
                 />
                 {generatedResults.final ? (
-                  <ResultActions url={generatedResults.final} label="Open mockup" />
+                  <ResultActions
+                    url={generatedResults.final}
+                    label="View mockup"
+                    onOpenInPage={() => setInlineMockupUrl(generatedResults.final)}
+                  />
                 ) : null}
                 {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
               </div>
@@ -973,6 +979,28 @@ export default function Home() {
               </div>
             </div>
           </div>
+          {inlineMockupUrl ? (
+            <div className="glass-card mt-4 rounded-2xl p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Product Mockup Result
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setInlineMockupUrl(null)}
+                  className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
+                >
+                  Close
+                </button>
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={inlineMockupUrl}
+                alt="Generated product mockup"
+                className="w-full rounded-xl border border-line bg-white object-contain"
+              />
+            </div>
+          ) : null}
           <p className="mt-3 text-sm text-muted">
             Visual inspiration only. Final fit depends on lug width &amp; strap model.
           </p>
@@ -1001,17 +1029,35 @@ function CompactAiStatus({ label, stage }: { label: string; stage: string }) {
   );
 }
 
-function ResultActions({ url, label }: { url: string; label: string }) {
+function ResultActions({
+  url,
+  label,
+  onOpenInPage
+}: {
+  url: string;
+  label: string;
+  onOpenInPage?: () => void;
+}) {
   return (
     <div className="ml-1 flex gap-2">
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
-      >
-        {label}
-      </a>
+      {onOpenInPage ? (
+        <button
+          type="button"
+          onClick={onOpenInPage}
+          className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
+        >
+          {label}
+        </button>
+      ) : (
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
+        >
+          {label}
+        </a>
+      )}
       <a
         href={url}
         download
