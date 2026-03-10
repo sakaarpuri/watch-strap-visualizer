@@ -12,6 +12,8 @@ export interface StrapStyle {
   alpha: number;
 }
 
+export type JoinShape = "flat" | "curved";
+
 export const STRAP_STYLES: StrapStyle[] = [
   { name: "Original", color: "#000000", alpha: 0 },
   { name: "Black Leather", color: "#111111", alpha: 0.3 },
@@ -52,7 +54,8 @@ export const loadImage = (src: string): Promise<HTMLImageElement> =>
 const strapRenderCache = new Map<string, HTMLCanvasElement>();
 
 const isCheckerboardStrap = (src: string) =>
-  src.includes("/strap-selection/") && /\.(jpe?g)$/i.test(src);
+  (src.includes("/strap-selection/") && /\.(jpe?g)$/i.test(src)) ||
+  src.includes("/strap-selection-kie/olive-nato-buckle.png");
 
 const luma = (r: number, g: number, b: number) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
@@ -279,7 +282,9 @@ const drawPart = (
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement | HTMLCanvasElement,
   transform: PartTransform,
-  style: StrapStyle
+  style: StrapStyle,
+  joinEdge: "top" | "bottom" | null = null,
+  joinShape: JoinShape = "flat"
 ) => {
   const scale = transform.scale / 100;
   const w = image.width * scale;
@@ -289,6 +294,27 @@ const drawPart = (
   ctx.translate(CANVAS_SIZE / 2 + transform.x, CANVAS_SIZE / 2 + transform.y);
   ctx.rotate((transform.rotation * Math.PI) / 180);
   ctx.globalAlpha = transform.opacity;
+  if (joinEdge && joinShape === "curved") {
+    const left = -w / 2;
+    const right = w / 2;
+    const top = -h / 2;
+    const bottom = h / 2;
+    const depth = Math.min(w * 0.2, 18);
+    ctx.beginPath();
+    if (joinEdge === "bottom") {
+      ctx.moveTo(left, top);
+      ctx.lineTo(left, bottom);
+      ctx.quadraticCurveTo(0, bottom - depth, right, bottom);
+      ctx.lineTo(right, top);
+    } else {
+      ctx.moveTo(left, top);
+      ctx.quadraticCurveTo(0, top + depth, right, top);
+      ctx.lineTo(right, bottom);
+      ctx.lineTo(left, bottom);
+    }
+    ctx.closePath();
+    ctx.clip();
+  }
   ctx.drawImage(image, -w / 2, -h / 2, w, h);
 
   if (style.alpha > 0) {
@@ -330,6 +356,7 @@ export const renderComposition = async (
   transformA: PartTransform,
   transformB: PartTransform,
   style: StrapStyle,
+  joinShape: JoinShape = "flat",
   watchScale = 1,
   sceneZoom = 1
 ) => {
@@ -354,8 +381,8 @@ export const renderComposition = async (
   ctx.translate(-CANVAS_SIZE / 2, -CANVAS_SIZE / 2);
   // Draw watch first so new strap overlays old strap from uploaded photos.
   drawWatch(ctx, watch, watchScale);
-  drawPart(ctx, partA, transformA, style);
-  drawPart(ctx, partB, transformB, style);
+  drawPart(ctx, partA, transformA, style, "bottom", joinShape);
+  drawPart(ctx, partB, transformB, style, "top", joinShape);
   ctx.restore();
 };
 
@@ -399,7 +426,8 @@ export const calculateAutoPlacement = async (
   watchSrc: string,
   strapASrc: string,
   strapBSrc: string,
-  targetWidthFactor = 0.32
+  targetWidthFactor = 0.32,
+  gapFactor = 1
 ): Promise<{ partA: PartTransform; partB: PartTransform }> => {
   const [watch, partAImage, partBImage] = await Promise.all([
     loadImage(watchSrc),
@@ -409,7 +437,7 @@ export const calculateAutoPlacement = async (
 
   const watchRect = getWatchRect(watch, 1);
   const targetStrapWidth = watchRect.w * targetWidthFactor;
-  const visualGap = Math.max(18, watchRect.h * 0.045);
+  const visualGap = Math.max(18, watchRect.h * 0.045) * gapFactor;
   const metricsA = getImageMetrics(partAImage);
   const metricsB = getImageMetrics(partBImage);
 

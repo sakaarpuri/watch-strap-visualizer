@@ -12,6 +12,7 @@ import {
 } from "react";
 import {
   CANVAS_SIZE,
+  JoinShape,
   loadStrapImage,
   PartTransform,
   StrapStyle,
@@ -25,6 +26,7 @@ interface CanvasPreviewProps {
   partA: PartTransform;
   partB: PartTransform;
   style: StrapStyle;
+  joinShape?: JoinShape;
   watchScale: number;
   sceneZoom: number;
   locked: boolean;
@@ -75,6 +77,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       partA,
       partB,
       style,
+      joinShape = "flat",
       watchScale,
       sceneZoom,
       locked,
@@ -118,6 +121,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             partA,
             partB,
             style,
+            joinShape,
             watchScale,
             sceneZoom
           );
@@ -131,7 +135,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       return () => {
         active = false;
       };
-    }, [watchSrc, strapASrc, strapBSrc, partA, partB, style, watchScale, sceneZoom]);
+    }, [watchSrc, strapASrc, strapBSrc, partA, partB, style, joinShape, watchScale, sceneZoom]);
 
     useEffect(() => {
       let active = true;

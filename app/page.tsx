@@ -314,7 +314,8 @@ export default function Home() {
         watchSrc,
         currentStrap.strapASrc,
         currentStrap.strapBSrc,
-        currentStrap.autoFitWidthFactor
+        currentStrap.autoFitWidthFactor,
+        currentStrap.autoGapFactor
       );
 
       if (partA && partB && preserveSettings) {
@@ -764,6 +765,7 @@ export default function Home() {
               partA={partA as PartTransform}
               partB={partB as PartTransform}
               style={currentStrap.tint}
+              joinShape={currentStrap.joinShape}
               watchScale={dialScale}
               sceneZoom={sceneZoom}
               locked={lockView}
