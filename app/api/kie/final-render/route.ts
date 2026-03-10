@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     const imageUrl = await runNanoBananaImageTask({
-      prompt: `Create a premium photoreal watch mockup based on these reference images. Keep the watch identity faithful and keep the strap consistent with ${strapLabel}. Preserve the chosen composition, refine the lighting, strap attachment, shadows, and edges, and place the result on a clean luxury product background. Do not add extra text, props, logos, or new watch features.`,
+      prompt: `Create a premium retailer-style product mockup based on these reference images. Keep the watch identity faithful and keep the strap consistent with ${strapLabel}. Show the watch attached to the strap in a buckled or looped display pose, centered on a clean luxury product background with polished retail lighting. Preserve the chosen watch and strap combination, refine the strap attachment, shadows, and edges, and do not add extra text, props, logos, or new watch features.`,
       files
     });
 
