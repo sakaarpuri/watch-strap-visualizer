@@ -73,6 +73,22 @@ const applyGapToPair = (
   };
 };
 
+const applyCenterToPair = (
+  partA: PartTransform,
+  partB: PartTransform,
+  nextCenterX: number,
+  nextCenterY: number
+) => {
+  const currentCenterX = (partA.x + partB.x) / 2;
+  const currentCenterY = (partA.y + partB.y) / 2;
+  const deltaX = nextCenterX - currentCenterX;
+  const deltaY = nextCenterY - currentCenterY;
+  return {
+    partA: { ...partA, x: partA.x + deltaX, y: partA.y + deltaY },
+    partB: { ...partB, x: partB.x + deltaX, y: partB.y + deltaY }
+  };
+};
+
 type AiToolKey = "cleanup" | "rescue" | "final" | "explore";
 
 interface AiToolState {
@@ -365,8 +381,16 @@ export default function Home() {
       if (partA && partB && preserveSettings) {
         const preservedHalfGap = (partB.y - partA.y) / 2;
         const preservedAverageScale = getAverageScale(partA, partB);
+        const preservedCenterX = (partA.x + partB.x) / 2;
+        const preservedCenterY = (partA.y + partB.y) / 2;
         aligned = applyScaleToPair(aligned.partA, aligned.partB, preservedAverageScale);
         aligned = applyGapToPair(aligned.partA, aligned.partB, preservedHalfGap);
+        aligned = applyCenterToPair(
+          aligned.partA,
+          aligned.partB,
+          preservedCenterX,
+          preservedCenterY
+        );
       }
 
       setPartA(aligned.partA);
