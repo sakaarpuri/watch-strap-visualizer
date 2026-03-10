@@ -160,15 +160,6 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
     }
   ],
   Rubber: [
-    { id: "rubber-sport", label: "Sport Rubber", category: "Rubber", strapASrc: BASE_A, strapBSrc: BASE_B, tint: ORIG_TINT },
-    {
-      id: "rubber-black",
-      label: "Black Rubber",
-      category: "Rubber",
-      strapASrc: `${SEL}/black-rubber-buckle.png`,
-      strapBSrc: `${SEL}/black-rubber-tail.png`,
-      tint: ORIG_TINT
-    },
     {
       id: "rubber-black-performance",
       label: "Black Performance Rubber",

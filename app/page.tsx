@@ -248,6 +248,10 @@ const formatAiError = (error: unknown) => {
 };
 
 export default function Home() {
+  const defaultAllCategoryIndex = Math.max(
+    0,
+    getStrapsForCategory("All categories").findIndex((strap) => strap.id === "rubber-olive-performance")
+  );
   const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
   const [watchPreviewSrc, setWatchPreviewSrc] = useState("/mock-dial.svg");
   const [originalWatchSrc, setOriginalWatchSrc] = useState<string | null>(null);
@@ -255,7 +259,7 @@ export default function Home() {
   const [uploadedWatchFile, setUploadedWatchFile] = useState<File | null>(null);
   const [cropSourceUrl, setCropSourceUrl] = useState<string | null>(null);
   const [category, setCategory] = useState<StrapCategory>("All categories");
-  const [strapIndex, setStrapIndex] = useState(0);
+  const [strapIndex, setStrapIndex] = useState(defaultAllCategoryIndex);
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
   const [dialScale, setDialScale] = useState(1);
@@ -768,112 +772,54 @@ export default function Home() {
               }}
               onCycleStrap={onCycleStrap}
               controls={
-                <div className="space-y-3">
-                  <div className="glass-card rounded-xl p-3">
-                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                      Preview Controls
-                    </p>
-                    <div className="mt-2 grid gap-2">
-                      <SliderControl
-                        label="Strap Gap"
-                        min={250}
-                        max={900}
-                        step={10}
-                        value={strapGap}
-                        onChange={setGapHalf}
-                        disabled={lockView}
-                      />
-                      <SliderControl
-                        label="Strap Size"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={strapSizeUi}
-                        onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
-                        displayValue={Math.round(strapScale).toString()}
-                        disabled={lockView}
-                      />
-                      <SliderControl
-                        label="Dial Size"
-                        min={DIAL_SCALE_MIN}
-                        max={DIAL_SCALE_MAX}
-                        step={0.02}
-                        value={dialScale}
-                        onChange={setDialScaleValue}
-                        disabled={lockView}
-                      />
-                      <SliderControl
-                        label="View Zoom"
-                        min={0.2}
-                        max={1.4}
-                        step={0.02}
-                        value={sceneZoom}
-                        onChange={setSceneZoom}
-                        displayValue={`${Math.round(sceneZoom * 100)}%`}
-                      />
-                      <ToggleControl
-                        label="Lock Position"
-                        description="Freeze strap and dial placement while you only zoom the view"
-                        enabled={lockView}
-                        onToggle={() => setLockView((prev) => !prev)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="glass-card rounded-xl p-3">
-                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                      AI Tools
-                    </p>
-                    <p className="mt-2 text-xs leading-relaxed text-muted">
-                      Clean Photo and Fix Wrist Photo update the watch image in preview. Product
-                      Mockup and More Like This create separate AI images.
-                    </p>
-                    {activeAiStatus.tool ? (
-                      <CompactAiStatus label={activeAiStatus.label} stage={activeAiStatus.stage} />
-                    ) : null}
-                    <div className="mt-3 grid gap-2">
-                      <ToolButton
-                        title="Clean Photo"
-                        description="Removes most of the background from a clean product-style watch photo."
-                        disabled={!hasUserUpload}
-                        loading={aiTools.cleanup.loading}
-                        onClick={() => void runCleanupFallback()}
-                      />
-                      {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
-
-                      <ToolButton
-                        title="Fix Wrist Photo"
-                        description="Tries to pull just the watch from a casual wrist photo."
-                        disabled={!hasUserUpload}
-                        loading={aiTools.rescue.loading}
-                        onClick={() => void runRescueMode()}
-                      />
-                      {aiTools.rescue.error ? <ErrorText message={aiTools.rescue.error} /> : null}
-
-                      <ToolButton
-                        title="Product Mockup"
-                        description="Shows your watch and strap together like a retailer product display."
-                        disabled={!canRender}
-                        loading={aiTools.final.loading}
-                        onClick={() => void runFinalRender()}
-                      />
-                      {generatedResults.final ? (
-                        <ResultActions url={generatedResults.final} label="Open mockup" />
-                      ) : null}
-                      {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
-
-                      <ToolButton
-                        title="More Like This"
-                        description="Creates another strap idea inspired by the current one."
-                        disabled={!currentStrap}
-                        loading={aiTools.explore.loading}
-                        onClick={() => void runStyleExploration()}
-                      />
-                      {generatedResults.explore ? (
-                        <ResultActions url={generatedResults.explore} label="Open idea" />
-                      ) : null}
-                      {aiTools.explore.error ? <ErrorText message={aiTools.explore.error} /> : null}
-                    </div>
+                <div className="glass-card rounded-xl p-3">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Preview Controls
+                  </p>
+                  <div className="mt-2 grid gap-2">
+                    <SliderControl
+                      label="Strap Gap"
+                      min={250}
+                      max={900}
+                      step={10}
+                      value={strapGap}
+                      onChange={setGapHalf}
+                      disabled={lockView}
+                    />
+                    <SliderControl
+                      label="Strap Size"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={strapSizeUi}
+                      onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
+                      displayValue={Math.round(strapScale).toString()}
+                      disabled={lockView}
+                    />
+                    <SliderControl
+                      label="Dial Size"
+                      min={DIAL_SCALE_MIN}
+                      max={DIAL_SCALE_MAX}
+                      step={0.02}
+                      value={dialScale}
+                      onChange={setDialScaleValue}
+                      disabled={lockView}
+                    />
+                    <SliderControl
+                      label="View Zoom"
+                      min={0.2}
+                      max={1.4}
+                      step={0.02}
+                      value={sceneZoom}
+                      onChange={setSceneZoom}
+                      displayValue={`${Math.round(sceneZoom * 100)}%`}
+                    />
+                    <ToggleControl
+                      label="Lock Position"
+                      description="Freeze strap and dial placement while you only zoom the view"
+                      enabled={lockView}
+                      onToggle={() => setLockView((prev) => !prev)}
+                    />
                   </div>
                 </div>
               }
@@ -883,6 +829,75 @@ export default function Home() {
               Upload a watch image to start previewing straps.
             </div>
           )}
+          <div className="glass-card mt-4 rounded-2xl p-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  AI Tools
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  Clean Photo and Fix Wrist Photo update the watch image in preview. Product Mockup
+                  and More Like This create separate AI images.
+                </p>
+              </div>
+              {activeAiStatus.tool ? (
+                <div className="md:max-w-[18rem]">
+                  <CompactAiStatus label={activeAiStatus.label} stage={activeAiStatus.stage} />
+                </div>
+              ) : null}
+            </div>
+            <div className="mt-4 grid gap-3 xl:grid-cols-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <ToolButton
+                  title="Clean Photo"
+                  description="Removes most of the background from a clean product-style watch photo."
+                  disabled={!hasUserUpload}
+                  loading={aiTools.cleanup.loading}
+                  onClick={() => void runCleanupFallback()}
+                />
+                {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
+              </div>
+
+              <div className="space-y-2">
+                <ToolButton
+                  title="Fix Wrist Photo"
+                  description="Tries to pull just the watch from a casual wrist photo."
+                  disabled={!hasUserUpload}
+                  loading={aiTools.rescue.loading}
+                  onClick={() => void runRescueMode()}
+                />
+                {aiTools.rescue.error ? <ErrorText message={aiTools.rescue.error} /> : null}
+              </div>
+
+              <div className="space-y-2">
+                <ToolButton
+                  title="Product Mockup"
+                  description="Shows your watch and strap together like a retailer product display."
+                  disabled={!canRender}
+                  loading={aiTools.final.loading}
+                  onClick={() => void runFinalRender()}
+                />
+                {generatedResults.final ? (
+                  <ResultActions url={generatedResults.final} label="Open mockup" />
+                ) : null}
+                {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
+              </div>
+
+              <div className="space-y-2">
+                <ToolButton
+                  title="More Like This"
+                  description="Creates another strap idea inspired by the current one."
+                  disabled={!currentStrap}
+                  loading={aiTools.explore.loading}
+                  onClick={() => void runStyleExploration()}
+                />
+                {generatedResults.explore ? (
+                  <ResultActions url={generatedResults.explore} label="Open idea" />
+                ) : null}
+                {aiTools.explore.error ? <ErrorText message={aiTools.explore.error} /> : null}
+              </div>
+            </div>
+          </div>
           <p className="mt-3 text-sm text-muted">
             Visual inspiration only. Final fit depends on lug width &amp; strap model.
           </p>

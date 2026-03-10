@@ -405,8 +405,8 @@ export const calculateAutoPlacement = async (
   ]);
 
   const watchRect = getWatchRect(watch, 1);
-  const targetStrapWidth = watchRect.w * 0.42;
-  const overlap = Math.max(12, watchRect.h * 0.075);
+  const targetStrapWidth = watchRect.w * 0.32;
+  const visualGap = Math.max(18, watchRect.h * 0.045);
   const metricsA = getImageMetrics(partAImage);
   const metricsB = getImageMetrics(partBImage);
 
@@ -421,7 +421,7 @@ export const calculateAutoPlacement = async (
   const partA: PartTransform = {
     scale: scaleA,
     x: 0,
-    y: topEdge + visibleBottomOffsetA + overlap,
+    y: topEdge + visibleBottomOffsetA - visualGap,
     rotation: 0,
     opacity: 1
   };
@@ -429,7 +429,7 @@ export const calculateAutoPlacement = async (
   const partB: PartTransform = {
     scale: scaleB,
     x: 0,
-    y: bottomEdge + visibleTopOffsetB - overlap,
+    y: bottomEdge - visibleTopOffsetB + visualGap,
     rotation: 0,
     opacity: 1
   };
