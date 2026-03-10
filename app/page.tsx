@@ -679,16 +679,17 @@ export default function Home() {
           onFileSelect={onUploadDial}
           compact
         />
-        {cropSourceUrl && originalWatchFile ? (
-          <div className="mt-4">
-            <CropEditor
-              file={originalWatchFile}
-              sourceUrl={cropSourceUrl}
-              onApply={applyCroppedDial}
-            />
-          </div>
-        ) : null}
       </section>
+
+      {cropSourceUrl && originalWatchFile ? (
+        <section className="mt-4 w-full max-w-[920px]">
+          <CropEditor
+            file={originalWatchFile}
+            sourceUrl={cropSourceUrl}
+            onApply={applyCroppedDial}
+          />
+        </section>
+      ) : null}
 
       <section className="mt-6 grid gap-5 lg:mt-8 lg:grid-cols-[340px,1fr]">
         <aside className="space-y-5">

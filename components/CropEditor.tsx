@@ -2,7 +2,7 @@
 
 import { PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 
-const VIEWPORT_SIZE = 280;
+const VIEWPORT_SIZE = 360;
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
@@ -123,10 +123,10 @@ export default function CropEditor({ file, sourceUrl, onApply }: CropEditorProps
         </button>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,320px),1fr] lg:items-center">
-        <div className="mx-auto w-full max-w-[320px]">
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,420px),1fr] lg:items-center">
+        <div className="mx-auto w-full max-w-[420px]">
           <div
-            className="relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-[28px] border border-line bg-canvas/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_40px_rgba(15,23,42,0.14)]"
+            className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-[28px] border border-line bg-canvas/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_40px_rgba(15,23,42,0.14)]"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
