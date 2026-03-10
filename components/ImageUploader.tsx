@@ -35,12 +35,12 @@ export default function ImageUploader({
   };
 
   return (
-    <div className={`rounded-2xl border border-line ${compact ? "p-4 sm:p-5" : "p-6"}`}>
-      <p id={id} className="text-lg font-medium text-ink">
+    <div className={`glass-card rounded-2xl border border-line ${compact ? "p-4 sm:p-4" : "p-6"}`}>
+      <p id={id} className="text-2xl font-semibold leading-tight text-ink sm:text-xl">
         {label}
       </p>
       {helperText ? (
-        <p className="mt-2 text-base leading-relaxed text-ink/80">{helperText}</p>
+        <p className="mt-2 text-lg leading-snug text-ink/85 sm:text-base">{helperText}</p>
       ) : null}
       {showOrientationHints ? (
         <div className="mt-3 rounded-xl border border-line bg-canvas/60 p-3">
@@ -54,14 +54,14 @@ export default function ImageUploader({
           </div>
         </div>
       ) : null}
-      <div className={`mt-3 ${compact ? "flex flex-col gap-3 sm:flex-row sm:items-center" : "flex items-center gap-3"}`}>
+      <div className={`mt-3 ${compact ? "flex flex-col gap-2 sm:flex-row sm:items-center" : "flex items-center gap-3"}`}>
         <label
           htmlFor={inputId}
-          className="cursor-pointer rounded-lg border border-line bg-white px-4 py-2.5 text-base text-ink transition hover:bg-canvas"
+          className="neo-button cursor-pointer rounded-xl border border-line px-6 py-3 text-lg font-semibold text-ink transition hover:opacity-90 sm:px-5 sm:py-2.5 sm:text-base"
         >
           Choose File
         </label>
-        <span className={`truncate text-base text-muted ${compact ? "max-w-full" : "max-w-[160px] md:max-w-[220px]"}`}>
+        <span className={`truncate text-base text-muted sm:text-sm ${compact ? "max-w-full" : "max-w-[160px] md:max-w-[220px]"}`}>
           {fileName}
         </span>
       </div>
@@ -73,16 +73,16 @@ export default function ImageUploader({
         onChange={handleChange}
         className="sr-only"
       />
-      <div className={`mt-4 flex items-center justify-center rounded-xl border border-dashed border-line bg-canvas ${compact ? "h-20 sm:h-20" : "h-24"}`}>
+      <div className={`mt-3 flex items-center justify-center rounded-xl border border-dashed border-line bg-canvas ${compact ? "h-16 sm:h-16" : "h-24"}`}>
         {previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={previewUrl}
             alt={`${label} preview`}
-            className="h-20 w-auto rounded-md object-contain"
+            className="h-14 w-auto rounded-md object-contain sm:h-12"
           />
         ) : (
-          <span className="text-xs text-muted">No image selected</span>
+          <span className="text-sm text-muted sm:text-xs">No image selected</span>
         )}
       </div>
     </div>

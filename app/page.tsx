@@ -327,7 +327,6 @@ export default function Home() {
   const [preserveSettings, setPreserveSettings] = useState(true);
   const [lockView, setLockView] = useState(false);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [aiTools, setAiTools] = useState<Record<AiToolKey, AiToolState>>(defaultToolState);
   const [generatedResults, setGeneratedResults] = useState<GeneratedResultState>({
     final: null,
@@ -642,39 +641,15 @@ export default function Home() {
   const strapScale = partA && partB ? (partA.scale + partB.scale) / 2 : 90;
   const strapSizeUi = strapScaleToUi(strapScale);
 
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? window.localStorage.getItem("watch-theme") : null;
-    if (saved === "light" || saved === "dark") {
-      setTheme(saved);
-      return;
-    }
-    if (typeof window !== "undefined") {
-      setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    }
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem("watch-theme", theme);
-  }, [theme]);
-
   return (
     <main className="mx-auto max-w-[96rem] px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-12">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+      <header>
         <div>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Watch Strap Visualizer
           </h1>
           <p className="mt-2 text-base text-muted">Inspiration Mode</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
-          className="glass-card rounded-xl px-4 py-2 text-sm font-medium text-ink"
-          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-        >
-          {theme === "light" ? "Night Theme" : "Day Theme"}
-        </button>
       </header>
 
       <section className="mt-4">
