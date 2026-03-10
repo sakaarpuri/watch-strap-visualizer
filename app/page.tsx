@@ -203,6 +203,50 @@ const postToolForm = async (url: string, formData: FormData) => {
   return imageUrl;
 };
 
+const startPolledTask = async (url: string, formData: FormData) => {
+  const response = await fetch(url, {
+    method: "POST",
+    body: formData
+  });
+  const parsed = await parseApiResponse(response);
+  const endpointLabel = getEndpointLabel(url);
+  if (!response.ok) {
+    throw new Error(`${endpointLabel}: ${parsed.bestError}`);
+  }
+  const taskId =
+    parsed.payload && typeof parsed.payload.taskId === "string" ? parsed.payload.taskId.trim() : "";
+  if (!taskId) {
+    throw new Error(`${endpointLabel}: Missing task id.`);
+  }
+  return taskId;
+};
+
+const pollTaskResult = async (
+  url: string,
+  taskId: string,
+  { maxPolls = 180, delayMs = 2000 }: { maxPolls?: number; delayMs?: number } = {}
+) => {
+  for (let attempt = 0; attempt < maxPolls; attempt += 1) {
+    await sleep(delayMs);
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId })
+    });
+    const parsed = await parseApiResponse(response);
+    const endpointLabel = getEndpointLabel(url);
+    if (!response.ok) {
+      throw new Error(`${endpointLabel}: ${parsed.bestError}`);
+    }
+    const payload = parsed.payload || {};
+    const status = typeof payload.status === "string" ? payload.status : "";
+    if (status === "completed" && typeof payload.imageUrl === "string" && payload.imageUrl.trim()) {
+      return payload.imageUrl.trim();
+    }
+  }
+  throw new Error(`${getEndpointLabel(url)}: Timed out waiting for AI output.`);
+};
+
 const parseApiResponse = async (response: Response) => {
   const rawBody = await response.text();
   let payload: Record<string, unknown> | null = null;
@@ -532,8 +576,13 @@ export default function Home() {
       formData.append("strapB", await fileFromSrc(currentStrap.strapBSrc, "strap-b.png"));
       formData.append("strapLabel", currentStrap.label);
 
+      setAiStage("final", "Product Mockup", "Starting render");
+      const taskId = await startPolledTask("/api/kie/final-render/start", formData);
       setAiStage("final", "Product Mockup", "Rendering buckled display");
-      const imageUrl = await postToolForm("/api/kie/final-render", formData);
+      const imageUrl = await pollTaskResult("/api/kie/final-render/poll", taskId, {
+        maxPolls: 180,
+        delayMs: 2500
+      });
       setGeneratedResults((prev) => ({ ...prev, final: imageUrl }));
       setToolLoading("final", false);
     } catch (error) {
@@ -551,8 +600,13 @@ export default function Home() {
       formData.append("strapLabel", currentStrap.label);
       formData.append("category", currentStrap.category);
 
+      setAiStage("explore", "More Like This", "Starting idea");
+      const taskId = await startPolledTask("/api/kie/style-explore/start", formData);
       setAiStage("explore", "More Like This", "Generating option");
-      const imageUrl = await postToolForm("/api/kie/style-explore", formData);
+      const imageUrl = await pollTaskResult("/api/kie/style-explore/poll", taskId, {
+        maxPolls: 180,
+        delayMs: 2500
+      });
       setGeneratedResults((prev) => ({ ...prev, explore: imageUrl }));
       setToolLoading("explore", false);
     } catch (error) {
@@ -849,8 +903,8 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
-            <div className="mt-4 grid gap-3 xl:grid-cols-4 md:grid-cols-2">
-              <div className="space-y-2">
+            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-4">
+              <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="Clean Photo"
                   description="Removes most of the background from a clean product-style watch photo."
@@ -861,7 +915,7 @@ export default function Home() {
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
               </div>
 
-              <div className="space-y-2">
+              <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="Fix Wrist Photo"
                   description="Tries to pull just the watch from a casual wrist photo."
@@ -872,7 +926,7 @@ export default function Home() {
                 {aiTools.rescue.error ? <ErrorText message={aiTools.rescue.error} /> : null}
               </div>
 
-              <div className="space-y-2">
+              <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="Product Mockup"
                   description="Shows your watch and strap together like a retailer product display."
@@ -886,7 +940,7 @@ export default function Home() {
                 {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
               </div>
 
-              <div className="space-y-2">
+              <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="More Like This"
                   description="Creates another strap idea inspired by the current one."
@@ -981,17 +1035,17 @@ function ToolButton({
   onClick: () => void;
 }) {
   return (
-    <div className="neo-control rounded-2xl p-4">
+    <div className="neo-control rounded-2xl p-4 sm:p-4">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-lg font-semibold text-ink">{title}</p>
-          <p className="mt-1 text-sm leading-relaxed text-muted">{description}</p>
+        <div className="min-w-0">
+          <p className="text-xl font-semibold text-ink sm:text-lg">{title}</p>
+          <p className="mt-1 text-base leading-relaxed text-muted sm:text-sm">{description}</p>
         </div>
         <button
           type="button"
           onClick={onClick}
           disabled={disabled || loading}
-          className={`neo-button min-w-[88px] rounded-xl px-4 py-2.5 text-sm font-semibold text-ink transition disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`neo-button min-w-[96px] shrink-0 rounded-xl px-5 py-3 text-base font-semibold text-ink transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[88px] sm:px-4 sm:py-2.5 sm:text-sm ${
             loading
               ? "ai-pulse border-slate-300/80 bg-slate-100"
               : "hover:opacity-90"
