@@ -41,6 +41,9 @@ export interface CanvasPreviewRef {
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
+const PART_SCALE_MIN = 5;
+const PART_SCALE_MAX = 260;
+
 const scalePairByAverage = (
   startScaleA: number,
   startScaleB: number,
@@ -48,15 +51,18 @@ const scalePairByAverage = (
 ) => {
   const currentAverage = (startScaleA + startScaleB) / 2;
   if (currentAverage <= 0) {
-    const bounded = clamp(targetAverageScale, 30, 250);
+    const bounded = clamp(targetAverageScale, PART_SCALE_MIN, PART_SCALE_MAX);
     return { nextA: bounded, nextB: bounded };
   }
 
-  const boundedTarget = clamp(targetAverageScale, 30, 250);
+  const boundedTarget = clamp(targetAverageScale, PART_SCALE_MIN, PART_SCALE_MAX);
   const factor = boundedTarget / currentAverage;
+  const minFactor = Math.max(PART_SCALE_MIN / startScaleA, PART_SCALE_MIN / startScaleB);
+  const maxFactor = Math.min(PART_SCALE_MAX / startScaleA, PART_SCALE_MAX / startScaleB);
+  const boundedFactor = clamp(factor, minFactor, maxFactor);
   return {
-    nextA: clamp(startScaleA * factor, 30, 250),
-    nextB: clamp(startScaleB * factor, 30, 250)
+    nextA: startScaleA * boundedFactor,
+    nextB: startScaleB * boundedFactor
   };
 };
 

@@ -13,8 +13,8 @@ import {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
-const STRAP_SCALE_MIN = 20;
-const STRAP_SCALE_MAX = 220;
+const STRAP_SCALE_MIN = 5;
+const STRAP_SCALE_MAX = 260;
 const DIAL_SCALE_MIN = 0.7;
 const DIAL_SCALE_MAX = 1.8;
 const strapScaleToUi = (scale: number) => {
@@ -44,14 +44,17 @@ const applyScaleToPair = (
   }
 
   const factor = boundedTarget / currentAverage;
+  const minFactor = Math.max(STRAP_SCALE_MIN / partA.scale, STRAP_SCALE_MIN / partB.scale);
+  const maxFactor = Math.min(STRAP_SCALE_MAX / partA.scale, STRAP_SCALE_MAX / partB.scale);
+  const boundedFactor = clamp(factor, minFactor, maxFactor);
   return {
     partA: {
       ...partA,
-      scale: clamp(partA.scale * factor, STRAP_SCALE_MIN, STRAP_SCALE_MAX)
+      scale: partA.scale * boundedFactor
     },
     partB: {
       ...partB,
-      scale: clamp(partB.scale * factor, STRAP_SCALE_MIN, STRAP_SCALE_MAX)
+      scale: partB.scale * boundedFactor
     }
   };
 };
