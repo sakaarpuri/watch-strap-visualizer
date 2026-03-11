@@ -432,6 +432,7 @@ export default function Home() {
   const [inlineMockupUrl, setInlineMockupUrl] = useState<string | null>(null);
   const [showUploadGuide, setShowUploadGuide] = useState(false);
   const [highlightUploadGuide, setHighlightUploadGuide] = useState(false);
+  const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
     tool: null,
     label: "",
@@ -453,6 +454,10 @@ export default function Home() {
     setWatchSrc(uploadedUrl);
     setCropSourceUrl(uploadedUrl);
     setHighlightUploadGuide(true);
+    if (!hasAutoOpenedUploadGuide) {
+      setShowUploadGuide(true);
+      setHasAutoOpenedUploadGuide(true);
+    }
   };
 
   useEffect(() => {
