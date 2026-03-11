@@ -258,6 +258,66 @@ body {
   transform: rotate(0deg) translateX(10px);
 }
 
+.upload-attention-ring {
+  position: relative;
+  animation: upload-guide-glow 5s ease-in-out both;
+}
+
+.upload-attention-ring::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  background:
+    linear-gradient(120deg, rgba(125, 211, 252, 0.18), transparent 32%, rgba(251, 191, 36, 0.16) 66%, transparent 100%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  animation: upload-guide-sheen 1.35s ease-in-out 4;
+}
+
+@keyframes upload-guide-glow {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 65%, transparent),
+      0 10px 30px rgba(2, 8, 23, 0.22);
+  }
+  20% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      0 0 0 1px rgba(96, 165, 250, 0.22),
+      0 18px 36px rgba(14, 165, 233, 0.18);
+  }
+  45% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      0 0 0 1px rgba(251, 191, 36, 0.18),
+      0 18px 36px rgba(251, 191, 36, 0.14);
+  }
+  70% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      0 0 0 1px rgba(52, 211, 153, 0.18),
+      0 18px 36px rgba(52, 211, 153, 0.14);
+  }
+}
+
+@keyframes upload-guide-sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-3%) scale(0.995);
+  }
+  18%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(3%) scale(1.005);
+  }
+}
+
 .ai-orbit span:nth-child(2) {
   background: #38bdf8;
   transform: rotate(120deg) translateX(10px);

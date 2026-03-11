@@ -10,6 +10,8 @@ interface ImageUploaderProps {
   onFileSelect: (file: File) => void;
   compact?: boolean;
   showOrientationHints?: boolean;
+  className?: string;
+  accentActive?: boolean;
 }
 
 export default function ImageUploader({
@@ -19,7 +21,9 @@ export default function ImageUploader({
   previewUrl,
   onFileSelect,
   compact = false,
-  showOrientationHints = false
+  showOrientationHints = false,
+  className = "",
+  accentActive = false
 }: ImageUploaderProps) {
   const inputId = useId();
   const [fileName, setFileName] = useState<string>("No file selected");
@@ -35,7 +39,9 @@ export default function ImageUploader({
   };
 
   return (
-    <div className={`glass-card rounded-2xl border border-line ${compact ? "p-4 sm:p-4" : "p-6"}`}>
+    <div
+      className={`glass-card rounded-2xl border border-line ${accentActive ? "upload-attention-ring" : ""} ${compact ? "p-4 sm:p-4" : "p-6"} ${className}`}
+    >
       <p id={id} className="text-2xl font-semibold leading-tight text-ink sm:text-xl">
         {label}
       </p>

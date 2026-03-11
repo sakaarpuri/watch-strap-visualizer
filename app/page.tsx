@@ -107,6 +107,16 @@ interface GeneratedResultState {
   explore: string | null;
 }
 
+interface UploadGuideItem {
+  title: string;
+  verdict: string;
+  note: string;
+  tone: "ideal" | "good" | "weak" | "avoid";
+  tilt: number;
+  blur?: boolean;
+  clutter?: boolean;
+}
+
 const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
   cleanup: { loading: false, error: null },
   rescue: { loading: false, error: null },
@@ -307,6 +317,93 @@ const formatAiError = (error: unknown) => {
   return message;
 };
 
+const UPLOAD_GUIDE_ITEMS: UploadGuideItem[] = [
+  {
+    title: "Ideal",
+    verdict: "Best results",
+    note: "Front-facing product photo or retailer screenshot. Clean background and full watch head visible.",
+    tone: "ideal",
+    tilt: 0
+  },
+  {
+    title: "Good",
+    verdict: "Usually workable",
+    note: "Straight dial photo with slight crop or mild shadows. The watch should still sit mostly flat.",
+    tone: "good",
+    tilt: 7
+  },
+  {
+    title: "Difficult",
+    verdict: "Needs fixing",
+    note: "Casual wrist shot, angle drift, or busy table background. Rescue tools may help but expect more adjustment.",
+    tone: "weak",
+    tilt: -18,
+    clutter: true
+  },
+  {
+    title: "Skip It",
+    verdict: "Do not upload",
+    note: "Blurry, heavily rotated, partly hidden, dark, or cut-off watch photos. They slow the flow and preview badly.",
+    tone: "avoid",
+    tilt: 32,
+    blur: true,
+    clutter: true
+  }
+];
+
+function UploadGuideCard({ item }: { item: UploadGuideItem }) {
+  const shellTone =
+    item.tone === "ideal"
+      ? "from-emerald-50 to-cyan-50 border-emerald-200"
+      : item.tone === "good"
+        ? "from-sky-50 to-slate-50 border-sky-200"
+        : item.tone === "weak"
+          ? "from-amber-50 to-stone-50 border-amber-200"
+          : "from-rose-50 to-stone-50 border-rose-200";
+
+  const chipTone =
+    item.tone === "ideal"
+      ? "bg-emerald-600/10 text-emerald-700"
+      : item.tone === "good"
+        ? "bg-sky-600/10 text-sky-700"
+        : item.tone === "weak"
+          ? "bg-amber-600/10 text-amber-700"
+          : "bg-rose-600/10 text-rose-700";
+
+  return (
+    <div className={`rounded-2xl border bg-gradient-to-br ${shellTone} p-3`}>
+      <div className="rounded-[1.1rem] border border-white/70 bg-white/85 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+        <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-[0.9rem] bg-[linear-gradient(160deg,#f9fafb,#eef2f7)]">
+          {item.clutter ? (
+            <>
+              <div className="absolute left-3 top-3 h-3 w-8 rounded-full bg-slate-200/80" />
+              <div className="absolute right-4 top-5 h-4 w-11 rounded-full bg-slate-200/70" />
+              <div className="absolute bottom-4 left-4 h-10 w-16 rounded-2xl bg-slate-100/90" />
+            </>
+          ) : null}
+          <div
+            className={`relative h-16 w-14 rounded-[1.2rem] border border-slate-300 bg-[linear-gradient(180deg,#0f172a,#1e293b)] shadow-[0_10px_18px_rgba(15,23,42,0.15)] ${item.blur ? "opacity-75 blur-[1.2px]" : ""}`}
+            style={{ transform: `rotate(${item.tilt}deg)` }}
+          >
+            <div className="absolute inset-x-[16%] top-[18%] bottom-[18%] rounded-full border border-slate-200 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" />
+            <div className="absolute left-1/2 top-[26%] h-[28%] w-[6%] -translate-x-1/2 rounded-full bg-slate-900" />
+            <div className="absolute left-1/2 top-1/2 h-[6%] w-[26%] origin-left rounded-full bg-slate-900" style={{ transform: "rotate(28deg)" }} />
+          </div>
+        </div>
+      </div>
+      <div className="mt-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${chipTone}`}>
+            {item.verdict}
+          </span>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-slate-600">{item.note}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const defaultAllCategoryIndex = Math.max(
     0,
@@ -333,6 +430,8 @@ export default function Home() {
     explore: null
   });
   const [inlineMockupUrl, setInlineMockupUrl] = useState<string | null>(null);
+  const [showUploadGuide, setShowUploadGuide] = useState(false);
+  const [highlightUploadGuide, setHighlightUploadGuide] = useState(false);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
     tool: null,
     label: "",
@@ -353,7 +452,14 @@ export default function Home() {
     setWatchPreviewSrc(uploadedUrl);
     setWatchSrc(uploadedUrl);
     setCropSourceUrl(uploadedUrl);
+    setHighlightUploadGuide(true);
   };
+
+  useEffect(() => {
+    if (!highlightUploadGuide) return undefined;
+    const timeout = window.setTimeout(() => setHighlightUploadGuide(false), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [highlightUploadGuide]);
 
   const applyWatchAsset = (file: File, sourceUrl: string) => {
     setUploadedWatchFile(file);
@@ -687,7 +793,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mt-4 w-full max-w-[340px]">
+      <section className="mt-4 grid gap-4 lg:grid-cols-[340px_minmax(0,420px)] lg:items-start">
         <ImageUploader
           id="watch"
           label="1. Upload Watch Dial Photo"
@@ -695,7 +801,39 @@ export default function Home() {
           previewUrl={watchPreviewSrc}
           onFileSelect={onUploadDial}
           compact
+          accentActive={highlightUploadGuide}
         />
+        <div className={`glass-card rounded-2xl border border-line p-4 transition ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-lg font-semibold text-ink">Upload Guide</p>
+              <p className="mt-1 text-sm leading-6 text-muted">
+                See which photo types work instantly and which ones usually break the preview.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowUploadGuide((prev) => !prev)}
+              className="neo-button shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-ink"
+              aria-expanded={showUploadGuide}
+              aria-controls="upload-guide-panel"
+            >
+              {showUploadGuide ? "Hide" : "View"}
+            </button>
+          </div>
+          <div
+            id="upload-guide-panel"
+            className={`grid overflow-hidden transition-all duration-300 ${showUploadGuide ? "mt-4 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-70"}`}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {UPLOAD_GUIDE_ITEMS.map((item) => (
+                  <UploadGuideCard key={item.title} item={item} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {cropSourceUrl && originalWatchFile ? (
