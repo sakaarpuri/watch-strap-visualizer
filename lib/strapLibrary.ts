@@ -158,6 +158,46 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       strapASrc: `${SEL}/chocolate-smooth-leather-buckle.png`,
       strapBSrc: `${SEL}/chocolate-smooth-leather-tail.png`,
       tint: ORIG_TINT
+    },
+    {
+      id: "leather-bourbon-pullup",
+      label: "Bourbon Pull-Up Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/bourbon-pullup-leather-buckle.png`,
+      strapBSrc: `${SEL}/bourbon-pullup-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-taupe-nubuck",
+      label: "Taupe Nubuck Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/taupe-nubuck-leather-buckle.png`,
+      strapBSrc: `${SEL}/taupe-nubuck-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-oxblood-pebbled",
+      label: "Oxblood Pebbled Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/oxblood-pebbled-leather-buckle.png`,
+      strapBSrc: `${SEL}/oxblood-pebbled-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-forest-calf",
+      label: "Forest Calf Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/forest-calf-leather-buckle.png`,
+      strapBSrc: `${SEL}/forest-calf-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-slate-saffiano",
+      label: "Slate Saffiano Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/slate-saffiano-leather-buckle.png`,
+      strapBSrc: `${SEL}/slate-saffiano-leather-tail.png`,
+      tint: ORIG_TINT
     }
   ],
   Rubber: [
@@ -331,6 +371,42 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       category: "Fabric",
       strapASrc: `${SEL}/fabric-desert-nato-buckle.png`,
       strapBSrc: `${SEL}/fabric-desert-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-olive-seatbelt-nato",
+      label: "Olive Seatbelt NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/olive-seatbelt-nato-buckle.png`,
+      strapBSrc: `${SEL}/olive-seatbelt-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-navy-bond-nato",
+      label: "Navy Bond NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/navy-bond-nato-buckle.png`,
+      strapBSrc: `${SEL}/navy-bond-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-sand-stripe-nato",
+      label: "Sand Stripe NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/sand-stripe-nato-buckle.png`,
+      strapBSrc: `${SEL}/sand-stripe-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-charcoal-seatbelt-nato",
+      label: "Charcoal Seatbelt NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/charcoal-seatbelt-nato-buckle.png`,
+      strapBSrc: `${SEL}/charcoal-seatbelt-nato-tail.png`,
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.085
     }

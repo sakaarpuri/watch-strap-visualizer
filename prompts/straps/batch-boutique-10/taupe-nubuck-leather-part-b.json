@@ -1,0 +1,9 @@
+{
+  "prompt": "Global Requirements: Output one single PNG file with transparent background showing only part-b (6 o'clock tail side). Product-only image, no watch case, no dial, no hand, no wrist, no person, no props, no text, no logo, no watermark. Flat front view, perfectly centered, vertical orientation, realistic texture, soft studio lighting, crisp edges. Keep identical camera angle, framing, scale, and lighting across all color variants of the same style. Use a clean seamless white studio background during generation so the object is easy to cut out cleanly. Create a premium two-piece nubuck watch strap with velvety surface, muted luxury finish, refined stitch lines, boutique handmade feel, front view. Color variant: stone taupe nubuck leather with slightly darker stitching and brushed steel buckle. Show only the tail half. Strap extending straight downward with adjustment holes visible in the lower half. No buckle on this half. Natural premium proportions, full length visible from straight lug end to lower end.",
+  "negative_prompt": "watch case, dial, hands, wrist, hand, person, props, text, logo, watermark, duplicate strap, full strap pair in one image, side-by-side composition, angled view, perspective distortion, folded strap, curved strap, floating fragments, checkerboard background, patterned background, busy background, illustration, cartoon",
+  "api_parameters": {
+    "resolution": "2K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  }
+}
