@@ -229,15 +229,6 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       autoFitWidthFactor: 0.11
     },
     {
-      id: "rubber-white-fkm",
-      label: "White FKM Rubber",
-      category: "Rubber",
-      strapASrc: `${SEL}/rubber-white-fkm-buckle.png`,
-      strapBSrc: `${SEL}/rubber-white-fkm-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.115
-    },
-    {
       id: "rubber-sand-fkm",
       label: "Sand FKM Rubber",
       category: "Rubber",
@@ -245,15 +236,6 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       strapBSrc: `${SEL}/rubber-sand-fkm-tail.png`,
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.115
-    },
-    {
-      id: "rubber-grey-waffle",
-      label: "Grey Waffle Rubber",
-      category: "Rubber",
-      strapASrc: `${SEL}/rubber-grey-waffle-buckle.png`,
-      strapBSrc: `${SEL}/rubber-grey-waffle-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.11
     },
     {
       id: "rubber-red-waffle",
@@ -275,15 +257,6 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
     }
   ],
   Fabric: [
-    {
-      id: "fabric-nato",
-      label: "NATO Fabric",
-      category: "Fabric",
-      strapASrc: `${SEL}/fabric-bond-nato-buckle.png`,
-      strapBSrc: `${SEL}/fabric-bond-nato-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.085
-    },
     {
       id: "fabric-grey-canvas",
       label: "Grey Canvas",
@@ -339,15 +312,6 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       autoFitWidthFactor: 0.09
     },
     {
-      id: "fabric-navy-sailcloth",
-      label: "Navy Sailcloth",
-      category: "Fabric",
-      strapASrc: `${SEL}/fabric-navy-sailcloth-buckle.png`,
-      strapBSrc: `${SEL}/fabric-navy-sailcloth-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.09
-    },
-    {
       id: "fabric-grey-sailcloth",
       label: "Grey Sailcloth",
       category: "Fabric",
@@ -362,15 +326,6 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       category: "Fabric",
       strapASrc: `${SEL}/fabric-bond-nato-buckle.png`,
       strapBSrc: `${SEL}/fabric-bond-nato-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.085
-    },
-    {
-      id: "fabric-desert-nato",
-      label: "Desert NATO",
-      category: "Fabric",
-      strapASrc: `${SEL}/fabric-desert-nato-buckle.png`,
-      strapBSrc: `${SEL}/fabric-desert-nato-tail.png`,
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.085
     },
@@ -443,17 +398,6 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.078,
       autoGapFactor: 1.6,
-      joinShape: "curved"
-    },
-    {
-      id: "metal-gunmetal-milanese",
-      label: "Gunmetal Milanese",
-      category: "Metal",
-      strapASrc: `${SEL}/metal-gunmetal-milanese-buckle.png`,
-      strapBSrc: `${SEL}/metal-gunmetal-milanese-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.085,
-      autoGapFactor: 1.35,
       joinShape: "curved"
     }
   ]
