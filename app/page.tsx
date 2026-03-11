@@ -112,9 +112,7 @@ interface UploadGuideItem {
   verdict: string;
   note: string;
   tone: "ideal" | "good" | "weak" | "avoid";
-  tilt: number;
-  blur?: boolean;
-  clutter?: boolean;
+  imageSrc: string;
 }
 
 const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
@@ -323,31 +321,28 @@ const UPLOAD_GUIDE_ITEMS: UploadGuideItem[] = [
     verdict: "Best results",
     note: "Front-facing product photo or retailer screenshot. Clean background and full watch head visible.",
     tone: "ideal",
-    tilt: 0
+    imageSrc: "/upload-guide/ideal-straight.png"
   },
   {
     title: "Good",
     verdict: "Usually workable",
     note: "Straight dial photo with slight crop or mild shadows. The watch should still sit mostly flat.",
     tone: "good",
-    tilt: 7
+    imageSrc: "/upload-guide/straight-noisy.png"
   },
   {
     title: "Difficult",
     verdict: "Needs fixing",
     note: "Casual wrist shot, angle drift, or busy table background. Rescue tools may help but expect more adjustment.",
     tone: "weak",
-    tilt: -18,
-    clutter: true
+    imageSrc: "/upload-guide/too-rotated.png"
   },
   {
     title: "Skip It",
     verdict: "Do not upload",
     note: "Blurry, heavily rotated, partly hidden, dark, or cut-off watch photos. They slow the flow and preview badly.",
     tone: "avoid",
-    tilt: 32,
-    blur: true,
-    clutter: true
+    imageSrc: "/upload-guide/dont-even-try.png"
   }
 ];
 
@@ -373,22 +368,13 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
   return (
     <div className={`rounded-2xl border bg-gradient-to-br ${shellTone} p-3`}>
       <div className="rounded-[1.1rem] border border-white/70 bg-white/85 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-        <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-[0.9rem] bg-[linear-gradient(160deg,#f9fafb,#eef2f7)]">
-          {item.clutter ? (
-            <>
-              <div className="absolute left-3 top-3 h-3 w-8 rounded-full bg-slate-200/80" />
-              <div className="absolute right-4 top-5 h-4 w-11 rounded-full bg-slate-200/70" />
-              <div className="absolute bottom-4 left-4 h-10 w-16 rounded-2xl bg-slate-100/90" />
-            </>
-          ) : null}
-          <div
-            className={`relative h-16 w-14 rounded-[1.2rem] border border-slate-300 bg-[linear-gradient(180deg,#0f172a,#1e293b)] shadow-[0_10px_18px_rgba(15,23,42,0.15)] ${item.blur ? "opacity-75 blur-[1.2px]" : ""}`}
-            style={{ transform: `rotate(${item.tilt}deg)` }}
-          >
-            <div className="absolute inset-x-[16%] top-[18%] bottom-[18%] rounded-full border border-slate-200 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]" />
-            <div className="absolute left-1/2 top-[26%] h-[28%] w-[6%] -translate-x-1/2 rounded-full bg-slate-900" />
-            <div className="absolute left-1/2 top-1/2 h-[6%] w-[26%] origin-left rounded-full bg-slate-900" style={{ transform: "rotate(28deg)" }} />
-          </div>
+        <div className="relative h-32 overflow-hidden rounded-[0.9rem] bg-[linear-gradient(160deg,#f9fafb,#eef2f7)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.imageSrc}
+            alt={`${item.title} upload example`}
+            className="h-full w-full object-cover"
+          />
         </div>
       </div>
       <div className="mt-3">
@@ -831,9 +817,11 @@ export default function Home() {
             className={`grid overflow-hidden transition-all duration-300 ${showUploadGuide ? "mt-4 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-70"}`}
           >
             <div className="min-h-0 overflow-hidden">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
                 {UPLOAD_GUIDE_ITEMS.map((item) => (
-                  <UploadGuideCard key={item.title} item={item} />
+                  <div key={item.title} className="min-w-[220px] flex-1">
+                    <UploadGuideCard item={item} />
+                  </div>
                 ))}
               </div>
             </div>

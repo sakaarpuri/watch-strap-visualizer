@@ -1,0 +1,5 @@
+{
+  "prompt": "Casual smartphone photo of an analog wristwatch photographed almost straight-on on a messy desk, dial clearly visible and mostly flat to camera, but with a noisy background including papers, keyboard, mug or cables. Realistic everyday photo, usable for strap visualization but not ideal, natural indoor light.",
+  "negative_prompt": "smartwatch, digital watch screen, extreme angle, side profile watch, blurry photo, cropped off watch, abstract background",
+  "api_parameters": {"resolution": "1K", "output_format": "png", "aspect_ratio": "1:1"}
+}

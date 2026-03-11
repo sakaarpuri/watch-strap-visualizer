@@ -1,0 +1,5 @@
+{
+  "prompt": "Casual smartphone photo of an analog wristwatch where the dial is still visible but the whole watch is rotated too much to one side, noticeably tilted and awkward for strap matching, front of the watch still visible, realistic desk background, clear example of bad upload angle.",
+  "negative_prompt": "perfectly straight watch, side profile only, smartwatch, clean studio shot, cropped off watch, abstract art, blurry mess",
+  "api_parameters": {"resolution": "1K", "output_format": "png", "aspect_ratio": "1:1"}
+}
