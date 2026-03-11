@@ -794,30 +794,36 @@ export default function Home() {
           compact
           accentActive={highlightUploadGuide}
         />
-        <div className={`glass-card rounded-2xl border border-line p-4 transition ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-lg font-semibold text-ink">Upload Guide</p>
-              <p className="mt-1 text-sm leading-6 text-muted">
-                See which photo types work instantly and which ones usually break the preview.
-              </p>
+        <div className={`glass-card overflow-hidden rounded-2xl border border-line p-4 transition ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div className="shrink-0 lg:w-[248px]">
+              <div className="flex items-start justify-between gap-3 lg:flex-col lg:items-start">
+                <div>
+                  <p className="text-lg font-semibold text-ink">Upload Guide</p>
+                  <p className="mt-1 text-sm leading-6 text-muted">
+                    See which photo types work instantly and which ones usually break the preview.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowUploadGuide((prev) => !prev)}
+                  className="neo-button shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-ink"
+                  aria-expanded={showUploadGuide}
+                  aria-controls="upload-guide-panel"
+                >
+                  {showUploadGuide ? "Hide \u2190" : "View \u2192"}
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowUploadGuide((prev) => !prev)}
-              className="neo-button shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-ink"
-              aria-expanded={showUploadGuide}
-              aria-controls="upload-guide-panel"
+            <div
+              id="upload-guide-panel"
+              className={`overflow-hidden transition-all duration-300 lg:self-stretch ${
+                showUploadGuide
+                  ? "max-h-[26rem] opacity-100 lg:ml-1 lg:max-h-none lg:max-w-[960px]"
+                  : "max-h-0 opacity-0 lg:max-h-none lg:max-w-0"
+              }`}
             >
-              {showUploadGuide ? "Hide" : "View"}
-            </button>
-          </div>
-          <div
-            id="upload-guide-panel"
-            className={`grid overflow-hidden transition-all duration-300 ${showUploadGuide ? "mt-4 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-70"}`}
-          >
-            <div className="min-h-0 overflow-hidden">
-              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 lg:w-[min(960px,52vw)]">
                 {UPLOAD_GUIDE_ITEMS.map((item) => (
                   <div key={item.title} className="min-w-[220px] flex-1">
                     <UploadGuideCard item={item} />
