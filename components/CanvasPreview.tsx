@@ -288,7 +288,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 
     return (
       <div
-        className={`rounded-2xl border p-3 transition sm:p-4 ${
+        className={`rounded-2xl border p-2.5 transition sm:p-3 ${
           isTicking ? "border-slate-500" : "border-white/70"
         }`}
         style={{
@@ -298,7 +298,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
           backdropFilter: "blur(8px)"
         }}
       >
-        <div className={controls ? "grid gap-3 xl:grid-cols-[1fr,300px]" : ""}>
+        <div className={controls ? "grid gap-3 xl:grid-cols-[minmax(0,1fr),272px]" : ""}>
           <div className="relative">
             <button
               type="button"

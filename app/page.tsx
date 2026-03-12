@@ -889,7 +889,7 @@ export default function Home() {
   const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-    <main className="mx-auto max-w-[96rem] px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-12">
+    <main className="mx-auto max-w-[104rem] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 xl:px-10">
       <header>
         <div>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -964,7 +964,7 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[500px,1fr]">
+      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[520px,1fr]">
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <p className="text-lg font-medium text-ink">
@@ -1364,7 +1364,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       aria-pressed={active}
     >
       <div
-        className={`flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border ${
+        className={`flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border ${
           active ? "border-white/15 bg-white/10" : "border-line bg-slate-50"
         }`}
       >
@@ -1372,7 +1372,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         <img
           src={strap.strapASrc}
           alt={`${strap.label} thumbnail`}
-          className="h-full w-full object-contain p-2.5"
+          className="h-full w-full object-contain p-1.5"
           loading="lazy"
         />
       </div>
