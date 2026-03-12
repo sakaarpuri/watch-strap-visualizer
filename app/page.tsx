@@ -445,9 +445,9 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
           : "bg-rose-600/10 text-rose-700";
 
   return (
-    <div className={`rounded-2xl border bg-gradient-to-br ${shellTone} p-3`}>
-      <div className="rounded-[1.1rem] border border-white/70 bg-white/85 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-        <div className="relative h-32 overflow-hidden rounded-[0.9rem] bg-[linear-gradient(160deg,#f9fafb,#eef2f7)]">
+    <div className={`rounded-2xl border bg-gradient-to-br ${shellTone} p-2.5`}>
+      <div className="rounded-[1rem] border border-white/70 bg-white/85 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+        <div className="relative h-24 overflow-hidden rounded-[0.85rem] bg-[linear-gradient(160deg,#f9fafb,#eef2f7)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.imageSrc}
@@ -456,10 +456,10 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
           />
         </div>
       </div>
-      <div className="mt-3">
+      <div className="mt-2.5">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${chipTone}`}>
+          <p className="text-[13px] font-semibold text-slate-900">{item.title}</p>
+          <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${chipTone}`}>
             {item.verdict}
           </span>
         </div>
@@ -901,32 +901,37 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mt-4 grid items-start gap-4 lg:grid-cols-[280px,minmax(0,1fr)]">
-        <ImageUploader
-          id="watch"
-          label="1. Upload Watch Photo"
-          helperText="Front-on, straight shots work best. Retailer screenshots are the easy mode."
-          previewUrl={watchPreviewSrc}
-          onFileSelect={onUploadDial}
-          compact
-          accentActive={highlightUploadGuide}
-          className="w-full max-w-[280px] shrink-0"
-        />
-        <div className="relative min-w-0 lg:overflow-visible">
-          {!showUploadGuide ? (
-            <button
-              type="button"
-              onClick={() => setShowUploadGuide(true)}
-              className={`neo-button rounded-2xl border border-line px-4 py-2.5 text-sm font-semibold text-ink ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
-              aria-expanded={showUploadGuide}
-              aria-controls="upload-guide-panel"
-            >
-              Photo Tips →
-            </button>
-          ) : (
+      <section className="mt-4">
+        <div className="relative w-full max-w-[1120px]">
+          <div className="w-full max-w-[280px]">
+            <ImageUploader
+              id="watch"
+              label="1. Upload Watch Photo"
+              helperText="Front-on, straight shots work best. Retailer screenshots are the easy mode."
+              previewUrl={watchPreviewSrc}
+              onFileSelect={onUploadDial}
+              compact
+              accentActive={highlightUploadGuide}
+              className="w-full max-w-[280px] shrink-0"
+            />
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setShowUploadGuide((prev) => !prev)}
+                className={`neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+                aria-expanded={showUploadGuide}
+                aria-controls="upload-guide-panel"
+              >
+                Photo Tips
+                <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
+              </button>
+            </div>
+          </div>
+
+          {showUploadGuide ? (
             <div
               id="upload-guide-panel"
-              className={`glass-card z-20 w-full overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 lg:absolute lg:left-0 lg:top-0 ${
+              className={`glass-card z-20 mt-3 w-full max-w-[760px] overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 lg:absolute lg:left-[304px] lg:top-0 lg:mt-0 ${
                 highlightUploadGuide ? "upload-attention-ring" : ""
               }`}
             >
@@ -944,13 +949,13 @@ export default function Home() {
               </button>
               <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
                 {UPLOAD_GUIDE_ITEMS.map((item) => (
-                  <div key={item.title} className="min-w-[220px] flex-1">
+                  <div key={item.title} className="min-w-[170px] max-w-[180px] flex-1">
                     <UploadGuideCard item={item} />
                   </div>
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </section>
 
