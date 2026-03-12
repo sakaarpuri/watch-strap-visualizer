@@ -494,7 +494,7 @@ export default function Home() {
   });
   const [inlineMockupUrl, setInlineMockupUrl] = useState<string | null>(null);
   const [showUploadGuide, setShowUploadGuide] = useState(false);
-  const [highlightUploadGuide, setHighlightUploadGuide] = useState(false);
+  const [highlightUploadGuide, setHighlightUploadGuide] = useState(true);
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
   const [showControlCoachmark, setShowControlCoachmark] = useState(false);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
@@ -889,19 +889,19 @@ export default function Home() {
   const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-    <main className="mx-auto max-w-[104rem] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 xl:px-10">
+    <main className="mx-auto max-w-[108rem] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 xl:px-10">
       <header>
-        <div>
+        <div className="text-center">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Watch Strap Visualizer
           </h1>
-          <p className="mt-2 text-base text-muted">
+          <p className="mx-auto mt-2 max-w-2xl text-base text-muted">
             Your current favourite watch is looking for a strap partner.
           </p>
         </div>
       </header>
 
-      <section className="mt-4 flex flex-wrap items-start gap-4">
+      <section className="mt-4 grid items-start gap-4 lg:grid-cols-[280px,minmax(0,1fr)]">
         <ImageUploader
           id="watch"
           label="1. Upload Watch Photo"
@@ -910,9 +910,9 @@ export default function Home() {
           onFileSelect={onUploadDial}
           compact
           accentActive={highlightUploadGuide}
-          className="w-full max-w-[300px] shrink-0"
+          className="w-full max-w-[280px] shrink-0"
         />
-        <div className="min-w-0 flex-1">
+        <div className="relative min-w-0 lg:overflow-visible">
           {!showUploadGuide ? (
             <button
               type="button"
@@ -926,7 +926,7 @@ export default function Home() {
           ) : (
             <div
               id="upload-guide-panel"
-              className={`glass-card max-w-[920px] overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 ${
+              className={`glass-card z-20 w-full overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 lg:absolute lg:left-0 lg:top-0 ${
                 highlightUploadGuide ? "upload-attention-ring" : ""
               }`}
             >
@@ -938,8 +938,8 @@ export default function Home() {
                 aria-controls="upload-guide-panel"
               >
                 <p className="text-base font-semibold text-ink">Photo Tips</p>
-                <span className="neo-button shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-ink">
-                  Hide ←
+                <span className="neo-button shrink-0 rounded-xl px-3 py-2 text-lg font-semibold text-ink">
+                  ←
                 </span>
               </button>
               <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
@@ -964,7 +964,7 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[520px,1fr]">
+      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[480px,1fr]">
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <p className="text-lg font-medium text-ink">
@@ -1356,7 +1356,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`flex w-full items-center gap-5 rounded-[1.6rem] border px-4 py-4 text-left transition ${
+      className={`flex w-full items-center gap-4 rounded-[1.6rem] border px-4 py-4 text-left transition ${
         active
           ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -1364,7 +1364,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       aria-pressed={active}
     >
       <div
-        className={`flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border ${
+        className={`flex h-[152px] w-[152px] shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border ${
           active ? "border-white/15 bg-white/10" : "border-line bg-slate-50"
         }`}
       >
@@ -1372,15 +1372,15 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         <img
           src={strap.strapASrc}
           alt={`${strap.label} thumbnail`}
-          className="h-full w-full object-contain p-1.5"
+          className="h-full w-full object-contain p-1"
           loading="lazy"
         />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[17px] font-semibold leading-tight sm:text-[18px]">{strap.label}</p>
+      <div className="min-w-0 max-w-[9.5rem] flex-1">
+        <p className="line-clamp-2 text-[15px] font-semibold leading-tight sm:text-[16px]">{strap.label}</p>
         {showCategory ? (
           <p
-            className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs ${
+            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] ${
               active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"
             }`}
           >
