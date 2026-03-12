@@ -21,6 +21,14 @@ const ORIG_TINT: StrapStyle = { name: "Original", color: "#000000", alpha: 0 };
 export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, StrapVariant[]> = {
   Leather: [
     {
+      id: "leather-classic",
+      label: "Classic Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/classic-leather-buckle.png`,
+      strapBSrc: `${SEL}/classic-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
       id: "leather-black-smooth",
       label: "Black Smooth Leather",
       category: "Leather",
@@ -34,6 +42,14 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       category: "Leather",
       strapASrc: `${SEL}/black-grain-leather-buckle.png`,
       strapBSrc: `${SEL}/black-grain-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-espresso-smooth",
+      label: "Espresso Smooth Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/espresso-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/espresso-smooth-leather-tail.png`,
       tint: ORIG_TINT
     },
     {
@@ -69,11 +85,27 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       tint: ORIG_TINT
     },
     {
+      id: "leather-beige-suede",
+      label: "Beige Suede Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/beige-suede-leather-buckle.png`,
+      strapBSrc: `${SEL}/beige-suede-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
       id: "leather-burgundy-smooth",
       label: "Burgundy Smooth Leather",
       category: "Leather",
       strapASrc: `${SEL}/burgundy-smooth-leather-buckle.png`,
       strapBSrc: `${SEL}/burgundy-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-burgundy-pebbled",
+      label: "Burgundy Pebbled Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/burgundy-pebbled-leather-buckle.png`,
+      strapBSrc: `${SEL}/burgundy-pebbled-leather-tail.png`,
       tint: ORIG_TINT
     },
     {
@@ -147,6 +179,70 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       strapASrc: `${SEL}/clean/slate-saffiano-leather-buckle.png`,
       strapBSrc: `${SEL}/clean/slate-saffiano-leather-tail.png`,
       tint: ORIG_TINT
+    },
+    {
+      id: "leather-cognac-grain",
+      label: "Cognac Grain Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/cognac-grain-leather-buckle.png`,
+      strapBSrc: `${SEL}/cognac-grain-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-sand-suede",
+      label: "Sand Suede Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/sand-suede-leather-buckle.png`,
+      strapBSrc: `${SEL}/sand-suede-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-tan-suede",
+      label: "Tan Suede Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/tan-suede-leather-buckle.png`,
+      strapBSrc: `${SEL}/tan-suede-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-emerald-suede",
+      label: "Emerald Suede",
+      category: "Leather",
+      strapASrc: `${SEL}/emerald-suede-buckle.png`,
+      strapBSrc: `${SEL}/emerald-suede-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-sapphire-suede",
+      label: "Sapphire Suede",
+      category: "Leather",
+      strapASrc: `${SEL}/sapphire-suede-buckle.png`,
+      strapBSrc: `${SEL}/sapphire-suede-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-oxblood-suede",
+      label: "Oxblood Suede",
+      category: "Leather",
+      strapASrc: `${SEL}/oxblood-suede-buckle.png`,
+      strapBSrc: `${SEL}/oxblood-suede-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-aubergine-suede",
+      label: "Aubergine Suede",
+      category: "Leather",
+      strapASrc: `${SEL}/aubergine-suede-buckle.png`,
+      strapBSrc: `${SEL}/aubergine-suede-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-mustard-suede",
+      label: "Mustard Suede",
+      category: "Leather",
+      strapASrc: `${SEL}/mustard-suede-buckle.png`,
+      strapBSrc: `${SEL}/mustard-suede-tail.png`,
+      tint: ORIG_TINT
     }
   ],
   Rubber: [
@@ -185,9 +281,36 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       strapBSrc: `${SEL}/rubber-navy-performance-tail.png`,
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.11
+    },
+    {
+      id: "rubber-olive-performance",
+      label: "Olive Performance Rubber",
+      category: "Rubber",
+      strapASrc: `${SEL}/olive-performance-rubber-buckle.png`,
+      strapBSrc: `${SEL}/olive-performance-rubber-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.11
     }
   ],
   Fabric: [
+    {
+      id: "fabric-grey-canvas",
+      label: "Grey Canvas",
+      category: "Fabric",
+      strapASrc: `${SEL}/grey-canvas-buckle.png`,
+      strapBSrc: `${SEL}/grey-canvas-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.09
+    },
+    {
+      id: "fabric-navy-canvas",
+      label: "Navy Canvas",
+      category: "Fabric",
+      strapASrc: `${SEL}/navy-canvas-buckle.png`,
+      strapBSrc: `${SEL}/navy-canvas-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.09
+    },
     {
       id: "fabric-sand-canvas",
       label: "Sand Canvas",
@@ -268,16 +391,102 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       strapBSrc: `${SEL}/clean/charcoal-seatbelt-nato-tail.png`,
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-olive-nato",
+      label: "Olive NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/olive-nato-buckle.png`,
+      strapBSrc: `${SEL}/olive-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-jaipur-saffron-nato",
+      label: "Jaipur Saffron NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/jaipur-saffron-nato-buckle.png`,
+      strapBSrc: `${SEL}/jaipur-saffron-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-indigo-block-nato",
+      label: "Indigo Block NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/indigo-block-nato-buckle.png`,
+      strapBSrc: `${SEL}/indigo-block-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-holi-stripe-nato",
+      label: "Holi Stripe NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/holi-stripe-nato-buckle.png`,
+      strapBSrc: `${SEL}/holi-stripe-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-oaxaca-serape-nato",
+      label: "Oaxaca Serape NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/oaxaca-serape-nato-buckle.png`,
+      strapBSrc: `${SEL}/oaxaca-serape-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
+    },
+    {
+      id: "fabric-talavera-blue-nato",
+      label: "Talavera Blue NATO",
+      category: "Fabric",
+      strapASrc: `${SEL}/talavera-blue-nato-buckle.png`,
+      strapBSrc: `${SEL}/talavera-blue-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.085
     }
   ],
-  Metal: []
+  Metal: [
+    {
+      id: "metal-steel-bracelet",
+      label: "Steel Bracelet",
+      category: "Metal",
+      strapASrc: `${SEL}/steel-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/steel-bracelet-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.11,
+      joinShape: "curved"
+    },
+    {
+      id: "metal-steel-link-bracelet",
+      label: "Steel Link Bracelet",
+      category: "Metal",
+      strapASrc: `${SEL}/steel-link-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/steel-link-bracelet-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.11,
+      joinShape: "curved"
+    },
+    {
+      id: "metal-black-pvd-bracelet",
+      label: "Black PVD Bracelet",
+      category: "Metal",
+      strapASrc: `${SEL}/black-pvd-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/black-pvd-bracelet-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.11,
+      joinShape: "curved"
+    }
+  ]
 };
 
 export const STRAP_CATEGORIES: StrapCategory[] = [
   "All categories",
   "Leather",
   "Rubber",
-  "Fabric"
+  "Fabric",
+  "Metal"
 ];
 
 export const getStrapsForCategory = (category: StrapCategory): StrapVariant[] => {
