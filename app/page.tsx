@@ -806,7 +806,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mt-4 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
+      <section className="mt-4 flex flex-wrap items-start gap-4">
         <ImageUploader
           id="watch"
           label="1. Upload Watch Photo"
@@ -816,39 +816,52 @@ export default function Home() {
           compact
           accentActive={highlightUploadGuide}
         />
-        <div className={`glass-card overflow-hidden rounded-2xl border border-line p-3 transition ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="shrink-0 lg:w-[216px]">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-lg font-semibold text-ink">Photo Sanity Check</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowUploadGuide((prev) => !prev)}
-                  className="neo-button shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-ink"
-                  aria-expanded={showUploadGuide}
-                  aria-controls="upload-guide-panel"
-                >
-                  {showUploadGuide ? "Hide \u2190" : "View \u2192"}
-                </button>
-              </div>
+        <div className="flex min-w-[190px] flex-1 items-start gap-3">
+          <div
+            className={`shrink-0 transition-all duration-300 ${
+              showUploadGuide ? "w-[230px] opacity-0 lg:w-0" : "w-auto opacity-100"
+            }`}
+          >
+            {!showUploadGuide ? (
+              <button
+                type="button"
+                onClick={() => setShowUploadGuide(true)}
+                className={`neo-button rounded-2xl border border-line px-4 py-2.5 text-sm font-semibold text-ink ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+                aria-expanded={showUploadGuide}
+                aria-controls="upload-guide-panel"
+              >
+                Upload Tips →
+              </button>
+            ) : null}
+          </div>
+          <div
+            id="upload-guide-panel"
+            className={`glass-card overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 ${
+              highlightUploadGuide ? "upload-attention-ring" : ""
+            } ${
+              showUploadGuide
+                ? "max-h-[26rem] flex-1 opacity-100"
+                : "max-h-0 max-w-0 border-transparent p-0 opacity-0"
+            }`}
+          >
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-base font-semibold text-ink">Upload Tips</p>
+              <button
+                type="button"
+                onClick={() => setShowUploadGuide(false)}
+                className="neo-button shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-ink"
+                aria-expanded={showUploadGuide}
+                aria-controls="upload-guide-panel"
+              >
+                Hide ←
+              </button>
             </div>
-            <div
-              id="upload-guide-panel"
-              className={`overflow-hidden transition-all duration-300 lg:self-stretch ${
-                showUploadGuide
-                  ? "max-h-[26rem] opacity-100 lg:ml-1 lg:max-h-none lg:max-w-[1180px] lg:flex-1"
-                  : "max-h-0 opacity-0 lg:max-h-none lg:max-w-0 lg:flex-none"
-              }`}
-            >
-              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 lg:w-[min(1180px,64vw)]">
-                {UPLOAD_GUIDE_ITEMS.map((item) => (
-                  <div key={item.title} className="min-w-[220px] flex-1">
-                    <UploadGuideCard item={item} />
-                  </div>
-                ))}
-              </div>
+            <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+              {UPLOAD_GUIDE_ITEMS.map((item) => (
+                <div key={item.title} className="min-w-[220px] flex-1">
+                  <UploadGuideCard item={item} />
+                </div>
+              ))}
             </div>
           </div>
         </div>
