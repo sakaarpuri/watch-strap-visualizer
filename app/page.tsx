@@ -1137,7 +1137,7 @@ export default function Home() {
                   title="Catalogue Mockup"
                   disabled={!canRender}
                   loading={aiTools.final.loading}
-                  sampleImageSrc="/sample-watch.svg"
+                  sampleImageSrc="/catalogue-mockup-sample.png"
                   onClick={() => void runFinalRender()}
                 />
                 {generatedResults.final ? (
