@@ -754,7 +754,7 @@ export default function Home() {
     if (!canvasRef.current) return;
     setToolLoading("final", true);
     try {
-      setAiStage("final", "Catalogue Mockup", "Packaging preview");
+        setAiStage("final", "Create Catalogue Image", "Packaging preview");
       const previewBlob = await canvasRef.current.getPngBlob();
       if (!previewBlob) {
         throw new Error("Preview image was not available");
@@ -767,9 +767,9 @@ export default function Home() {
       formData.append("strapB", await fileFromSrc(currentStrap.strapBSrc, "strap-b.png"));
       formData.append("strapLabel", currentStrap.label);
 
-      setAiStage("final", "Catalogue Mockup", "Starting render");
+      setAiStage("final", "Create Catalogue Image", "Starting render");
       const taskId = await startPolledTask("/api/kie/final-render/start", formData);
-      setAiStage("final", "Catalogue Mockup", "Rendering buckled display");
+      setAiStage("final", "Create Catalogue Image", "Rendering buckled display");
       const imageUrl = await pollTaskResult("/api/kie/final-render/poll", taskId, {
         maxPolls: 180,
         delayMs: 2500
@@ -1134,8 +1134,8 @@ export default function Home() {
 
               <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
-                  title="Catalogue Mockup"
-                  disabled={!canRender}
+                  title="Create Catalogue Image"
+                  disabled={!canRender || !lockView}
                   loading={aiTools.final.loading}
                   sampleImageSrc="/catalogue-mockup-sample.png"
                   onClick={() => void runFinalRender()}
