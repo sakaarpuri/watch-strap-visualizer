@@ -113,6 +113,13 @@ interface UploadGuideItem {
   imageSrc: string;
 }
 
+interface StrapThumbProps {
+  strap: StrapVariant;
+  active: boolean;
+  showCategory: boolean;
+  onClick: () => void;
+}
+
 const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
   cleanup: { loading: false, error: null },
   rescue: { loading: false, error: null },
@@ -799,20 +806,20 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mt-4 grid gap-4 lg:grid-cols-[340px_minmax(0,420px)] lg:items-start">
+      <section className="mt-4 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
         <ImageUploader
           id="watch"
-          label="1. Feed The Head Unit"
-          helperText="Front-on shots win. Retailer screenshots are the easy mode."
+          label="1. Upload Watch Photo"
+          helperText="Front-on, straight shots work best. Retailer screenshots are the easy mode."
           previewUrl={watchPreviewSrc}
           onFileSelect={onUploadDial}
           compact
           accentActive={highlightUploadGuide}
         />
-        <div className={`glass-card overflow-hidden rounded-2xl border border-line p-4 transition ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-            <div className="shrink-0 lg:w-[248px]">
-              <div className="flex items-start justify-between gap-3 lg:flex-col lg:items-start">
+        <div className={`glass-card overflow-hidden rounded-2xl border border-line p-3 transition ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="shrink-0 lg:w-[216px]">
+              <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-lg font-semibold text-ink">Photo Sanity Check</p>
                 </div>
@@ -831,11 +838,11 @@ export default function Home() {
               id="upload-guide-panel"
               className={`overflow-hidden transition-all duration-300 lg:self-stretch ${
                 showUploadGuide
-                  ? "max-h-[26rem] opacity-100 lg:ml-1 lg:max-h-none lg:max-w-[960px]"
-                  : "max-h-0 opacity-0 lg:max-h-none lg:max-w-0"
+                  ? "max-h-[26rem] opacity-100 lg:ml-1 lg:max-h-none lg:max-w-[1180px] lg:flex-1"
+                  : "max-h-0 opacity-0 lg:max-h-none lg:max-w-0 lg:flex-none"
               }`}
             >
-              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 lg:w-[min(960px,52vw)]">
+              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 lg:w-[min(1180px,64vw)]">
                 {UPLOAD_GUIDE_ITEMS.map((item) => (
                   <div key={item.title} className="min-w-[220px] flex-1">
                     <UploadGuideCard item={item} />
@@ -908,25 +915,13 @@ export default function Home() {
                 {strapsInCategory.map((strap, index) => {
                   const active = index === strapIndex;
                   return (
-                    <button
+                    <StrapDrawerButton
                       key={strap.id}
-                      type="button"
                       onClick={() => setStrapIndex(index)}
-                      data-testid={`strap-${strap.id}`}
-                      className={`w-full rounded-lg border px-3 py-2 text-left transition ${
-                        active
-                          ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)]"
-                          : "border-line bg-white/70 text-ink hover:bg-white"
-                      }`}
-                      aria-pressed={active}
-                    >
-                      <p className="text-sm font-medium">{strap.label}</p>
-                      {category === "All categories" ? (
-                        <p className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
-                          {strap.category}
-                        </p>
-                      ) : null}
-                    </button>
+                      strap={strap}
+                      active={active}
+                      showCategory={category === "All categories"}
+                    />
                   );
                 })}
               </div>
@@ -1066,7 +1061,7 @@ export default function Home() {
                       </div>
                     ) : null}
                     <SliderControl
-                      label="Watch Head Size"
+                      label="Dial Size"
                       min={DIAL_SCALE_MIN}
                       max={DIAL_SCALE_MAX}
                       step={0.02}
@@ -1138,6 +1133,7 @@ export default function Home() {
                   disabled={!canRender || !lockView}
                   loading={aiTools.final.loading}
                   sampleImageSrc="/catalogue-mockup-sample.png"
+                  note="Lock the fit with your favourite strap, then make a catalogue-style shot."
                   onClick={() => void runFinalRender()}
                 />
                 {generatedResults.final ? (
@@ -1243,6 +1239,48 @@ function ErrorText({ message }: { message: string }) {
   return <p className="text-xs text-rose-600">{message}</p>;
 }
 
+function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid={`strap-${strap.id}`}
+      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
+        active
+          ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)]"
+          : "border-line bg-white/70 text-ink hover:bg-white"
+      }`}
+      aria-pressed={active}
+    >
+      <div
+        className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border ${
+          active ? "border-white/15 bg-white/10" : "border-line bg-slate-50"
+        }`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={strap.strapASrc}
+          alt={`${strap.label} thumbnail`}
+          className="h-full w-full object-contain p-1"
+          loading="lazy"
+        />
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{strap.label}</p>
+        {showCategory ? (
+          <p
+            className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] ${
+              active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"
+            }`}
+          >
+            {strap.category}
+          </p>
+        ) : null}
+      </div>
+    </button>
+  );
+}
+
 const snapToStep = (value: number, min: number, step: number) => {
   if (step <= 0) return value;
   const snapped = Math.round((value - min) / step) * step + min;
@@ -1260,12 +1298,14 @@ function ToolButton({
   disabled,
   loading,
   sampleImageSrc,
+  note,
   onClick
 }: {
   title: string;
   disabled?: boolean;
   loading?: boolean;
   sampleImageSrc?: string;
+  note?: string;
   onClick: () => void;
 }) {
   return (
@@ -1283,6 +1323,7 @@ function ToolButton({
               />
             </div>
           ) : null}
+          {note ? <p className="mt-3 max-w-[15rem] text-xs leading-5 text-muted">{note}</p> : null}
         </div>
         <button
           type="button"
