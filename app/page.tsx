@@ -208,7 +208,7 @@ const saveBlob = async (blob: Blob, filename: string) => {
 };
 
 const saveUrlAsPng = async (url: string, filename: string) => {
-  const response = await fetch(url);
+  const response = await fetch(toProxyPreviewSrc(url));
   const blob = await response.blob();
   await saveBlob(blob, filename);
 };
