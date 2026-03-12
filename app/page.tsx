@@ -964,7 +964,7 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[376px,1fr]">
+      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[500px,1fr]">
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <p className="text-lg font-medium text-ink">
@@ -1011,7 +1011,7 @@ export default function Home() {
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                 {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
               </p>
-              <div className="mt-2 max-h-72 space-y-2 overflow-y-auto pr-1">
+              <div className="mt-3 max-h-[36rem] space-y-3 overflow-y-auto pr-1">
                 {strapsInCategory.map((strap, index) => {
                   const active = index === strapIndex;
                   return (
@@ -1206,8 +1206,8 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
-            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
-              <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
+            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-4 md:overflow-visible md:px-0">
+              <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="Clean Shot"
                   disabled={!hasUserUpload}
@@ -1217,7 +1217,7 @@ export default function Home() {
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
               </div>
 
-              <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
+              <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="Wrist Rescue"
                   disabled={!hasUserUpload}
@@ -1227,7 +1227,7 @@ export default function Home() {
                 {aiTools.rescue.error ? <ErrorText message={aiTools.rescue.error} /> : null}
               </div>
 
-              <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
+              <div className="min-w-[18rem] snap-start space-y-2 md:col-span-2 md:min-w-0">
                 <ToolButton
                   title="Create Catalogue Image"
                   disabled={!canRender || !lockView}
@@ -1356,7 +1356,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`flex w-full items-center gap-4 rounded-2xl border px-3 py-3 text-left transition ${
+      className={`flex w-full items-center gap-5 rounded-[1.6rem] border px-4 py-4 text-left transition ${
         active
           ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -1364,7 +1364,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       aria-pressed={active}
     >
       <div
-        className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border ${
+        className={`flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border ${
           active ? "border-white/15 bg-white/10" : "border-line bg-slate-50"
         }`}
       >
@@ -1372,15 +1372,15 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         <img
           src={strap.strapASrc}
           alt={`${strap.label} thumbnail`}
-          className="h-full w-full object-contain p-1.5"
+          className="h-full w-full object-contain p-2.5"
           loading="lazy"
         />
       </div>
-      <div className="min-w-0">
-        <p className="truncate text-[15px] font-semibold leading-tight">{strap.label}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-[17px] font-semibold leading-tight sm:text-[18px]">{strap.label}</p>
         {showCategory ? (
           <p
-            className={`mt-1.5 inline-flex rounded-full px-2.5 py-1 text-xs ${
+            className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs ${
               active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"
             }`}
           >
@@ -1420,34 +1420,36 @@ function ToolButton({
   onClick: () => void;
 }) {
   return (
-    <div className="neo-control rounded-2xl p-4 sm:p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xl font-semibold text-ink sm:text-lg">{title}</p>
-          {sampleImageSrc ? (
-            <div className="mt-3 w-24 overflow-hidden rounded-xl border border-line bg-white/90 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={sampleImageSrc}
-                alt={`${title} sample`}
-                className="h-16 w-full object-contain"
-              />
-            </div>
-          ) : null}
-          {note ? <p className="mt-3 max-w-[15rem] text-xs leading-5 text-muted">{note}</p> : null}
+    <div className="neo-control rounded-2xl p-4">
+      <div className="flex items-center gap-4">
+        {sampleImageSrc ? (
+          <div className="w-24 shrink-0 overflow-hidden rounded-2xl border border-line bg-white/90 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={sampleImageSrc}
+              alt={`${title} sample`}
+              className="h-20 w-full object-cover"
+            />
+          </div>
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-lg font-semibold leading-tight text-ink">{title}</p>
+            <button
+              type="button"
+              onClick={onClick}
+              disabled={disabled || loading}
+              className={`neo-button min-w-[84px] shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold text-ink transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                loading
+                  ? "ai-pulse border-slate-300/80 bg-slate-100"
+                  : "hover:opacity-90"
+              }`}
+            >
+              {loading ? "Working" : "Run"}
+            </button>
+          </div>
+          {note ? <p className="mt-2 max-w-[28rem] text-sm leading-5 text-muted">{note}</p> : null}
         </div>
-        <button
-          type="button"
-          onClick={onClick}
-          disabled={disabled || loading}
-          className={`neo-button min-w-[96px] shrink-0 rounded-xl px-5 py-3 text-base font-semibold text-ink transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[88px] sm:px-4 sm:py-2.5 sm:text-sm ${
-            loading
-              ? "ai-pulse border-slate-300/80 bg-slate-100"
-              : "hover:opacity-90"
-          }`}
-        >
-          {loading ? "Working" : "Run"}
-        </button>
       </div>
     </div>
   );
