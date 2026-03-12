@@ -89,7 +89,7 @@ const applyCenterToPair = (
   };
 };
 
-type AiToolKey = "cleanup" | "rescue" | "final" | "explore";
+type AiToolKey = "cleanup" | "rescue" | "final";
 
 interface AiToolState {
   loading: boolean;
@@ -104,13 +104,11 @@ interface ActiveAiStatus {
 
 interface GeneratedResultState {
   final: string | null;
-  explore: string | null;
 }
 
 interface UploadGuideItem {
   title: string;
   verdict: string;
-  note: string;
   tone: "ideal" | "good" | "weak" | "avoid";
   imageSrc: string;
 }
@@ -118,9 +116,10 @@ interface UploadGuideItem {
 const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
   cleanup: { loading: false, error: null },
   rescue: { loading: false, error: null },
-  final: { loading: false, error: null },
-  explore: { loading: false, error: null }
+  final: { loading: false, error: null }
 });
+
+const CONTROL_COACHMARK_STORAGE_KEY = "watchstrapper-gap-size-coachmark-seen";
 
 const fileFromSrc = async (src: string, filename: string) => {
   const response = await fetch(src);
@@ -178,7 +177,6 @@ const getEndpointLabel = (url: string) => {
   if (url.includes("/rescue")) return "Rescue API";
   if (url.includes("/cleanup")) return "Cleanup API";
   if (url.includes("/final-render")) return "Final Render API";
-  if (url.includes("/style-explore")) return "Style Explore API";
   return "AI API";
 };
 
@@ -319,28 +317,24 @@ const UPLOAD_GUIDE_ITEMS: UploadGuideItem[] = [
   {
     title: "Ideal",
     verdict: "Best results",
-    note: "Front-facing product photo or retailer screenshot. Clean background and full watch head visible.",
     tone: "ideal",
     imageSrc: "/upload-guide/ideal-straight.png"
   },
   {
     title: "Good",
     verdict: "Usually workable",
-    note: "Straight dial photo with slight crop or mild shadows. The watch should still sit mostly flat.",
     tone: "good",
     imageSrc: "/upload-guide/straight-noisy.png"
   },
   {
     title: "Difficult",
     verdict: "Needs fixing",
-    note: "Casual wrist shot, angle drift, or busy table background. Rescue tools may help but expect more adjustment.",
     tone: "weak",
     imageSrc: "/upload-guide/too-rotated.png"
   },
   {
     title: "Skip It",
     verdict: "Do not upload",
-    note: "Blurry, heavily rotated, partly hidden, dark, or cut-off watch photos. They slow the flow and preview badly.",
     tone: "avoid",
     imageSrc: "/upload-guide/dont-even-try.png"
   }
@@ -384,7 +378,6 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
             {item.verdict}
           </span>
         </div>
-        <p className="mt-2 text-xs leading-5 text-slate-600">{item.note}</p>
       </div>
     </div>
   );
@@ -412,13 +405,13 @@ export default function Home() {
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [aiTools, setAiTools] = useState<Record<AiToolKey, AiToolState>>(defaultToolState);
   const [generatedResults, setGeneratedResults] = useState<GeneratedResultState>({
-    final: null,
-    explore: null
+    final: null
   });
   const [inlineMockupUrl, setInlineMockupUrl] = useState<string | null>(null);
   const [showUploadGuide, setShowUploadGuide] = useState(false);
   const [highlightUploadGuide, setHighlightUploadGuide] = useState(false);
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
+  const [showControlCoachmark, setShowControlCoachmark] = useState(false);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
     tool: null,
     label: "",
@@ -426,10 +419,31 @@ export default function Home() {
   });
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
+  const latestPartARef = useRef<PartTransform | null>(null);
+  const latestPartBRef = useRef<PartTransform | null>(null);
+  const preserveSettingsRef = useRef(true);
+  const lockViewRef = useRef(false);
 
   const strapsInCategory = getStrapsForCategory(category);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
+  const canRender = useMemo(
+    () => Boolean(partA && partB && currentStrap),
+    [partA, partB, currentStrap]
+  );
+
+  useEffect(() => {
+    latestPartARef.current = partA;
+    latestPartBRef.current = partB;
+  }, [partA, partB]);
+
+  useEffect(() => {
+    preserveSettingsRef.current = preserveSettings;
+  }, [preserveSettings]);
+
+  useEffect(() => {
+    lockViewRef.current = lockView;
+  }, [lockView]);
 
   const onUploadDial = (file: File) => {
     const uploadedUrl = URL.createObjectURL(file);
@@ -452,6 +466,27 @@ export default function Home() {
     return () => window.clearTimeout(timeout);
   }, [highlightUploadGuide]);
 
+  useEffect(() => {
+    if (!canRender || showControlCoachmark) return;
+    try {
+      if (window.localStorage.getItem(CONTROL_COACHMARK_STORAGE_KEY) === "1") return;
+      const timer = window.setTimeout(() => setShowControlCoachmark(true), 450);
+      return () => window.clearTimeout(timer);
+    } catch {
+      const timer = window.setTimeout(() => setShowControlCoachmark(true), 450);
+      return () => window.clearTimeout(timer);
+    }
+  }, [canRender, showControlCoachmark]);
+
+  const dismissControlCoachmark = () => {
+    setShowControlCoachmark(false);
+    try {
+      window.localStorage.setItem(CONTROL_COACHMARK_STORAGE_KEY, "1");
+    } catch {
+      // Ignore storage failures and just hide for the current session.
+    }
+  };
+
   const applyWatchAsset = (file: File, sourceUrl: string) => {
     setUploadedWatchFile(file);
     setWatchPreviewSrc(sourceUrl);
@@ -467,6 +502,13 @@ export default function Home() {
     if (!currentStrap) return;
     setIsAutoAligning(true);
     try {
+      const latestPartA = latestPartARef.current;
+      const latestPartB = latestPartBRef.current;
+      const shouldPreserve = Boolean(
+        latestPartA &&
+          latestPartB &&
+          (preserveSettingsRef.current || lockViewRef.current)
+      );
       let aligned = await calculateAutoPlacement(
         watchSrc,
         currentStrap.strapASrc,
@@ -475,11 +517,11 @@ export default function Home() {
         currentStrap.autoGapFactor
       );
 
-      if (partA && partB && preserveSettings) {
-        const preservedHalfGap = (partB.y - partA.y) / 2;
-        const preservedAverageScale = getAverageScale(partA, partB);
-        const preservedCenterX = (partA.x + partB.x) / 2;
-        const preservedCenterY = (partA.y + partB.y) / 2;
+      if (shouldPreserve && latestPartA && latestPartB) {
+        const preservedHalfGap = (latestPartB.y - latestPartA.y) / 2;
+        const preservedAverageScale = getAverageScale(latestPartA, latestPartB);
+        const preservedCenterX = (latestPartA.x + latestPartB.x) / 2;
+        const preservedCenterY = (latestPartA.y + latestPartB.y) / 2;
         aligned = applyScaleToPair(aligned.partA, aligned.partB, preservedAverageScale);
         aligned = applyGapToPair(aligned.partA, aligned.partB, preservedHalfGap);
         aligned = applyCenterToPair(
@@ -505,7 +547,7 @@ export default function Home() {
   useEffect(() => {
     void autoAlignStraps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, strapIndex, preserveSettings]);
+  }, [category, strapIndex]);
 
   useEffect(() => {
     const total = strapsInCategory.length;
@@ -531,11 +573,6 @@ export default function Home() {
       return (prev + direction + total) % total;
     });
   };
-
-  const canRender = useMemo(
-    () => Boolean(partA && partB && currentStrap),
-    [partA, partB, currentStrap]
-  );
 
   const setGapHalf = (nextHalfGap: number) => {
     if (!partA || !partB) return;
@@ -579,16 +616,16 @@ export default function Home() {
     if (!uploadedWatchFile) return;
     setToolLoading("cleanup", true);
     try {
-      setAiStage("cleanup", "Clean Photo", "Uploading");
+      setAiStage("cleanup", "Clean Shot", "Uploading");
       const preparedFile = await prepareAiInput(uploadedWatchFile, {
         maxSide: 1200,
         quality: 0.86
       });
       const formData = new FormData();
       formData.append("image", preparedFile);
-      setAiStage("cleanup", "Clean Photo", "Removing background");
+      setAiStage("cleanup", "Clean Shot", "Removing background");
       const imageUrl = await postToolForm("/api/kie/cleanup", formData);
-      setAiStage("cleanup", "Clean Photo", "Applying result");
+      setAiStage("cleanup", "Clean Shot", "Applying result");
       applyProcessedWatch(imageUrl);
       setToolLoading("cleanup", false);
     } catch (error) {
@@ -600,7 +637,7 @@ export default function Home() {
     if (!uploadedWatchFile) return;
     setToolLoading("rescue", true);
     try {
-      setAiStage("rescue", "Fix Wrist Photo", "Uploading");
+      setAiStage("rescue", "Wrist Rescue", "Uploading");
       const preparedFile = await prepareAiInput(uploadedWatchFile, {
         maxSide: 640,
         quality: 0.72
@@ -616,7 +653,7 @@ export default function Home() {
           method: "POST",
           body: startForm
         });
-        setAiStage("rescue", "Fix Wrist Photo", "Generating watch");
+        setAiStage("rescue", "Wrist Rescue", "Generating watch");
         const startParsed = await parseApiResponse(startResponse);
         if (startResponse.ok) {
           startPayload = (startParsed.payload || {}) as Record<string, unknown>;
@@ -649,7 +686,7 @@ export default function Home() {
       let transientPollErrors = 0;
       for (let attempt = 0; attempt < maxPolls; attempt += 1) {
         await sleep(2000);
-        setAiStage("rescue", "Fix Wrist Photo", "Refining cutout");
+        setAiStage("rescue", "Wrist Rescue", "Refining cutout");
         let pollResponse: Response;
         try {
           pollResponse = await fetch("/api/kie/rescue/poll", {
@@ -690,13 +727,13 @@ export default function Home() {
         );
       }
 
-      setAiStage("rescue", "Fix Wrist Photo", "Applying result");
+      setAiStage("rescue", "Wrist Rescue", "Applying result");
       applyProcessedWatch(imageUrl);
       setToolLoading("rescue", false);
     } catch (error) {
       try {
         // Fallback path for transient start/poll issues in serverless runtime.
-        setAiStage("rescue", "Fix Wrist Photo", "Retrying with fallback");
+        setAiStage("rescue", "Wrist Rescue", "Retrying with fallback");
         const preparedFallbackFile = await prepareAiInput(uploadedWatchFile, {
           maxSide: 640,
           quality: 0.72
@@ -704,7 +741,7 @@ export default function Home() {
         const fallbackFormData = new FormData();
         fallbackFormData.append("image", preparedFallbackFile);
         const fallbackUrl = await postToolForm("/api/kie/rescue", fallbackFormData);
-        setAiStage("rescue", "Fix Wrist Photo", "Applying result");
+        setAiStage("rescue", "Wrist Rescue", "Applying result");
         applyProcessedWatch(fallbackUrl);
         setToolLoading("rescue", false);
       } catch (fallbackError) {
@@ -717,7 +754,7 @@ export default function Home() {
     if (!canvasRef.current) return;
     setToolLoading("final", true);
     try {
-      setAiStage("final", "Product Mockup", "Packaging preview");
+      setAiStage("final", "Catalogue Mockup", "Packaging preview");
       const previewBlob = await canvasRef.current.getPngBlob();
       if (!previewBlob) {
         throw new Error("Preview image was not available");
@@ -730,9 +767,9 @@ export default function Home() {
       formData.append("strapB", await fileFromSrc(currentStrap.strapBSrc, "strap-b.png"));
       formData.append("strapLabel", currentStrap.label);
 
-      setAiStage("final", "Product Mockup", "Starting render");
+      setAiStage("final", "Catalogue Mockup", "Starting render");
       const taskId = await startPolledTask("/api/kie/final-render/start", formData);
-      setAiStage("final", "Product Mockup", "Rendering buckled display");
+      setAiStage("final", "Catalogue Mockup", "Rendering buckled display");
       const imageUrl = await pollTaskResult("/api/kie/final-render/poll", taskId, {
         maxPolls: 180,
         delayMs: 2500
@@ -742,30 +779,6 @@ export default function Home() {
       setToolLoading("final", false);
     } catch (error) {
       setToolLoading("final", false, formatAiError(error));
-    }
-  };
-
-  const runStyleExploration = async () => {
-    setToolLoading("explore", true);
-    try {
-      setAiStage("explore", "More Like This", "Preparing references");
-      const formData = new FormData();
-      formData.append("strapA", await fileFromSrc(currentStrap.strapASrc, "strap-a.png"));
-      formData.append("strapB", await fileFromSrc(currentStrap.strapBSrc, "strap-b.png"));
-      formData.append("strapLabel", currentStrap.label);
-      formData.append("category", currentStrap.category);
-
-      setAiStage("explore", "More Like This", "Starting idea");
-      const taskId = await startPolledTask("/api/kie/style-explore/start", formData);
-      setAiStage("explore", "More Like This", "Generating option");
-      const imageUrl = await pollTaskResult("/api/kie/style-explore/poll", taskId, {
-        maxPolls: 180,
-        delayMs: 2500
-      });
-      setGeneratedResults((prev) => ({ ...prev, explore: imageUrl }));
-      setToolLoading("explore", false);
-    } catch (error) {
-      setToolLoading("explore", false, formatAiError(error));
     }
   };
 
@@ -780,15 +793,17 @@ export default function Home() {
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Watch Strap Visualizer
           </h1>
-          <p className="mt-2 text-base text-muted">Inspiration Mode</p>
+          <p className="mt-2 text-base text-muted">
+            Your current favourite watch is looking for a strap partner.
+          </p>
         </div>
       </header>
 
       <section className="mt-4 grid gap-4 lg:grid-cols-[340px_minmax(0,420px)] lg:items-start">
         <ImageUploader
           id="watch"
-          label="1. Upload Watch Dial Photo"
-          helperText="Front-facing watch photos work best. Product-page screenshots usually give the cleanest result."
+          label="1. Feed The Head Unit"
+          helperText="Front-on shots win. Retailer screenshots are the easy mode."
           previewUrl={watchPreviewSrc}
           onFileSelect={onUploadDial}
           compact
@@ -799,10 +814,7 @@ export default function Home() {
             <div className="shrink-0 lg:w-[248px]">
               <div className="flex items-start justify-between gap-3 lg:flex-col lg:items-start">
                 <div>
-                  <p className="text-lg font-semibold text-ink">Upload Guide</p>
-                  <p className="mt-1 text-sm leading-6 text-muted">
-                    See which photo types work instantly and which ones usually break the preview.
-                  </p>
+                  <p className="text-lg font-semibold text-ink">Photo Sanity Check</p>
                 </div>
                 <button
                   type="button"
@@ -849,7 +861,7 @@ export default function Home() {
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <p className="text-lg font-medium text-ink">
-              2. Select Strap Category
+              2. Browse The Strap Box
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {STRAP_CATEGORIES.map((option) => {
@@ -881,16 +893,16 @@ export default function Home() {
             </div>
 
             <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-              <p className="text-sm uppercase tracking-[0.12em] text-muted">Current Strap</p>
+              <p className="text-sm uppercase tracking-[0.12em] text-muted">On Deck</p>
               <p className="mt-2 text-xl font-semibold text-ink">{currentStrap.label}</p>
               <p className="mt-2 text-sm text-muted">
-                Use left/right arrows in preview to switch straps.
+                Flick through contenders with the preview arrows.
               </p>
             </div>
 
             <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
               <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                Straps In {category}
+                {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
               </p>
               <div className="mt-2 max-h-72 space-y-2 overflow-y-auto pr-1">
                 {strapsInCategory.map((strap, index) => {
@@ -922,8 +934,8 @@ export default function Home() {
 
             <div className="neo-toggle mt-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-ink">Keep Adjustments</p>
-                <p className="text-xs text-muted">Apply current gap/size settings to next strap</p>
+                <p className="text-sm font-semibold text-ink">Keep Tweaks</p>
+                <p className="text-xs text-muted">Carry the fit tune to the next candidate.</p>
               </div>
               <button
                 type="button"
@@ -949,14 +961,14 @@ export default function Home() {
                 onClick={() => void autoAlignStraps()}
                 className="rounded-lg border border-line bg-canvas px-4 py-2.5 text-base text-ink transition hover:opacity-90"
               >
-                {isAutoAligning ? "Auto-aligning..." : "Re-center Strap"}
+                {isAutoAligning ? "Resetting fit..." : "Reset Strap Fit"}
               </button>
               <button
                 type="button"
                 onClick={() => canvasRef.current?.downloadAsPng()}
                 className="rounded-lg border border-ink bg-ink px-4 py-2.5 text-base text-white hover:opacity-90"
               >
-                Download PNG
+                Download Shot
               </button>
               {hasUserUpload && originalWatchSrc && watchSrc !== originalWatchSrc ? (
                 <button
@@ -971,7 +983,7 @@ export default function Home() {
                   }}
                   className="rounded-lg border border-line bg-canvas px-4 py-2.5 text-base text-ink transition hover:opacity-90"
                 >
-                  Restore Original Upload
+                  Back To Original Photo
                 </button>
               ) : null}
             </div>
@@ -980,7 +992,7 @@ export default function Home() {
 
         <section className="min-w-0">
           <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
-            4. Live Preview
+            4. Strap Check
           </h2>
           {canRender ? (
             <CanvasPreview
@@ -1003,18 +1015,29 @@ export default function Home() {
               controls={
                 <div className="glass-card rounded-xl p-3">
                   <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Preview Controls
+                    Fit Bench
                   </p>
                   <div className="mt-2 grid gap-2">
-                    <SliderControl
-                      label="Strap Gap"
-                      min={250}
-                      max={900}
-                      step={10}
-                      value={strapGap}
-                      onChange={setGapHalf}
-                      disabled={lockView}
-                    />
+                    <div className="relative">
+                      <SliderControl
+                        label="Strap Gap"
+                        min={250}
+                        max={900}
+                        step={10}
+                        value={strapGap}
+                        onChange={setGapHalf}
+                        disabled={lockView}
+                        highlighted={showControlCoachmark}
+                      />
+                      {showControlCoachmark ? (
+                        <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
+                          <div className="flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                            <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+                            Size first. Then trim the gap.
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                     <SliderControl
                       label="Strap Size"
                       min={0}
@@ -1024,9 +1047,26 @@ export default function Home() {
                       onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
                       displayValue={Math.round(strapScale).toString()}
                       disabled={lockView}
+                      highlighted={showControlCoachmark}
                     />
+                    {showControlCoachmark ? (
+                      <div className="rounded-2xl border border-sky-200/80 bg-sky-50/80 px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-xs leading-5 text-slate-700">
+                            Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={dismissControlCoachmark}
+                            className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                          >
+                            Got it
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
                     <SliderControl
-                      label="Dial Size"
+                      label="Watch Head Size"
                       min={DIAL_SCALE_MIN}
                       max={DIAL_SCALE_MAX}
                       step={0.02}
@@ -1044,8 +1084,8 @@ export default function Home() {
                       displayValue={`${Math.round(sceneZoom * 100)}%`}
                     />
                     <ToggleControl
-                      label="Lock Position"
-                      description="Freeze strap and dial placement while you only zoom the view"
+                      label="Lock Fit"
+                      description="Freeze the fit and just inspect the view"
                       enabled={lockView}
                       onToggle={() => setLockView((prev) => !prev)}
                     />
@@ -1055,18 +1095,14 @@ export default function Home() {
             />
           ) : (
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
-              Upload a watch image to start previewing straps.
+              Give the watch head something to wear.
             </div>
           )}
           <div className="glass-card mt-4 rounded-2xl p-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  AI Tools
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  Clean Photo and Fix Wrist Photo update the watch image in preview. Product Mockup
-                  and More Like This create separate AI images.
+                  Bench Tools
                 </p>
               </div>
               {activeAiStatus.tool ? (
@@ -1075,11 +1111,10 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
-            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-4">
+            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-3 md:overflow-visible md:px-0">
               <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
-                  title="Clean Photo"
-                  description="Removes most of the background from a clean product-style watch photo."
+                  title="Clean Shot"
                   disabled={!hasUserUpload}
                   loading={aiTools.cleanup.loading}
                   onClick={() => void runCleanupFallback()}
@@ -1089,8 +1124,7 @@ export default function Home() {
 
               <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
-                  title="Fix Wrist Photo"
-                  description="Tries to pull just the watch from a casual wrist photo."
+                  title="Wrist Rescue"
                   disabled={!hasUserUpload}
                   loading={aiTools.rescue.loading}
                   onClick={() => void runRescueMode()}
@@ -1100,10 +1134,10 @@ export default function Home() {
 
               <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
-                  title="Product Mockup"
-                  description="Shows your watch and strap together like a retailer product display."
+                  title="Catalogue Mockup"
                   disabled={!canRender}
                   loading={aiTools.final.loading}
+                  sampleImageSrc="/sample-watch.svg"
                   onClick={() => void runFinalRender()}
                 />
                 {generatedResults.final ? (
@@ -1116,26 +1150,13 @@ export default function Home() {
                 {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
               </div>
 
-              <div className="min-w-[17rem] snap-start space-y-2 md:min-w-0">
-                <ToolButton
-                  title="More Like This"
-                  description="Creates another strap idea inspired by the current one."
-                  disabled={!currentStrap}
-                  loading={aiTools.explore.loading}
-                  onClick={() => void runStyleExploration()}
-                />
-                {generatedResults.explore ? (
-                  <ResultActions url={generatedResults.explore} label="Open idea" />
-                ) : null}
-                {aiTools.explore.error ? <ErrorText message={aiTools.explore.error} /> : null}
-              </div>
             </div>
           </div>
           {inlineMockupUrl ? (
             <div className="glass-card mt-4 rounded-2xl p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Product Mockup Result
+                  Mockup Deck
                 </p>
                 <button
                   type="button"
@@ -1155,9 +1176,6 @@ export default function Home() {
           ) : null}
           <p className="mt-3 text-sm text-muted">
             Visual inspiration only. Final fit depends on lug width &amp; strap model.
-          </p>
-          <p className="mt-1 text-xs text-muted">
-            AI cleanup tools are optional and work best on clear, front-facing product-style photos.
           </p>
         </section>
       </section>
@@ -1239,15 +1257,15 @@ const pulseHaptic = () => {
 
 function ToolButton({
   title,
-  description,
   disabled,
   loading,
+  sampleImageSrc,
   onClick
 }: {
   title: string;
-  description: string;
   disabled?: boolean;
   loading?: boolean;
+  sampleImageSrc?: string;
   onClick: () => void;
 }) {
   return (
@@ -1255,7 +1273,16 @@ function ToolButton({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xl font-semibold text-ink sm:text-lg">{title}</p>
-          <p className="mt-1 text-base leading-relaxed text-muted sm:text-sm">{description}</p>
+          {sampleImageSrc ? (
+            <div className="mt-3 w-24 overflow-hidden rounded-xl border border-line bg-white/90 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={sampleImageSrc}
+                alt={`${title} sample`}
+                className="h-16 w-full object-contain"
+              />
+            </div>
+          ) : null}
         </div>
         <button
           type="button"
@@ -1283,6 +1310,7 @@ interface SliderControlProps {
   onChange: (value: number) => void;
   displayValue?: string;
   disabled?: boolean;
+  highlighted?: boolean;
 }
 
 function SliderControl({
@@ -1293,7 +1321,8 @@ function SliderControl({
   value,
   onChange,
   displayValue,
-  disabled
+  disabled,
+  highlighted = false
 }: SliderControlProps) {
   const lastSnapRef = useRef<number>(snapToStep(value, min, step));
 
@@ -1311,11 +1340,12 @@ function SliderControl({
   };
 
   return (
-    <div className="neo-control rounded-2xl p-4">
+    <div className={`neo-control rounded-2xl p-4 transition ${highlighted ? "ring-2 ring-sky-200/80 shadow-[0_0_0_1px_rgba(125,211,252,0.35),0_14px_28px_rgba(56,189,248,0.1)]" : ""}`}>
       <div className="mb-2 flex items-center justify-between">
         <span className="text-lg font-semibold text-ink">{label}</span>
         <span className="text-sm text-muted">
-          {displayValue ?? (label === "Dial Size" ? `${Math.round(value * 100)}%` : Math.round(value))}
+          {displayValue ??
+            (label === "Watch Head Size" ? `${Math.round(value * 100)}%` : Math.round(value))}
         </span>
       </div>
       <input
