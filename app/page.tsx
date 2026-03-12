@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import CropEditor from "@/components/CropEditor";
 import ImageUploader from "@/components/ImageUploader";
@@ -161,6 +162,57 @@ const fileFromSrc = async (src: string, filename: string) => {
 };
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 const isImageFile = (file: File) => file.type.startsWith("image/");
+const saveBlob = async (blob: Blob, filename: string) => {
+  if (typeof window === "undefined") return;
+  const picker = (window as Window & {
+    showSaveFilePicker?: (options: {
+      suggestedName?: string;
+      types?: Array<{
+        description?: string;
+        accept: Record<string, string[]>;
+      }>;
+    }) => Promise<{
+      createWritable: () => Promise<{
+        write: (data: Blob) => Promise<void>;
+        close: () => Promise<void>;
+      }>;
+    }>;
+  }).showSaveFilePicker;
+
+  if (picker) {
+    try {
+      const handle = await picker({
+        suggestedName: filename,
+        types: [
+          {
+            description: "PNG image",
+            accept: { "image/png": [".png"] }
+          }
+        ]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch {
+      // Fall back to browser download if the picker is cancelled or unsupported.
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+const saveUrlAsPng = async (url: string, filename: string) => {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  await saveBlob(blob, filename);
+};
+
 const isTransientTimeoutLike = (message: string) => {
   const lower = message.toLowerCase();
   return (
@@ -525,6 +577,16 @@ export default function Home() {
     } catch {
       // Ignore storage failures and just hide for the current session.
     }
+  };
+
+  const onSavePreviewImage = async () => {
+    const blob = await canvasRef.current?.getPngBlob();
+    if (!blob) return;
+    await saveBlob(blob, "watch-strap-preview.png");
+  };
+
+  const onSaveMockupImage = async (url: string) => {
+    await saveUrlAsPng(url, "watch-strap-catalogue.png");
   };
 
   const applyWatchAsset = (file: File, sourceUrl: string) => {
@@ -998,10 +1060,10 @@ export default function Home() {
               </button>
               <button
                 type="button"
-                onClick={() => canvasRef.current?.downloadAsPng()}
+                onClick={() => void onSavePreviewImage()}
                 className="rounded-lg border border-ink bg-ink px-4 py-2.5 text-base text-white hover:opacity-90"
               >
-                Download Shot
+                Save Image
               </button>
               {hasUserUpload && originalWatchSrc && watchSrc !== originalWatchSrc ? (
                 <button
@@ -1179,6 +1241,7 @@ export default function Home() {
                     url={generatedResults.final}
                     label="View mockup"
                     onOpenInPage={() => setInlineMockupUrl(generatedResults.final)}
+                    onSave={() => void onSaveMockupImage(generatedResults.final as string)}
                   />
                 ) : null}
                 {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
@@ -1211,6 +1274,14 @@ export default function Home() {
           <p className="mt-3 text-sm text-muted">
             Visual inspiration only. Final fit depends on lug width &amp; strap model.
           </p>
+          <div className="mt-6 flex justify-center md:justify-end">
+            <Link
+              href="/contact"
+              className="neo-button rounded-2xl border border-line px-5 py-3 text-sm font-semibold text-ink"
+            >
+              Enquiries / Feedback
+            </Link>
+          </div>
         </section>
       </section>
     </main>
@@ -1236,11 +1307,13 @@ function CompactAiStatus({ label, stage }: { label: string; stage: string }) {
 function ResultActions({
   url,
   label,
-  onOpenInPage
+  onOpenInPage,
+  onSave
 }: {
   url: string;
   label: string;
   onOpenInPage?: () => void;
+  onSave?: () => void;
 }) {
   return (
     <div className="ml-1 flex gap-2">
@@ -1262,13 +1335,13 @@ function ResultActions({
           {label}
         </a>
       )}
-      <a
-        href={url}
-        download
+      <button
+        type="button"
+        onClick={onSave ?? (() => window.open(url, "_blank", "noopener,noreferrer"))}
         className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
       >
-        Download
-      </a>
+        Save image
+      </button>
     </div>
   );
 }
