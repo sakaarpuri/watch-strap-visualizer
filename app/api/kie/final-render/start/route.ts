@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createNanoBananaTaskFromFiles } from "@/lib/kie";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 interface ErrorPayload {
   error: string;

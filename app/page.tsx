@@ -251,6 +251,15 @@ const prepareAiInput = async (
   }
 };
 
+const prepareSrcForAi = async (
+  src: string,
+  filename: string,
+  options: { maxSide: number; quality: number }
+) => {
+  const file = await fileFromSrc(src, filename);
+  return prepareAiInput(file, options);
+};
+
 const toSnippet = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 240);
 const toProxyPreviewSrc = (imageUrl: string) => {
   const value = imageUrl.trim();
@@ -718,16 +727,16 @@ export default function Home() {
     if (!uploadedWatchFile) return;
     setToolLoading("cleanup", true);
     try {
-      setAiStage("cleanup", "Clean Shot", "Uploading");
+      setAiStage("cleanup", "Extract Watch", "Uploading");
       const preparedFile = await prepareAiInput(uploadedWatchFile, {
         maxSide: 1200,
         quality: 0.86
       });
       const formData = new FormData();
       formData.append("image", preparedFile);
-      setAiStage("cleanup", "Clean Shot", "Removing background");
+      setAiStage("cleanup", "Extract Watch", "Removing background");
       const imageUrl = await postToolForm("/api/kie/cleanup", formData);
-      setAiStage("cleanup", "Clean Shot", "Applying result");
+      setAiStage("cleanup", "Extract Watch", "Applying result");
       applyProcessedWatch(imageUrl);
       setToolLoading("cleanup", false);
     } catch (error) {
@@ -856,21 +865,53 @@ export default function Home() {
     if (!canvasRef.current) return;
     setToolLoading("final", true);
     try {
-        setAiStage("final", "Create Catalogue Image", "Packaging preview");
+      setAiStage("final", "Create Catalogue Image", "Packaging preview");
       const previewBlob = await canvasRef.current.getPngBlob();
       if (!previewBlob) {
         throw new Error("Preview image was not available");
       }
 
-      const formData = new FormData();
-      formData.append("preview", new File([previewBlob], "preview.png", { type: "image/png" }));
-      formData.append("watch", await fileFromSrc(watchSrc, "watch-source.png"));
-      formData.append("strapA", await fileFromSrc(currentStrap.strapASrc, "strap-a.png"));
-      formData.append("strapB", await fileFromSrc(currentStrap.strapBSrc, "strap-b.png"));
-      formData.append("strapLabel", currentStrap.label);
+      const preparedPreview = await prepareAiInput(
+        new File([previewBlob], "preview.png", { type: "image/png" }),
+        {
+          maxSide: 768,
+          quality: 0.74
+        }
+      );
+      const [preparedWatch, preparedStrapA, preparedStrapB] = await Promise.all([
+        prepareSrcForAi(watchSrc, "watch-source.png", { maxSide: 768, quality: 0.76 }),
+        prepareSrcForAi(currentStrap.strapASrc, "strap-a.png", { maxSide: 768, quality: 0.76 }),
+        prepareSrcForAi(currentStrap.strapBSrc, "strap-b.png", { maxSide: 768, quality: 0.76 })
+      ]);
 
-      setAiStage("final", "Create Catalogue Image", "Starting render");
-      const taskId = await startPolledTask("/api/kie/final-render/start", formData);
+      let taskId = "";
+      let lastStartError = "Product mockup could not start.";
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const formData = new FormData();
+        formData.append("preview", preparedPreview);
+        formData.append("watch", preparedWatch);
+        formData.append("strapA", preparedStrapA);
+        formData.append("strapB", preparedStrapB);
+        formData.append("strapLabel", currentStrap.label);
+
+        setAiStage("final", "Create Catalogue Image", attempt === 0 ? "Starting render" : "Retrying render");
+        try {
+          taskId = await startPolledTask("/api/kie/final-render/start", formData);
+          break;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Final render start failed";
+          lastStartError = message;
+          if (attempt < 2 && isTransientTimeoutLike(message)) {
+            await sleep(1200 * (attempt + 1));
+            continue;
+          }
+          throw error;
+        }
+      }
+      if (!taskId) {
+        throw new Error(lastStartError);
+      }
+
       setAiStage("final", "Create Catalogue Image", "Rendering buckled display");
       const imageUrl = await pollTaskResult("/api/kie/final-render/poll", taskId, {
         maxPolls: 180,
@@ -1214,22 +1255,12 @@ export default function Home() {
             <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-4 md:overflow-visible md:px-0">
               <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
-                  title="Clean Shot"
+                  title="Extract Watch"
                   disabled={!hasUserUpload}
                   loading={aiTools.cleanup.loading}
                   onClick={() => void runCleanupFallback()}
                 />
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
-              </div>
-
-              <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
-                <ToolButton
-                  title="Wrist Rescue"
-                  disabled={!hasUserUpload}
-                  loading={aiTools.rescue.loading}
-                  onClick={() => void runRescueMode()}
-                />
-                {aiTools.rescue.error ? <ErrorText message={aiTools.rescue.error} /> : null}
               </div>
 
               <div className="min-w-[18rem] snap-start space-y-2 md:col-span-2 md:min-w-0">
