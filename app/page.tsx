@@ -127,6 +127,32 @@ const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
 });
 
 const CONTROL_COACHMARK_STORAGE_KEY = "watchstrapper-gap-size-coachmark-seen";
+const BOUTIQUE_PRIORITY = [
+  "sapphire",
+  "emerald",
+  "oxblood",
+  "aubergine",
+  "mustard",
+  "jaipur",
+  "indigo",
+  "holi",
+  "oaxaca",
+  "talavera",
+  "bourbon",
+  "taupe",
+  "forest",
+  "slate",
+  "seatbelt",
+  "bond",
+  "stripe",
+  "nato"
+];
+
+const getStrapSortScore = (strap: StrapVariant) => {
+  const haystack = `${strap.id} ${strap.label}`.toLowerCase();
+  const priorityIndex = BOUTIQUE_PRIORITY.findIndex((token) => haystack.includes(token));
+  return priorityIndex === -1 ? BOUTIQUE_PRIORITY.length : priorityIndex;
+};
 
 const fileFromSrc = async (src: string, filename: string) => {
   const response = await fetch(src);
@@ -431,7 +457,14 @@ export default function Home() {
   const preserveSettingsRef = useRef(true);
   const lockViewRef = useRef(false);
 
-  const strapsInCategory = getStrapsForCategory(category);
+  const strapsInCategory = useMemo(() => {
+    const straps = [...getStrapsForCategory(category)];
+    return straps.sort((a, b) => {
+      const scoreDiff = getStrapSortScore(a) - getStrapSortScore(b);
+      if (scoreDiff !== 0) return scoreDiff;
+      return a.label.localeCompare(b.label);
+    });
+  }, [category]);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const canRender = useMemo(
@@ -815,60 +848,52 @@ export default function Home() {
           onFileSelect={onUploadDial}
           compact
           accentActive={highlightUploadGuide}
+          className="w-full max-w-[300px] shrink-0"
         />
-        <div className="flex min-w-[190px] flex-1 items-start gap-3">
-          <div
-            className={`shrink-0 transition-all duration-300 ${
-              showUploadGuide ? "w-[230px] opacity-0 lg:w-0" : "w-auto opacity-100"
-            }`}
-          >
-            {!showUploadGuide ? (
-              <button
-                type="button"
-                onClick={() => setShowUploadGuide(true)}
-                className={`neo-button rounded-2xl border border-line px-4 py-2.5 text-sm font-semibold text-ink ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
-                aria-expanded={showUploadGuide}
-                aria-controls="upload-guide-panel"
-              >
-                Upload Tips →
-              </button>
-            ) : null}
-          </div>
-          <div
-            id="upload-guide-panel"
-            className={`glass-card overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 ${
-              highlightUploadGuide ? "upload-attention-ring" : ""
-            } ${
-              showUploadGuide
-                ? "max-h-[26rem] flex-1 opacity-100"
-                : "max-h-0 max-w-0 border-transparent p-0 opacity-0"
-            }`}
-          >
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-base font-semibold text-ink">Upload Tips</p>
+        <div className="min-w-0 flex-1">
+          {!showUploadGuide ? (
+            <button
+              type="button"
+              onClick={() => setShowUploadGuide(true)}
+              className={`neo-button rounded-2xl border border-line px-4 py-2.5 text-sm font-semibold text-ink ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+              aria-expanded={showUploadGuide}
+              aria-controls="upload-guide-panel"
+            >
+              Photo Tips →
+            </button>
+          ) : (
+            <div
+              id="upload-guide-panel"
+              className={`glass-card max-w-[920px] overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 ${
+                highlightUploadGuide ? "upload-attention-ring" : ""
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setShowUploadGuide(false)}
-                className="neo-button shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-ink"
+                className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
                 aria-expanded={showUploadGuide}
                 aria-controls="upload-guide-panel"
               >
-                Hide ←
+                <p className="text-base font-semibold text-ink">Photo Tips</p>
+                <span className="neo-button shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-ink">
+                  Hide ←
+                </span>
               </button>
+              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+                {UPLOAD_GUIDE_ITEMS.map((item) => (
+                  <div key={item.title} className="min-w-[220px] flex-1">
+                    <UploadGuideCard item={item} />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-              {UPLOAD_GUIDE_ITEMS.map((item) => (
-                <div key={item.title} className="min-w-[220px] flex-1">
-                  <UploadGuideCard item={item} />
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </section>
 
       {cropSourceUrl && originalWatchFile ? (
-        <section className="mt-4 w-full max-w-[920px]">
+        <section className="mt-4 w-full max-w-[880px]">
           <CropEditor
             file={originalWatchFile}
             sourceUrl={cropSourceUrl}
@@ -877,7 +902,7 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="mt-6 grid gap-5 lg:mt-8 lg:grid-cols-[340px,1fr]">
+      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[376px,1fr]">
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <p className="text-lg font-medium text-ink">
@@ -1258,7 +1283,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
+      className={`flex w-full items-center gap-4 rounded-2xl border px-3 py-3 text-left transition ${
         active
           ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -1266,7 +1291,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       aria-pressed={active}
     >
       <div
-        className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border ${
+        className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border ${
           active ? "border-white/15 bg-white/10" : "border-line bg-slate-50"
         }`}
       >
@@ -1274,15 +1299,15 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         <img
           src={strap.strapASrc}
           alt={`${strap.label} thumbnail`}
-          className="h-full w-full object-contain p-1"
+          className="h-full w-full object-contain p-1.5"
           loading="lazy"
         />
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{strap.label}</p>
+        <p className="truncate text-[15px] font-semibold leading-tight">{strap.label}</p>
         {showCategory ? (
           <p
-            className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] ${
+            className={`mt-1.5 inline-flex rounded-full px-2.5 py-1 text-xs ${
               active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"
             }`}
           >
