@@ -179,17 +179,33 @@ const CURATED_PRODUCTS: SimilarProduct[] = [
   }
 ];
 
+const areColorFamiliesCompatible = (
+  strapColor: StrapVariant["shopping"]["colorFamily"],
+  productColor: StrapVariant["shopping"]["colorFamily"]
+) => {
+  if (strapColor === productColor) return true;
+  const warmLeather = new Set(["brown", "tan", "beige"]);
+  if (warmLeather.has(strapColor) && warmLeather.has(productColor)) return true;
+  return false;
+};
+
 const scoreProduct = (strap: StrapVariant, product: SimilarProduct) => {
   const meta = strap.shopping;
-  let score = 0;
+  if (product.material !== meta.material) return -1;
 
-  if (product.material === meta.material) score += 7;
-  if (product.styleFamilies.includes(meta.styleFamily)) score += 5;
-  if (product.colorFamilies.includes(meta.colorFamily)) score += 4;
-  if (product.hardwareFinishes.includes(meta.hardwareFinish)) score += 2;
-
+  const sameStyle = product.styleFamilies.includes(meta.styleFamily);
+  const sameColor = product.colorFamilies.some((family) => areColorFamiliesCompatible(meta.colorFamily, family));
+  const sameHardware = product.hardwareFinishes.includes(meta.hardwareFinish);
   const sharedKeywords = (product.keywords || []).filter((keyword) => meta.keywords.includes(keyword));
+
+  let score = 10;
+  if (sameStyle) score += 8;
+  if (sameColor) score += 7;
+  if (sameHardware) score += 2;
   score += sharedKeywords.length;
+
+  if (!sameStyle && !sameColor) return -1;
+  if (meta.material !== "metal" && !sameColor) return -1;
 
   return score;
 };
@@ -203,7 +219,7 @@ export const getSimilarProductsForStrap = (strapId: string, limit = 4): SimilarP
       product,
       score: scoreProduct(strap, product)
     }))
-    .filter(({ score }) => score >= 8)
+    .filter(({ score }) => score >= 17)
     .sort((a, b) => b.score - a.score || a.product.title.localeCompare(b.product.title))
     .slice(0, limit)
     .map(({ product }) => ({
@@ -211,6 +227,6 @@ export const getSimilarProductsForStrap = (strapId: string, limit = 4): SimilarP
       title: product.title,
       store: product.store,
       url: product.affiliateUrl || product.url,
-      imageSrc: product.imageSrc
+      imageSrc: strap.strapASrc
     }));
 };

@@ -773,7 +773,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (strapSourceMode !== "library" || !currentStrap?.id) {
+    if (strapSourceMode !== "library" || !lockView || !currentStrap?.id) {
       setSimilarProducts([]);
       setSimilarProductsLoading(false);
       return;
@@ -802,7 +802,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [currentStrap?.id, strapSourceMode]);
+  }, [currentStrap?.id, strapSourceMode, lockView]);
 
   const runCleanupFallback = async () => {
     if (!uploadedWatchFile) return;
@@ -1442,7 +1442,7 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
-            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-4 md:overflow-visible md:px-0">
+            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-2 md:items-start md:gap-4 md:overflow-visible md:px-0">
               <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="Extract Watch"
@@ -1453,13 +1453,13 @@ export default function Home() {
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
               </div>
 
-              <div className="min-w-[18rem] snap-start space-y-2 md:col-span-2 md:min-w-0">
+              <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="Create Catalogue Image"
                   disabled={!canRender || !lockView}
                   loading={aiTools.final.loading}
                   sampleImageSrc="/catalogue-mockup-sample.png"
-                  note="Lock the fit with your favourite strap, then make a catalogue-style shot."
+                  note="Lock the view with your favourite strap, then create a catalogue-style shot."
                   onClick={() => void runFinalRender()}
                 />
                 {generatedResults.final ? (
@@ -1506,43 +1506,43 @@ export default function Home() {
               />
             </div>
           ) : null}
-          {strapSourceMode === "library" ? (
+          {strapSourceMode === "library" && lockView ? (
             <div className="glass-card mt-4 rounded-2xl p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Buy Similar Online
-                  </p>
-                  <p className="mt-1 text-sm text-muted">
-                    Matches for {currentStrap.label}, not the whole drawer.
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Buy Similar Straps From Brands You Love
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  We may earn affiliate commission from one of the listed purchase links.
+                </p>
               </div>
               {similarProductsLoading ? (
                 <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
               ) : similarProducts.length ? (
-                <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+                <div className="mt-4 space-y-3">
                   {similarProducts.map((product) => (
                     <a
                       key={product.id}
                       href={product.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-2xl border border-line bg-canvas/80 p-3 transition hover:-translate-y-0.5 hover:bg-white"
+                      className="flex items-center gap-3 rounded-2xl border border-line bg-canvas/80 p-3 transition hover:-translate-y-0.5 hover:bg-white"
                     >
-                      <div className="overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+                      <div className="w-24 shrink-0 overflow-hidden rounded-[1rem] border border-line bg-slate-50">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={product.imageSrc}
                           alt={product.title}
-                          className="h-36 w-full object-contain p-2"
+                          className="h-24 w-full object-contain p-2"
                         />
                       </div>
-                      <p className="mt-3 line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                        {product.store}
-                      </p>
-                      <span className="mt-3 inline-flex rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
+                          {product.store}
+                        </p>
+                      </div>
+                      <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
                         View Product
                       </span>
                     </a>
@@ -1550,7 +1550,7 @@ export default function Home() {
                 </div>
               ) : (
                 <p className="mt-3 text-sm text-muted">
-                  No decent shopping match yet for this strap. Try another one from the bench.
+                  No close store match yet for this locked strap.
                 </p>
               )}
             </div>
