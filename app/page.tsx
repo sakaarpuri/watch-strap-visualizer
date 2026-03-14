@@ -1015,13 +1015,13 @@ export default function Home() {
   const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-    <main className="mx-auto max-w-[120rem] px-4 py-5 sm:px-6 sm:py-7 md:px-8 md:py-8 xl:px-10">
-      <header className="border-b border-line/70 pb-5">
+    <main className="mx-auto max-w-[116rem] px-4 py-5 sm:px-6 sm:py-7 md:px-8 md:py-8 xl:px-10">
+      <header className="border-b border-line/70 pb-4">
         <div className="text-center">
-          <h1 className="text-[2rem] font-semibold tracking-[-0.03em] text-ink sm:text-[2.35rem]">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
             Watch Strap Visualizer
           </h1>
-          <p className="mx-auto mt-2 max-w-2xl text-sm text-muted sm:text-[1.02rem]">
+          <p className="mx-auto mt-1 max-w-2xl text-sm text-muted sm:text-base">
             Your current favourite watch is looking for a strap partner.
           </p>
         </div>
@@ -1040,9 +1040,9 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-[392px,minmax(0,1fr),272px]">
+      <section className="mt-6 grid gap-5 xl:grid-cols-[360px,minmax(0,1fr),264px]">
         <aside className="space-y-4">
-          <div className="relative w-full max-w-[348px] xl:max-w-none">
+          <div className="relative w-full max-w-[320px] xl:max-w-none">
             <ImageUploader
               id="watch"
               label="1. Upload Watch Photo"
@@ -1181,7 +1181,7 @@ export default function Home() {
                   <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                     {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
                   </p>
-                  <div className="mt-3 max-h-[33rem] space-y-3 overflow-y-auto pr-1">
+                  <div className="mt-3 max-h-[31rem] space-y-3 overflow-y-auto pr-1">
                     {strapsInCategory.map((strap, index) => {
                       const active = index === strapIndex;
                       return (
@@ -1360,7 +1360,7 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
-            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-2 md:items-stretch md:gap-4 md:overflow-visible md:px-0">
+            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-2 md:items-start md:gap-4 md:overflow-visible md:px-0">
               <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
                 <ToolButton
                   title="Extract Watch"
@@ -1571,13 +1571,13 @@ function StepBadge({
 }) {
   const shell =
     state === "active"
-      ? "border-slate-800 bg-slate-800 text-white shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
+      ? "border-ink bg-ink text-white"
       : state === "done"
-        ? "border-[color:rgba(148,163,184,0.35)] bg-slate-300/90 text-white"
-        : "border-line bg-white/90 text-muted";
+        ? "border-[color:rgba(148,163,184,0.4)] bg-slate-300/90 text-white"
+        : "border-line bg-white text-muted";
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-full bg-white/60 px-2 py-1 backdrop-blur-sm">
+    <div className="inline-flex items-center gap-2 rounded-full px-1 py-1">
       <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-semibold ${shell}`}>
         {state === "done" ? "✓" : state === "active" ? "•" : ""}
       </span>
@@ -1718,8 +1718,8 @@ function ToolButton({
   onClick: () => void;
 }) {
   return (
-    <div className="neo-control h-full rounded-2xl p-4">
-      <div className="flex h-full items-start gap-4">
+    <div className="neo-control rounded-2xl p-4">
+      <div className="flex items-center gap-4">
         {sampleImageSrc ? (
           <div className="w-24 shrink-0 overflow-hidden rounded-2xl border border-line bg-white/90 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1730,9 +1730,9 @@ function ToolButton({
             />
           </div>
         ) : null}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-[1.05rem] font-semibold leading-tight text-ink">{title}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-lg font-semibold leading-tight text-ink">{title}</p>
             <button
               type="button"
               onClick={onClick}
