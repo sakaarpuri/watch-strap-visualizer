@@ -1429,55 +1429,6 @@ export default function Home() {
               Upload a watch photo, then give it a strap worth arguing about.
             </div>
           )}
-          {strapSourceMode === "library" ? (
-            <div className="glass-card mt-4 rounded-2xl p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Buy Similar Online
-                  </p>
-                  <p className="mt-1 text-sm text-muted">
-                    Matches for {currentStrap.label}, not the whole drawer.
-                  </p>
-                </div>
-              </div>
-              {similarProductsLoading ? (
-                <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
-              ) : similarProducts.length ? (
-                <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-4">
-                  {similarProducts.map((product) => (
-                    <a
-                      key={product.id}
-                      href={product.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-2xl border border-line bg-canvas/80 p-3 transition hover:-translate-y-0.5 hover:bg-white"
-                    >
-                      <div className="overflow-hidden rounded-[1rem] border border-line bg-slate-50">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={product.imageSrc}
-                          alt={product.title}
-                          className="h-36 w-full object-contain p-2"
-                        />
-                      </div>
-                      <p className="mt-3 line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                        {product.store}
-                      </p>
-                      <span className="mt-3 inline-flex rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
-                        View Product
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-muted">
-                  No decent shopping match yet for this strap. Try another one from the bench.
-                </p>
-              )}
-            </div>
-          ) : null}
           <div className="glass-card mt-4 rounded-2xl p-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
@@ -1553,6 +1504,55 @@ export default function Home() {
                 alt="Generated product mockup"
                 className="w-full rounded-xl border border-line bg-white object-contain"
               />
+            </div>
+          ) : null}
+          {strapSourceMode === "library" ? (
+            <div className="glass-card mt-4 rounded-2xl p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Buy Similar Online
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    Matches for {currentStrap.label}, not the whole drawer.
+                  </p>
+                </div>
+              </div>
+              {similarProductsLoading ? (
+                <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+              ) : similarProducts.length ? (
+                <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+                  {similarProducts.map((product) => (
+                    <a
+                      key={product.id}
+                      href={product.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-2xl border border-line bg-canvas/80 p-3 transition hover:-translate-y-0.5 hover:bg-white"
+                    >
+                      <div className="overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={product.imageSrc}
+                          alt={product.title}
+                          className="h-36 w-full object-contain p-2"
+                        />
+                      </div>
+                      <p className="mt-3 line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
+                        {product.store}
+                      </p>
+                      <span className="mt-3 inline-flex rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
+                        View Product
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-muted">
+                  No decent shopping match yet for this strap. Try another one from the bench.
+                </p>
+              )}
             </div>
           ) : null}
           <p className="mt-3 text-sm text-muted">
