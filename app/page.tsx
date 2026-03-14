@@ -124,6 +124,10 @@ interface StrapThumbProps {
   onClick: () => void;
 }
 
+interface FeaturedStrapTeaserProps {
+  strap: StrapVariant;
+}
+
 interface UploadedSplitPart {
   file: File;
   url: string;
@@ -543,9 +547,20 @@ export default function Home() {
       return a.label.localeCompare(b.label);
     });
   }, [category]);
+  const featuredLibraryStraps = useMemo(() => {
+    const straps = [...getStrapsForCategory("All categories")];
+    return straps
+      .sort((a, b) => {
+        const scoreDiff = getStrapSortScore(a) - getStrapSortScore(b);
+        if (scoreDiff !== 0) return scoreDiff;
+        return a.label.localeCompare(b.label);
+      })
+      .slice(0, 3);
+  }, []);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
+  const libraryDrawerLocked = strapSourceMode === "library" && !hasUserUpload;
   const activeStrapASrc =
     strapSourceMode === "uploaded" && uploadedStrapPartA ? uploadedStrapPartA.url : currentStrap?.strapASrc;
   const activeStrapBSrc =
@@ -1018,27 +1033,38 @@ export default function Home() {
     <main className="mx-auto max-w-[108rem] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 xl:px-10">
       <header>
         <div className="text-center">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
             Watch Strap Visualizer
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
+            See any strap on your watch before you buy.
           </h1>
-          <p className="mx-auto mt-2 max-w-2xl text-base text-muted">
+          <p className="mx-auto mt-3 max-w-2xl text-lg leading-8 text-muted sm:text-xl">
             Your current favourite watch is looking for a strap partner.
           </p>
         </div>
       </header>
 
-      <section className="mt-4">
-        <div className="relative w-full max-w-[1120px]">
-          <div className="w-full max-w-[280px]">
+      <section className="mt-5">
+        <div className="relative grid gap-4 lg:max-w-[1120px] lg:grid-cols-[420px,minmax(0,1fr)] lg:items-start">
+          <div className="w-full max-w-[420px] space-y-3">
+            <div className="glass-card rounded-3xl border border-line px-5 py-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-[2rem]">
+                1. Upload your watch first
+              </h2>
+              <p className="mt-2 max-w-[30rem] text-base leading-7 text-muted">
+                Get your own watch on the bench first. Then the Strap Box opens properly and the fit tools start making sense.
+              </p>
+            </div>
             <ImageUploader
               id="watch"
-              label="1. Upload Watch Photo"
+              label="Watch Photo"
               helperText="Front-on, straight shots work best. Retailer screenshots are the easy mode."
               previewUrl={watchPreviewSrc}
               onFileSelect={onUploadDial}
-              compact
               accentActive={highlightUploadGuide}
-              className="w-full max-w-[280px] shrink-0"
+              className="w-full max-w-[420px] shrink-0"
             />
             <div className="mt-2">
               <button
@@ -1057,7 +1083,7 @@ export default function Home() {
           {showUploadGuide ? (
             <div
               id="upload-guide-panel"
-              className={`glass-card z-20 mt-3 w-full max-w-[760px] overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 lg:absolute lg:left-[304px] lg:top-0 lg:mt-0 ${
+              className={`glass-card z-20 mt-3 w-full max-w-[680px] overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 lg:absolute lg:left-[444px] lg:top-[84px] lg:mt-0 ${
                 highlightUploadGuide ? "upload-attention-ring" : ""
               }`}
             >
@@ -1086,11 +1112,12 @@ export default function Home() {
       </section>
 
       {cropSourceUrl && originalWatchFile ? (
-        <section className="mt-4 w-full max-w-[880px]">
+        <section className="mt-4 w-full max-w-[1080px]">
           <CropEditor
             file={originalWatchFile}
             sourceUrl={cropSourceUrl}
             onApply={applyCroppedDial}
+            onClose={() => setCropSourceUrl(null)}
           />
         </section>
       ) : null}
@@ -1109,9 +1136,27 @@ export default function Home() {
       <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[480px,1fr]">
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
-            <p className="text-lg font-medium text-ink">
-              2. Browse The Strap Box
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-lg font-medium text-ink">
+                  2. Browse The Strap Box
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  {hasUserUpload
+                    ? "Your watch is loaded. Now start auditioning straps."
+                    : "Upload your watch above to unlock the full drawer."}
+                </p>
+              </div>
+              {hasUserUpload ? (
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                  Ready
+                </span>
+              ) : (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
+                  Waiting for your watch
+                </span>
+              )}
+            </div>
             <div className="mt-3 inline-flex rounded-full border border-line bg-canvas p-1">
               {[
                 { mode: "library" as const, label: "Library" },
@@ -1125,7 +1170,7 @@ export default function Home() {
                     onClick={() => setStrapSourceMode(option.mode)}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       active
-                        ? "bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
+                        ? "bg-emerald-900 text-white shadow-[0_10px_20px_rgba(6,78,59,0.24)]"
                         : "text-ink hover:bg-white"
                     }`}
                     aria-pressed={active}
@@ -1137,6 +1182,20 @@ export default function Home() {
             </div>
 
             {strapSourceMode === "library" ? (
+              libraryDrawerLocked ? (
+                <div className="mt-4 rounded-2xl border border-dashed border-line bg-gradient-to-br from-white/90 to-slate-50/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+                  <p className="text-sm uppercase tracking-[0.12em] text-muted">Drawer Preview</p>
+                  <p className="mt-2 text-lg font-semibold text-ink">The full strap drawer opens after your upload.</p>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    We’ll keep the shortlist warmed up. Once your watch is loaded, you can browse by category and tune the fit properly.
+                  </p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    {featuredLibraryStraps.map((strap) => (
+                      <FeaturedStrapTeaser key={strap.id} strap={strap} />
+                    ))}
+                  </div>
+                </div>
+              ) : (
               <>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {STRAP_CATEGORIES.map((option) => {
@@ -1153,8 +1212,8 @@ export default function Home() {
                         data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
                         className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                           active
-                            ? "border-slate-900 bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
-                            : "border-line bg-canvas text-ink hover:border-slate-300 hover:bg-white"
+                            ? "border-emerald-900 bg-emerald-900 text-white shadow-[0_10px_20px_rgba(6,78,59,0.24)]"
+                            : "border-line bg-canvas text-ink hover:border-emerald-200 hover:bg-white"
                         }`}
                         aria-pressed={active}
                       >
@@ -1170,9 +1229,6 @@ export default function Home() {
                 <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm uppercase tracking-[0.12em] text-muted">On Deck</p>
                   <p className="mt-2 text-xl font-semibold text-ink">{currentStrap.label}</p>
-                  <p className="mt-2 text-sm text-muted">
-                    Flick through contenders with the preview arrows.
-                  </p>
                 </div>
 
                 <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
@@ -1195,6 +1251,7 @@ export default function Home() {
                   </div>
                 </div>
               </>
+              )
             ) : (
               <div className="mt-4 space-y-4">
                 <div className="rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
@@ -1293,13 +1350,6 @@ export default function Home() {
               >
                 {isAutoAligning ? "Resetting fit..." : "Reset Strap Fit"}
               </button>
-              <button
-                type="button"
-                onClick={() => void onSavePreviewImage()}
-                className="rounded-lg border border-ink bg-ink px-4 py-2.5 text-base text-white hover:opacity-90"
-              >
-                Save Image
-              </button>
               {hasUserUpload && originalWatchSrc && watchSrc !== originalWatchSrc ? (
                 <button
                   type="button"
@@ -1322,8 +1372,42 @@ export default function Home() {
 
         <section className="min-w-0">
           <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
-            4. Strap Check
+            3. Live Preview
           </h2>
+          {canRender && hasUserUpload ? (
+            <div className="glass-card sticky top-4 z-10 mb-4 rounded-2xl p-4 shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Lock & Export</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {lockView
+                      ? "Fit locked. Save the pairing or send it down to the catalogue image tool."
+                      : "Happy with the pairing? Lock the fit first, then export with confidence."}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setLockView((prev) => !prev)}
+                    className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+                      lockView
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                        : "border-line bg-canvas text-ink hover:bg-white"
+                    }`}
+                  >
+                    {lockView ? "Unlock Fit" : "Lock Fit"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void onSavePreviewImage()}
+                    className="rounded-xl border border-amber-800 bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                  >
+                    Save Image
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {canRender ? (
             <CanvasPreview
               ref={canvasRef}
@@ -1359,6 +1443,7 @@ export default function Home() {
                         onChange={setGapHalf}
                         disabled={lockView}
                         highlighted={showControlCoachmark}
+                        hint="Closer ↔ Wider"
                       />
                       {showControlCoachmark ? (
                         <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
@@ -1376,9 +1461,9 @@ export default function Home() {
                       step={1}
                       value={strapSizeUi}
                       onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
-                      displayValue={Math.round(strapScale).toString()}
                       disabled={lockView}
                       highlighted={showControlCoachmark}
+                      hint="Slimmer ↔ Fuller"
                     />
                     {showControlCoachmark ? (
                       <div className="rounded-2xl border border-sky-200/80 bg-sky-50/80 px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
@@ -1404,6 +1489,7 @@ export default function Home() {
                       value={dialScale}
                       onChange={setDialScaleValue}
                       disabled={lockView}
+                      hint="Smaller ↔ Larger"
                     />
                     <SliderControl
                       label="View Zoom"
@@ -1412,7 +1498,7 @@ export default function Home() {
                       step={0.02}
                       value={sceneZoom}
                       onChange={setSceneZoom}
-                      displayValue={`${Math.round(sceneZoom * 100)}%`}
+                      hint="Whole watch ↔ Detail"
                     />
                     <ToggleControl
                       label="Lock Fit"
@@ -1433,7 +1519,7 @@ export default function Home() {
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Bench Tools
+                  4. Bench Tools
                 </p>
               </div>
               {activeAiStatus.tool ? (
@@ -1634,6 +1720,23 @@ function ErrorText({ message }: { message: string }) {
   return <p className="text-xs text-rose-600">{message}</p>;
 }
 
+function FeaturedStrapTeaser({ strap }: FeaturedStrapTeaserProps) {
+  return (
+    <div className="rounded-2xl border border-line bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+      <div className="flex h-28 items-center justify-center overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={strap.strapASrc}
+          alt={`${strap.label} teaser`}
+          className="h-full w-full object-contain p-1"
+          loading="lazy"
+        />
+      </div>
+      <p className="mt-2 line-clamp-2 text-sm font-semibold leading-tight text-ink">{strap.label}</p>
+    </div>
+  );
+}
+
 function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbProps) {
   return (
     <button
@@ -1642,14 +1745,14 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       data-testid={`strap-${strap.id}`}
       className={`flex w-full items-center gap-4 rounded-[1.6rem] border px-4 py-4 text-left transition ${
         active
-          ? "border-sky-200 bg-sky-50/90 text-ink shadow-[0_10px_24px_rgba(56,189,248,0.12)]"
+          ? "border-emerald-200 bg-emerald-50/90 text-ink shadow-[0_10px_24px_rgba(16,185,129,0.12)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
       }`}
       aria-pressed={active}
     >
       <div
         className={`flex h-[152px] w-[152px] shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border ${
-          active ? "border-sky-200 bg-white" : "border-line bg-slate-50"
+          active ? "border-emerald-200 bg-white" : "border-line bg-slate-50"
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1665,7 +1768,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         {showCategory ? (
           <p
             className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] ${
-              active ? "bg-sky-100 text-sky-700" : "bg-slate-200/70 text-slate-700"
+              active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200/70 text-slate-700"
             }`}
           >
             {strap.category}
@@ -1747,6 +1850,7 @@ interface SliderControlProps {
   value: number;
   onChange: (value: number) => void;
   displayValue?: string;
+  hint?: string;
   disabled?: boolean;
   highlighted?: boolean;
 }
@@ -1759,6 +1863,7 @@ function SliderControl({
   value,
   onChange,
   displayValue,
+  hint,
   disabled,
   highlighted = false
 }: SliderControlProps) {
@@ -1781,10 +1886,7 @@ function SliderControl({
     <div className={`neo-control rounded-2xl p-4 transition ${highlighted ? "ring-2 ring-sky-200/80 shadow-[0_0_0_1px_rgba(125,211,252,0.35),0_14px_28px_rgba(56,189,248,0.1)]" : ""}`}>
       <div className="mb-2 flex items-center justify-between">
         <span className="text-lg font-semibold text-ink">{label}</span>
-        <span className="text-sm text-muted">
-          {displayValue ??
-            (label === "Watch Head Size" ? `${Math.round(value * 100)}%` : Math.round(value))}
-        </span>
+        {displayValue ? <span className="text-sm text-muted">{displayValue}</span> : null}
       </div>
       <input
         type="range"
@@ -1803,6 +1905,7 @@ function SliderControl({
           <span key={index} />
         ))}
       </div>
+      {hint ? <p className="mt-3 text-xs font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
     </div>
   );
 }
