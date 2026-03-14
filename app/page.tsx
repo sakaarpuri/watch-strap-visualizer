@@ -1015,21 +1015,34 @@ export default function Home() {
   const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-    <main className="mx-auto max-w-[108rem] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 xl:px-10">
-      <header>
+    <main className="mx-auto max-w-[116rem] px-4 py-5 sm:px-6 sm:py-7 md:px-8 md:py-8 xl:px-10">
+      <header className="border-b border-line/70 pb-4">
         <div className="text-center">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
             Watch Strap Visualizer
           </h1>
-          <p className="mx-auto mt-2 max-w-2xl text-base text-muted">
+          <p className="mx-auto mt-1 max-w-2xl text-sm text-muted sm:text-base">
             Your current favourite watch is looking for a strap partner.
           </p>
         </div>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-muted sm:text-sm">
+          <StepBadge label="Upload photo" state={hasUserUpload ? "done" : "active"} />
+          <span className="h-px w-6 bg-line" aria-hidden="true" />
+          <StepBadge
+            label="Browse straps"
+            state={canRender ? "active" : hasUserUpload ? "done" : "idle"}
+          />
+          <span className="h-px w-6 bg-line" aria-hidden="true" />
+          <StepBadge
+            label="Fit & export"
+            state={lockView || generatedResults.final ? "active" : "idle"}
+          />
+        </div>
       </header>
 
-      <section className="mt-4">
-        <div className="relative w-full max-w-[1120px]">
-          <div className="w-full max-w-[280px]">
+      <section className="mt-6 grid gap-5 xl:grid-cols-[360px,minmax(0,1fr),264px]">
+        <aside className="space-y-4">
+          <div className="relative w-full max-w-[320px] xl:max-w-none">
             <ImageUploader
               id="watch"
               label="1. Upload Watch Photo"
@@ -1038,7 +1051,7 @@ export default function Home() {
               onFileSelect={onUploadDial}
               compact
               accentActive={highlightUploadGuide}
-              className="w-full max-w-[280px] shrink-0"
+              className="w-full shrink-0"
             />
             <div className="mt-2">
               <button
@@ -1052,93 +1065,84 @@ export default function Home() {
                 <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
               </button>
             </div>
+            {showUploadGuide ? (
+              <div
+                id="upload-guide-panel"
+                className={`glass-card z-20 mt-3 overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 xl:absolute xl:left-full xl:top-0 xl:ml-3 xl:mt-0 xl:w-[540px] ${
+                  highlightUploadGuide ? "upload-attention-ring" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowUploadGuide(false)}
+                  className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
+                  aria-expanded={showUploadGuide}
+                  aria-controls="upload-guide-panel"
+                >
+                  <p className="text-sm font-semibold text-ink">Photo Tips</p>
+                  <span className="neo-button shrink-0 rounded-xl px-3 py-2 text-lg font-semibold text-ink">
+                    ←
+                  </span>
+                </button>
+                <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
+                  {UPLOAD_GUIDE_ITEMS.map((item) => (
+                    <div key={item.title} className="min-w-[136px] max-w-[148px] flex-1">
+                      <UploadGuideCard item={item} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          {showUploadGuide ? (
-            <div
-              id="upload-guide-panel"
-              className={`glass-card z-20 mt-3 w-full max-w-[760px] overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 lg:absolute lg:left-[304px] lg:top-0 lg:mt-0 ${
-                highlightUploadGuide ? "upload-attention-ring" : ""
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => setShowUploadGuide(false)}
-                className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
-                aria-expanded={showUploadGuide}
-                aria-controls="upload-guide-panel"
-              >
-                <p className="text-base font-semibold text-ink">Photo Tips</p>
-                <span className="neo-button shrink-0 rounded-xl px-3 py-2 text-lg font-semibold text-ink">
-                  ←
-                </span>
-              </button>
-              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-                {UPLOAD_GUIDE_ITEMS.map((item) => (
-                  <div key={item.title} className="min-w-[170px] max-w-[180px] flex-1">
-                    <UploadGuideCard item={item} />
-                  </div>
-                ))}
-              </div>
-            </div>
+          {cropSourceUrl && originalWatchFile ? (
+            <section>
+              <CropEditor file={originalWatchFile} sourceUrl={cropSourceUrl} onApply={applyCroppedDial} />
+            </section>
           ) : null}
-        </div>
-      </section>
 
-      {cropSourceUrl && originalWatchFile ? (
-        <section className="mt-4 w-full max-w-[880px]">
-          <CropEditor
-            file={originalWatchFile}
-            sourceUrl={cropSourceUrl}
-            onApply={applyCroppedDial}
-          />
-        </section>
-      ) : null}
+          {strapSplitSourceUrl && uploadedStrapSheetFile ? (
+            <section>
+              <StrapSplitEditor
+                file={uploadedStrapSheetFile}
+                sourceUrl={strapSplitSourceUrl}
+                onApply={applySplitStrap}
+                onClose={() => setStrapSplitSourceUrl(null)}
+              />
+            </section>
+          ) : null}
 
-      {strapSplitSourceUrl && uploadedStrapSheetFile ? (
-        <section className="mt-4 w-full max-w-[1100px]">
-          <StrapSplitEditor
-            file={uploadedStrapSheetFile}
-            sourceUrl={strapSplitSourceUrl}
-            onApply={applySplitStrap}
-            onClose={() => setStrapSplitSourceUrl(null)}
-          />
-        </section>
-      ) : null}
-
-      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[480px,1fr]">
-        <aside className="space-y-5">
-          <div className="glass-card rounded-2xl p-4 sm:p-6">
-            <p className="text-lg font-medium text-ink">
-              2. Browse The Strap Box
-            </p>
-            <div className="mt-3 inline-flex rounded-full border border-line bg-canvas p-1">
-              {[
-                { mode: "library" as const, label: "Library" },
-                { mode: "uploaded" as const, label: "Your Strap" }
-              ].map((option) => {
-                const active = strapSourceMode === option.mode;
-                return (
-                  <button
-                    key={option.mode}
-                    type="button"
-                    onClick={() => setStrapSourceMode(option.mode)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      active
-                        ? "bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
-                        : "text-ink hover:bg-white"
-                    }`}
-                    aria-pressed={active}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
+          <div className="glass-card rounded-2xl p-4 sm:p-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xl font-medium text-ink">2. Browse The Strap Box</p>
+              <div className="inline-flex rounded-full border border-line bg-canvas p-1">
+                {[
+                  { mode: "library" as const, label: "Library" },
+                  { mode: "uploaded" as const, label: "Your Strap" }
+                ].map((option) => {
+                  const active = strapSourceMode === option.mode;
+                  return (
+                    <button
+                      key={option.mode}
+                      type="button"
+                      onClick={() => setStrapSourceMode(option.mode)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        active
+                          ? "bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
+                          : "text-ink hover:bg-white"
+                      }`}
+                      aria-pressed={active}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {strapSourceMode === "library" ? (
               <>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2">
                   {STRAP_CATEGORIES.map((option) => {
                     const active = option === category;
                     const count = getStrapsForCategory(option).length;
@@ -1170,16 +1174,14 @@ export default function Home() {
                 <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm uppercase tracking-[0.12em] text-muted">On Deck</p>
                   <p className="mt-2 text-xl font-semibold text-ink">{currentStrap.label}</p>
-                  <p className="mt-2 text-sm text-muted">
-                    Flick through contenders with the preview arrows.
-                  </p>
+                  <p className="mt-2 text-sm text-muted">Flick through contenders with the preview arrows.</p>
                 </div>
 
                 <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                     {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
                   </p>
-                  <div className="mt-3 max-h-[36rem] space-y-3 overflow-y-auto pr-1">
+                  <div className="mt-3 max-h-[31rem] space-y-3 overflow-y-auto pr-1">
                     {strapsInCategory.map((strap, index) => {
                       const active = index === strapIndex;
                       return (
@@ -1196,7 +1198,7 @@ export default function Home() {
                 </div>
               </>
             ) : (
-              <div className="mt-4 space-y-4">
+              <div className="space-y-4">
                 <div className="rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm uppercase tracking-[0.12em] text-muted">Your Strap Sheet</p>
                   <p className="mt-2 text-sm text-muted">
@@ -1235,9 +1237,7 @@ export default function Home() {
                 </div>
 
                 <div className="rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Current Upload
-                  </p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Current Upload</p>
                   {hasUploadedStrap ? (
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       {[
@@ -1272,9 +1272,7 @@ export default function Home() {
                 onClick={() => setPreserveSettings((prev) => !prev)}
                 aria-pressed={preserveSettings}
                 className={`relative h-8 w-14 shrink-0 overflow-hidden rounded-full border transition ${
-                  preserveSettings
-                    ? "border-emerald-500/40 bg-emerald-400/30"
-                    : "border-line bg-canvas"
+                  preserveSettings ? "border-emerald-500/40 bg-emerald-400/30" : "border-line bg-canvas"
                 }`}
               >
                 <span
@@ -1321,9 +1319,7 @@ export default function Home() {
         </aside>
 
         <section className="min-w-0">
-          <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
-            4. Strap Check
-          </h2>
+          <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">4. Strap Check</h2>
           {canRender ? (
             <CanvasPreview
               ref={canvasRef}
@@ -1343,98 +1339,20 @@ export default function Home() {
                 setPartB(nextB);
               }}
               onCycleStrap={onCycleStrap}
-              controls={
-                <div className="glass-card rounded-xl p-3">
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Fit Bench
-                  </p>
-                  <div className="mt-2 grid gap-2">
-                    <div className="relative">
-                      <SliderControl
-                        label="Strap Gap"
-                        min={250}
-                        max={900}
-                        step={10}
-                        value={strapGap}
-                        onChange={setGapHalf}
-                        disabled={lockView}
-                        highlighted={showControlCoachmark}
-                      />
-                      {showControlCoachmark ? (
-                        <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
-                          <div className="flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
-                            Size first. Then trim the gap.
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                    <SliderControl
-                      label="Strap Size"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={strapSizeUi}
-                      onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
-                      displayValue={Math.round(strapScale).toString()}
-                      disabled={lockView}
-                      highlighted={showControlCoachmark}
-                    />
-                    {showControlCoachmark ? (
-                      <div className="rounded-2xl border border-sky-200/80 bg-sky-50/80 px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="text-xs leading-5 text-slate-700">
-                            Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
-                          </p>
-                          <button
-                            type="button"
-                            onClick={dismissControlCoachmark}
-                            className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-                          >
-                            Got it
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                    <SliderControl
-                      label="Dial Size"
-                      min={DIAL_SCALE_MIN}
-                      max={DIAL_SCALE_MAX}
-                      step={0.02}
-                      value={dialScale}
-                      onChange={setDialScaleValue}
-                      disabled={lockView}
-                    />
-                    <SliderControl
-                      label="View Zoom"
-                      min={0.2}
-                      max={1.4}
-                      step={0.02}
-                      value={sceneZoom}
-                      onChange={setSceneZoom}
-                      displayValue={`${Math.round(sceneZoom * 100)}%`}
-                    />
-                    <ToggleControl
-                      label="Lock Fit"
-                      description="Freeze the fit and just inspect the view"
-                      enabled={lockView}
-                      onToggle={() => setLockView((prev) => !prev)}
-                    />
-                  </div>
-                </div>
-              }
             />
           ) : (
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
               Upload a watch photo, then give it a strap worth arguing about.
             </div>
           )}
+          <p className="mt-2 text-center text-xs italic text-muted">
+            Visual inspiration only. Final fit depends on lug width &amp; strap model.
+          </p>
+
           <div className="glass-card mt-4 rounded-2xl p-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Bench Tools
-                </p>
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Bench Tools</p>
               </div>
               {activeAiStatus.tool ? (
                 <div className="md:max-w-[18rem]">
@@ -1472,15 +1390,13 @@ export default function Home() {
                 ) : null}
                 {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
               </div>
-
             </div>
           </div>
+
           {inlineMockupUrl ? (
             <div className="glass-card mt-4 rounded-2xl p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Mockup Deck
-                </p>
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Mockup Deck</p>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -1506,6 +1422,7 @@ export default function Home() {
               />
             </div>
           ) : null}
+
           {strapSourceMode === "library" && lockView ? (
             <div className="glass-card mt-4 rounded-2xl p-4">
               <div>
@@ -1538,9 +1455,7 @@ export default function Home() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                          {product.store}
-                        </p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">{product.store}</p>
                       </div>
                       <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
                         View Product
@@ -1549,15 +1464,11 @@ export default function Home() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-muted">
-                  No close store match yet for this locked strap.
-                </p>
+                <p className="mt-3 text-sm text-muted">No close store match yet for this locked strap.</p>
               )}
             </div>
           ) : null}
-          <p className="mt-3 text-sm text-muted">
-            Visual inspiration only. Final fit depends on lug width &amp; strap model.
-          </p>
+
           <div className="mt-6 flex justify-center md:justify-end">
             <Link
               href="/contact"
@@ -1567,8 +1478,111 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        <aside className="min-w-0">
+          <div className="glass-card rounded-2xl p-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Fit Bench</p>
+            <div className="mt-3 grid gap-3">
+              <div className="relative">
+                <SliderControl
+                  label="Strap Gap"
+                  min={250}
+                  max={900}
+                  step={10}
+                  value={strapGap}
+                  onChange={setGapHalf}
+                  disabled={lockView}
+                  highlighted={showControlCoachmark}
+                />
+                {showControlCoachmark ? (
+                  <div className="pointer-events-none absolute inset-x-4 -bottom-3 flex items-center justify-center">
+                    <div className="flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+                      Size first. Then trim the gap.
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              <SliderControl
+                label="Strap Size"
+                min={0}
+                max={100}
+                step={1}
+                value={strapSizeUi}
+                onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
+                displayValue={Math.round(strapScale).toString()}
+                disabled={lockView}
+                highlighted={showControlCoachmark}
+              />
+              {showControlCoachmark ? (
+                <div className="rounded-2xl border border-sky-200/80 bg-sky-50/80 px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-xs leading-5 text-slate-700">
+                      Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={dismissControlCoachmark}
+                      className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              <SliderControl
+                label="Dial Size"
+                min={DIAL_SCALE_MIN}
+                max={DIAL_SCALE_MAX}
+                step={0.02}
+                value={dialScale}
+                onChange={setDialScaleValue}
+                disabled={lockView}
+              />
+              <SliderControl
+                label="View Zoom"
+                min={0.2}
+                max={1.4}
+                step={0.02}
+                value={sceneZoom}
+                onChange={setSceneZoom}
+                displayValue={`${Math.round(sceneZoom * 100)}%`}
+              />
+              <ToggleControl
+                label="Lock Fit"
+                description="Freeze the fit and just inspect the view"
+                enabled={lockView}
+                onToggle={() => setLockView((prev) => !prev)}
+              />
+            </div>
+          </div>
+        </aside>
       </section>
     </main>
+  );
+}
+
+function StepBadge({
+  label,
+  state
+}: {
+  label: string;
+  state: "done" | "active" | "idle";
+}) {
+  const shell =
+    state === "active"
+      ? "border-ink bg-ink text-white"
+      : state === "done"
+        ? "border-[color:rgba(148,163,184,0.4)] bg-slate-300/90 text-white"
+        : "border-line bg-white text-muted";
+
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full px-1 py-1">
+      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-semibold ${shell}`}>
+        {state === "done" ? "✓" : state === "active" ? "•" : ""}
+      </span>
+      <span className={`${state === "active" ? "font-semibold text-ink" : "text-muted"}`}>{label}</span>
+    </div>
   );
 }
 
