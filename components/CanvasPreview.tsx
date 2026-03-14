@@ -32,6 +32,7 @@ interface CanvasPreviewProps {
   locked: boolean;
   onDragPartsChange: (nextPartA: PartTransform, nextPartB: PartTransform) => void;
   onCycleStrap: (direction: 1 | -1) => void;
+  showCycleControls?: boolean;
   controls?: ReactNode;
 }
 
@@ -83,6 +84,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       locked,
       onDragPartsChange,
       onCycleStrap,
+      showCycleControls = true,
       controls
     },
     ref
@@ -300,19 +302,21 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       >
         <div className={controls ? "grid gap-3 xl:grid-cols-[minmax(0,1fr),248px]" : ""}>
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setIsTicking(true);
-                window.setTimeout(() => setIsTicking(false), 90);
-                onCycleStrap(-1);
-              }}
-              disabled={locked}
-              className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-cyan-200/80 bg-gradient-to-b from-white/95 to-cyan-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(59,130,246,.2)] hover:from-white hover:to-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Previous strap"
-            >
-              ←
-            </button>
+            {showCycleControls ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTicking(true);
+                  window.setTimeout(() => setIsTicking(false), 90);
+                  onCycleStrap(-1);
+                }}
+                disabled={locked}
+                className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-cyan-200/80 bg-gradient-to-b from-white/95 to-cyan-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(59,130,246,.2)] hover:from-white hover:to-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Previous strap"
+              >
+                ←
+              </button>
+            ) : null}
             <canvas
               ref={canvasRef}
               data-testid="preview-canvas"
@@ -324,19 +328,21 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             style={{ touchAction: "none", cursor: locked ? "default" : cursor }}
             aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
           />
-            <button
-              type="button"
-              onClick={() => {
-                setIsTicking(true);
-                window.setTimeout(() => setIsTicking(false), 90);
-                onCycleStrap(1);
-              }}
-              disabled={locked}
-              className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-fuchsia-200/80 bg-gradient-to-b from-white/95 to-fuchsia-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(217,70,239,.2)] hover:from-white hover:to-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Next strap"
-            >
-              →
-            </button>
+            {showCycleControls ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTicking(true);
+                  window.setTimeout(() => setIsTicking(false), 90);
+                  onCycleStrap(1);
+                }}
+                disabled={locked}
+                className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-fuchsia-200/80 bg-gradient-to-b from-white/95 to-fuchsia-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(217,70,239,.2)] hover:from-white hover:to-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Next strap"
+              >
+                →
+              </button>
+            ) : null}
           </div>
           {controls ? <div className="self-start">{controls}</div> : null}
         </div>

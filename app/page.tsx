@@ -5,6 +5,7 @@ import Link from "next/link";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import CropEditor from "@/components/CropEditor";
 import ImageUploader from "@/components/ImageUploader";
+import StrapSplitEditor from "@/components/StrapSplitEditor";
 import { calculateAutoPlacement, loadStrapImage, PartTransform } from "@/lib/compose";
 import {
   STRAP_CATEGORIES,
@@ -12,6 +13,7 @@ import {
   StrapCategory,
   StrapVariant
 } from "@/lib/strapLibrary";
+import type { SimilarProductCard } from "@/lib/shopping";
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -91,6 +93,7 @@ const applyCenterToPair = (
 };
 
 type AiToolKey = "cleanup" | "rescue" | "final";
+type StrapSourceMode = "library" | "uploaded";
 
 interface AiToolState {
   loading: boolean;
@@ -119,6 +122,11 @@ interface StrapThumbProps {
   active: boolean;
   showCategory: boolean;
   onClick: () => void;
+}
+
+interface UploadedSplitPart {
+  file: File;
+  url: string;
 }
 
 const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
@@ -488,6 +496,12 @@ export default function Home() {
   const [originalWatchFile, setOriginalWatchFile] = useState<File | null>(null);
   const [uploadedWatchFile, setUploadedWatchFile] = useState<File | null>(null);
   const [cropSourceUrl, setCropSourceUrl] = useState<string | null>(null);
+  const [strapSourceMode, setStrapSourceMode] = useState<StrapSourceMode>("library");
+  const [uploadedStrapSheetFile, setUploadedStrapSheetFile] = useState<File | null>(null);
+  const [uploadedStrapSheetUrl, setUploadedStrapSheetUrl] = useState<string | null>(null);
+  const [strapSplitSourceUrl, setStrapSplitSourceUrl] = useState<string | null>(null);
+  const [uploadedStrapPartA, setUploadedStrapPartA] = useState<UploadedSplitPart | null>(null);
+  const [uploadedStrapPartB, setUploadedStrapPartB] = useState<UploadedSplitPart | null>(null);
   const [category, setCategory] = useState<StrapCategory>("All categories");
   const [strapIndex, setStrapIndex] = useState(defaultAllCategoryIndex);
   const [partA, setPartA] = useState<PartTransform | null>(null);
@@ -506,6 +520,8 @@ export default function Home() {
   const [highlightUploadGuide, setHighlightUploadGuide] = useState(true);
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
   const [showControlCoachmark, setShowControlCoachmark] = useState(false);
+  const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
+  const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
     tool: null,
     label: "",
@@ -513,6 +529,7 @@ export default function Home() {
   });
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
+  const strapUploadInputRef = useRef<HTMLInputElement>(null);
   const latestPartARef = useRef<PartTransform | null>(null);
   const latestPartBRef = useRef<PartTransform | null>(null);
   const preserveSettingsRef = useRef(true);
@@ -528,9 +545,21 @@ export default function Home() {
   }, [category]);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
+  const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
+  const activeStrapASrc =
+    strapSourceMode === "uploaded" && uploadedStrapPartA ? uploadedStrapPartA.url : currentStrap?.strapASrc;
+  const activeStrapBSrc =
+    strapSourceMode === "uploaded" && uploadedStrapPartB ? uploadedStrapPartB.url : currentStrap?.strapBSrc;
+  const activeStrapLabel =
+    strapSourceMode === "uploaded" ? "Your Strap" : currentStrap?.label || "Selected strap";
+  const activeJoinShape = strapSourceMode === "uploaded" ? undefined : currentStrap?.joinShape;
+  const activeAutoFitWidthFactor =
+    strapSourceMode === "uploaded" ? 0.1 : currentStrap?.autoFitWidthFactor;
+  const activeAutoGapFactor =
+    strapSourceMode === "uploaded" ? undefined : currentStrap?.autoGapFactor;
   const canRender = useMemo(
-    () => Boolean(partA && partB && currentStrap),
-    [partA, partB, currentStrap]
+    () => Boolean(partA && partB && activeStrapASrc && activeStrapBSrc),
+    [partA, partB, activeStrapASrc, activeStrapBSrc]
   );
 
   useEffect(() => {
@@ -559,6 +588,29 @@ export default function Home() {
       setShowUploadGuide(true);
       setHasAutoOpenedUploadGuide(true);
     }
+  };
+
+  const onUploadStrapSheet = (file: File) => {
+    const nextUrl = URL.createObjectURL(file);
+    setUploadedStrapSheetFile(file);
+    setUploadedStrapSheetUrl(nextUrl);
+    setStrapSplitSourceUrl(nextUrl);
+    setUploadedStrapPartA(null);
+    setUploadedStrapPartB(null);
+    setStrapSourceMode("uploaded");
+  };
+
+  const applySplitStrap = (payload: { partA: UploadedSplitPart; partB: UploadedSplitPart }) => {
+    setUploadedStrapPartA({
+      file: payload.partA.file,
+      url: URL.createObjectURL(payload.partA.file)
+    });
+    setUploadedStrapPartB({
+      file: payload.partB.file,
+      url: URL.createObjectURL(payload.partB.file)
+    });
+    setStrapSplitSourceUrl(null);
+    setStrapSourceMode("uploaded");
   };
 
   useEffect(() => {
@@ -610,7 +662,7 @@ export default function Home() {
   };
 
   const autoAlignStraps = async () => {
-    if (!currentStrap) return;
+    if (!activeStrapASrc || !activeStrapBSrc) return;
     setIsAutoAligning(true);
     try {
       const latestPartA = latestPartARef.current;
@@ -622,10 +674,10 @@ export default function Home() {
       );
       let aligned = await calculateAutoPlacement(
         watchSrc,
-        currentStrap.strapASrc,
-        currentStrap.strapBSrc,
-        currentStrap.autoFitWidthFactor,
-        currentStrap.autoGapFactor
+        activeStrapASrc,
+        activeStrapBSrc,
+        activeAutoFitWidthFactor,
+        activeAutoGapFactor
       );
 
       if (shouldPreserve && latestPartA && latestPartB) {
@@ -653,14 +705,10 @@ export default function Home() {
   useEffect(() => {
     void autoAlignStraps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSrc]);
+  }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor]);
 
   useEffect(() => {
-    void autoAlignStraps();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, strapIndex]);
-
-  useEffect(() => {
+    if (strapSourceMode !== "library") return;
     const total = strapsInCategory.length;
     if (!total) return;
     const neighborIndices = [
@@ -676,9 +724,10 @@ export default function Home() {
         return [loadStrapImage(strap.strapASrc), loadStrapImage(strap.strapBSrc)];
       })
     ).catch(() => undefined);
-  }, [category, strapIndex]);
+  }, [category, strapIndex, strapSourceMode]);
 
   const onCycleStrap = (direction: 1 | -1) => {
+    if (strapSourceMode !== "library") return;
     setStrapIndex((prev) => {
       const total = strapsInCategory.length;
       return (prev + direction + total) % total;
@@ -722,6 +771,38 @@ export default function Home() {
     setWatchSrc(previewSrc);
     setWatchPreviewSrc(previewSrc);
   };
+
+  useEffect(() => {
+    if (strapSourceMode !== "library" || !currentStrap?.id) {
+      setSimilarProducts([]);
+      setSimilarProductsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setSimilarProductsLoading(true);
+    fetch(`/api/products/similar?strapId=${encodeURIComponent(currentStrap.id)}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load shopping matches.");
+        return response.json() as Promise<{ products?: SimilarProductCard[] }>;
+      })
+      .then((payload) => {
+        if (!active) return;
+        setSimilarProducts(Array.isArray(payload.products) ? payload.products : []);
+      })
+      .catch(() => {
+        if (!active) return;
+        setSimilarProducts([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setSimilarProductsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentStrap?.id, strapSourceMode]);
 
   const runCleanupFallback = async () => {
     if (!uploadedWatchFile) return;
@@ -878,10 +959,14 @@ export default function Home() {
           quality: 0.74
         }
       );
+      if (!activeStrapASrc || !activeStrapBSrc) {
+        throw new Error("Strap preview was not available");
+      }
+
       const [preparedWatch, preparedStrapA, preparedStrapB] = await Promise.all([
         prepareSrcForAi(watchSrc, "watch-source.png", { maxSide: 768, quality: 0.76 }),
-        prepareSrcForAi(currentStrap.strapASrc, "strap-a.png", { maxSide: 768, quality: 0.76 }),
-        prepareSrcForAi(currentStrap.strapBSrc, "strap-b.png", { maxSide: 768, quality: 0.76 })
+        prepareSrcForAi(activeStrapASrc, "strap-a.png", { maxSide: 768, quality: 0.76 }),
+        prepareSrcForAi(activeStrapBSrc, "strap-b.png", { maxSide: 768, quality: 0.76 })
       ]);
 
       let taskId = "";
@@ -892,7 +977,7 @@ export default function Home() {
         formData.append("watch", preparedWatch);
         formData.append("strapA", preparedStrapA);
         formData.append("strapB", preparedStrapB);
-        formData.append("strapLabel", currentStrap.label);
+        formData.append("strapLabel", activeStrapLabel);
 
         setAiStage("final", "Create Catalogue Image", attempt === 0 ? "Starting render" : "Retrying render");
         try {
@@ -1010,68 +1095,172 @@ export default function Home() {
         </section>
       ) : null}
 
+      {strapSplitSourceUrl && uploadedStrapSheetFile ? (
+        <section className="mt-4 w-full max-w-[1100px]">
+          <StrapSplitEditor
+            file={uploadedStrapSheetFile}
+            sourceUrl={strapSplitSourceUrl}
+            onApply={applySplitStrap}
+            onClose={() => setStrapSplitSourceUrl(null)}
+          />
+        </section>
+      ) : null}
+
       <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[480px,1fr]">
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <p className="text-lg font-medium text-ink">
               2. Browse The Strap Box
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {STRAP_CATEGORIES.map((option) => {
-                const active = option === category;
-                const count = getStrapsForCategory(option).length;
+            <div className="mt-3 inline-flex rounded-full border border-line bg-canvas p-1">
+              {[
+                { mode: "library" as const, label: "Library" },
+                { mode: "uploaded" as const, label: "Your Strap" }
+              ].map((option) => {
+                const active = strapSourceMode === option.mode;
                 return (
                   <button
-                    key={option}
+                    key={option.mode}
                     type="button"
-                    onClick={() => {
-                      setCategory(option);
-                      setStrapIndex(0);
-                    }}
-                    data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
-                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                    onClick={() => setStrapSourceMode(option.mode)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       active
-                        ? "border-slate-900 bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
-                        : "border-line bg-canvas text-ink hover:border-slate-300 hover:bg-white"
+                        ? "bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
+                        : "text-ink hover:bg-white"
                     }`}
                     aria-pressed={active}
                   >
-                    {option}
-                    <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
-                      {count}
-                    </span>
+                    {option.label}
                   </button>
                 );
               })}
             </div>
 
-            <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-              <p className="text-sm uppercase tracking-[0.12em] text-muted">On Deck</p>
-              <p className="mt-2 text-xl font-semibold text-ink">{currentStrap.label}</p>
-              <p className="mt-2 text-sm text-muted">
-                Flick through contenders with the preview arrows.
-              </p>
-            </div>
+            {strapSourceMode === "library" ? (
+              <>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {STRAP_CATEGORIES.map((option) => {
+                    const active = option === category;
+                    const count = getStrapsForCategory(option).length;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => {
+                          setCategory(option);
+                          setStrapIndex(0);
+                        }}
+                        data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
+                        className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                          active
+                            ? "border-slate-900 bg-slate-900 text-white shadow-[0_10px_20px_rgba(15,23,42,0.18)]"
+                            : "border-line bg-canvas text-ink hover:border-slate-300 hover:bg-white"
+                        }`}
+                        aria-pressed={active}
+                      >
+                        {option}
+                        <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-            <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
-              </p>
-              <div className="mt-3 max-h-[36rem] space-y-3 overflow-y-auto pr-1">
-                {strapsInCategory.map((strap, index) => {
-                  const active = index === strapIndex;
-                  return (
-                    <StrapDrawerButton
-                      key={strap.id}
-                      onClick={() => setStrapIndex(index)}
-                      strap={strap}
-                      active={active}
-                      showCategory={category === "All categories"}
-                    />
-                  );
-                })}
+                <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-sm uppercase tracking-[0.12em] text-muted">On Deck</p>
+                  <p className="mt-2 text-xl font-semibold text-ink">{currentStrap.label}</p>
+                  <p className="mt-2 text-sm text-muted">
+                    Flick through contenders with the preview arrows.
+                  </p>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
+                  </p>
+                  <div className="mt-3 max-h-[36rem] space-y-3 overflow-y-auto pr-1">
+                    {strapsInCategory.map((strap, index) => {
+                      const active = index === strapIndex;
+                      return (
+                        <StrapDrawerButton
+                          key={strap.id}
+                          onClick={() => setStrapIndex(index)}
+                          strap={strap}
+                          active={active}
+                          showCategory={category === "All categories"}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 space-y-4">
+                <div className="rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-sm uppercase tracking-[0.12em] text-muted">Your Strap Sheet</p>
+                  <p className="mt-2 text-sm text-muted">
+                    Upload one straight pair image: buckle side on top, tail side below.
+                  </p>
+                  <input
+                    ref={strapUploadInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      const nextFile = event.target.files?.[0];
+                      if (!nextFile) return;
+                      onUploadStrapSheet(nextFile);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => strapUploadInputRef.current?.click()}
+                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                    >
+                      {hasUploadedStrap ? "Replace Strap Sheet" : "Upload Strap Sheet"}
+                    </button>
+                    {uploadedStrapSheetUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setStrapSplitSourceUrl(uploadedStrapSheetUrl)}
+                        className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                      >
+                        Re-open Split Tool
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Current Upload
+                  </p>
+                  {hasUploadedStrap ? (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        { title: "Part A", src: uploadedStrapPartA?.url },
+                        { title: "Part B", src: uploadedStrapPartB?.url }
+                      ].map((item) => (
+                        <div key={item.title} className="rounded-2xl border border-line bg-white/80 p-3">
+                          <p className="text-sm font-semibold text-ink">{item.title}</p>
+                          <div className="mt-2 flex h-36 items-center justify-center rounded-xl border border-line bg-slate-50">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.src} alt={item.title} className="h-full w-full object-contain p-2" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted">
+                      No strap loaded yet. Upload a product-style pair image and we’ll split it into the preview.
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="neo-toggle mt-4 flex items-center justify-between">
               <div>
@@ -1139,15 +1328,16 @@ export default function Home() {
             <CanvasPreview
               ref={canvasRef}
               watchSrc={watchSrc}
-              strapASrc={currentStrap.strapASrc}
-              strapBSrc={currentStrap.strapBSrc}
+              strapASrc={activeStrapASrc as string}
+              strapBSrc={activeStrapBSrc as string}
               partA={partA as PartTransform}
               partB={partB as PartTransform}
               style={currentStrap.tint}
-              joinShape={currentStrap.joinShape}
+              joinShape={activeJoinShape}
               watchScale={dialScale}
               sceneZoom={sceneZoom}
               locked={lockView}
+              showCycleControls={strapSourceMode === "library"}
               onDragPartsChange={(nextA, nextB) => {
                 setPartA(nextA);
                 setPartB(nextB);
@@ -1236,9 +1426,58 @@ export default function Home() {
             />
           ) : (
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
-              Give the watch head something to wear.
+              Upload a watch photo, then give it a strap worth arguing about.
             </div>
           )}
+          {strapSourceMode === "library" ? (
+            <div className="glass-card mt-4 rounded-2xl p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Buy Similar Online
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    Matches for {currentStrap.label}, not the whole drawer.
+                  </p>
+                </div>
+              </div>
+              {similarProductsLoading ? (
+                <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+              ) : similarProducts.length ? (
+                <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+                  {similarProducts.map((product) => (
+                    <a
+                      key={product.id}
+                      href={product.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-2xl border border-line bg-canvas/80 p-3 transition hover:-translate-y-0.5 hover:bg-white"
+                    >
+                      <div className="overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={product.imageSrc}
+                          alt={product.title}
+                          className="h-36 w-full object-contain p-2"
+                        />
+                      </div>
+                      <p className="mt-3 line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
+                        {product.store}
+                      </p>
+                      <span className="mt-3 inline-flex rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
+                        View Product
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-muted">
+                  No decent shopping match yet for this strap. Try another one from the bench.
+                </p>
+              )}
+            </div>
+          ) : null}
           <div className="glass-card mt-4 rounded-2xl p-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
@@ -1291,13 +1530,22 @@ export default function Home() {
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Mockup Deck
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setInlineMockupUrl(null)}
-                  className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
-                >
-                  Close
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void onSaveMockupImage(inlineMockupUrl)}
+                    className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
+                  >
+                    Save image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInlineMockupUrl(null)}
+                    className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -1394,14 +1642,14 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       data-testid={`strap-${strap.id}`}
       className={`flex w-full items-center gap-4 rounded-[1.6rem] border px-4 py-4 text-left transition ${
         active
-          ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)]"
+          ? "border-sky-200 bg-sky-50/90 text-ink shadow-[0_10px_24px_rgba(56,189,248,0.12)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
       }`}
       aria-pressed={active}
     >
       <div
         className={`flex h-[152px] w-[152px] shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border ${
-          active ? "border-white/15 bg-white/10" : "border-line bg-slate-50"
+          active ? "border-sky-200 bg-white" : "border-line bg-slate-50"
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1417,7 +1665,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         {showCategory ? (
           <p
             className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] ${
-              active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"
+              active ? "bg-sky-100 text-sky-700" : "bg-slate-200/70 text-slate-700"
             }`}
           >
             {strap.category}

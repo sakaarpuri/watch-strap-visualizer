@@ -2,6 +2,42 @@ import type { StrapStyle } from "@/lib/compose";
 
 export type StrapCategory = "All categories" | "Leather" | "Rubber" | "Fabric" | "Metal";
 
+export interface StrapShoppingMeta {
+  material: "leather" | "rubber" | "fabric" | "metal";
+  styleFamily:
+    | "classic"
+    | "smooth"
+    | "grain"
+    | "suede"
+    | "pebbled"
+    | "pull-up"
+    | "saffiano"
+    | "canvas"
+    | "sailcloth"
+    | "nato"
+    | "rubber"
+    | "tropic"
+    | "fkm"
+    | "performance"
+    | "bracelet"
+    | "link-bracelet"
+    | "mesh";
+  colorFamily:
+    | "black"
+    | "brown"
+    | "tan"
+    | "beige"
+    | "burgundy"
+    | "blue"
+    | "green"
+    | "gray"
+    | "silver"
+    | "multicolor"
+    | "orange";
+  hardwareFinish: "silver" | "black";
+  keywords: string[];
+}
+
 export interface StrapVariant {
   id: string;
   label: string;
@@ -9,16 +45,109 @@ export interface StrapVariant {
   strapASrc: string;
   strapBSrc: string;
   tint: StrapStyle;
+  shopping: StrapShoppingMeta;
   autoFitWidthFactor?: number;
   autoGapFactor?: number;
   joinShape?: "flat" | "curved";
 }
 
+type RawStrapVariant = Omit<StrapVariant, "shopping">;
+
 const SEL = "/strap-selection-kie";
 
 const ORIG_TINT: StrapStyle = { name: "Original", color: "#000000", alpha: 0 };
 
-export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, StrapVariant[]> = {
+const inferShoppingMeta = (strap: RawStrapVariant): StrapShoppingMeta => {
+  const haystack = `${strap.id} ${strap.label}`.toLowerCase();
+  const material: StrapShoppingMeta["material"] =
+    strap.category === "Leather"
+      ? "leather"
+      : strap.category === "Rubber"
+        ? "rubber"
+        : strap.category === "Fabric"
+          ? "fabric"
+          : "metal";
+
+  let styleFamily: StrapShoppingMeta["styleFamily"] = "classic";
+  if (material === "metal") {
+    styleFamily = haystack.includes("milanese") ? "mesh" : haystack.includes("link") ? "link-bracelet" : "bracelet";
+  } else if (material === "rubber") {
+    styleFamily = haystack.includes("tropic")
+      ? "tropic"
+      : haystack.includes("fkm")
+        ? "fkm"
+        : haystack.includes("performance")
+          ? "performance"
+          : "rubber";
+  } else if (material === "fabric") {
+    styleFamily = haystack.includes("sailcloth")
+      ? "sailcloth"
+      : haystack.includes("canvas")
+        ? "canvas"
+        : "nato";
+  } else if (haystack.includes("suede") || haystack.includes("nubuck")) {
+    styleFamily = "suede";
+  } else if (haystack.includes("pebbled")) {
+    styleFamily = "pebbled";
+  } else if (haystack.includes("pull-up")) {
+    styleFamily = "pull-up";
+  } else if (haystack.includes("saffiano")) {
+    styleFamily = "saffiano";
+  } else if (haystack.includes("grain")) {
+    styleFamily = "grain";
+  } else if (haystack.includes("smooth")) {
+    styleFamily = "smooth";
+  }
+
+  const colorFamily: StrapShoppingMeta["colorFamily"] = haystack.includes("black") || haystack.includes("pvd")
+    ? "black"
+    : haystack.includes("espresso") ||
+        haystack.includes("dark-brown") ||
+        haystack.includes("chocolate") ||
+        haystack.includes("bourbon") ||
+        haystack.includes("cognac") ||
+        haystack.includes("brown")
+      ? "brown"
+      : haystack.includes("tan") || haystack.includes("saffron")
+        ? "tan"
+        : haystack.includes("beige") || haystack.includes("sand")
+          ? "beige"
+          : haystack.includes("burgundy") || haystack.includes("oxblood") || haystack.includes("aubergine")
+            ? "burgundy"
+            : haystack.includes("navy") || haystack.includes("bond") || haystack.includes("indigo") || haystack.includes("talavera") || haystack.includes("sapphire")
+              ? "blue"
+              : haystack.includes("olive") || haystack.includes("forest") || haystack.includes("khaki") || haystack.includes("emerald") || haystack.includes("mustard")
+                ? "green"
+                : haystack.includes("gray") || haystack.includes("grey") || haystack.includes("slate") || haystack.includes("charcoal") || haystack.includes("gunmetal")
+                  ? material === "metal"
+                    ? "silver"
+                    : "gray"
+                  : haystack.includes("orange")
+                    ? "orange"
+                    : haystack.includes("stripe") || haystack.includes("holi") || haystack.includes("oaxaca")
+                      ? "multicolor"
+                      : material === "metal"
+                        ? "silver"
+                        : "brown";
+
+  const hardwareFinish: StrapShoppingMeta["hardwareFinish"] = haystack.includes("pvd") ? "black" : "silver";
+  const keywords = [...new Set(haystack.split(/[^a-z0-9]+/).filter((token) => token.length > 2 && !["leather", "fabric", "rubber", "metal", "strap", "watch"].includes(token)))];
+
+  return {
+    material,
+    styleFamily,
+    colorFamily,
+    hardwareFinish,
+    keywords
+  };
+};
+
+const withShopping = (strap: RawStrapVariant): StrapVariant => ({
+  ...strap,
+  shopping: inferShoppingMeta(strap)
+});
+
+const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStrapVariant[]> = {
   Leather: [
     {
       id: "leather-classic",
@@ -479,6 +608,13 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
       joinShape: "curved"
     }
   ]
+};
+
+export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, StrapVariant[]> = {
+  Leather: RAW_STRAP_LIBRARY.Leather.map(withShopping),
+  Rubber: RAW_STRAP_LIBRARY.Rubber.map(withShopping),
+  Fabric: RAW_STRAP_LIBRARY.Fabric.map(withShopping),
+  Metal: RAW_STRAP_LIBRARY.Metal.map(withShopping)
 };
 
 export const STRAP_CATEGORIES: StrapCategory[] = [
