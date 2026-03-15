@@ -2,7 +2,7 @@
 
 import { PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 
-const VIEWPORT_SIZE = 360;
+const VIEWPORT_SIZE = 480;
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
@@ -10,9 +10,10 @@ interface CropEditorProps {
   file: File;
   sourceUrl: string;
   onApply: (file: File, previewUrl: string) => void;
+  onClose: () => void;
 }
 
-export default function CropEditor({ file, sourceUrl, onApply }: CropEditorProps) {
+export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEditorProps) {
   const [zoom, setZoom] = useState(1);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
@@ -102,31 +103,40 @@ export default function CropEditor({ file, sourceUrl, onApply }: CropEditorProps
   };
 
   return (
-    <div className="glass-card rounded-2xl p-4 sm:p-5">
+    <div className="glass-card rounded-2xl p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-base font-semibold text-ink">Crop Photo</p>
+          <p className="text-lg font-semibold text-ink">Crop Photo</p>
           <p className="mt-1 text-sm text-muted">
             Drag to frame the watch. Use zoom to tighten the crop before preview.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setZoom(1);
-            setOffsetX(0);
-            setOffsetY(0);
-          }}
-          className="neo-button rounded-xl px-4 py-2 text-sm font-medium text-ink"
-        >
-          Reset Crop
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setZoom(1);
+              setOffsetX(0);
+              setOffsetY(0);
+            }}
+            className="neo-button rounded-xl px-4 py-2 text-sm font-medium text-ink"
+          >
+            Reset Crop
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="neo-button rounded-xl px-4 py-2 text-sm font-medium text-ink"
+          >
+            Close
+          </button>
+        </div>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,420px),1fr] lg:items-center">
-        <div className="mx-auto w-full max-w-[420px]">
+      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,540px),1fr] xl:items-center">
+        <div className="mx-auto w-full max-w-[540px]">
           <div
-            className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-[28px] border border-line bg-canvas/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_40px_rgba(15,23,42,0.14)]"
+            className="relative mx-auto aspect-square w-full max-w-[480px] overflow-hidden rounded-[28px] border border-line bg-canvas/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_40px_rgba(15,23,42,0.14)]"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -192,6 +202,13 @@ export default function CropEditor({ file, sourceUrl, onApply }: CropEditorProps
               className="neo-button neo-button--primary rounded-2xl px-5 py-3 text-base font-semibold text-white"
             >
               Apply Crop
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="neo-button rounded-2xl px-5 py-3 text-base font-semibold text-ink"
+            >
+              Cancel
             </button>
             <div className="rounded-2xl border border-line bg-canvas/70 px-4 py-3 text-sm text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
               {isDragging ? "Repositioning crop..." : "Square crop keeps the dial centered for preview."}
