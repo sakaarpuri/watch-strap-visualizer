@@ -1048,25 +1048,22 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mb-10 mt-8 sm:mb-12 sm:mt-10">
-        <div className="mx-auto max-w-[980px]">
-          <div className={`glass-card rounded-[2rem] border border-line px-5 py-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-8 sm:py-8 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),430px] lg:items-center">
-              <div className="max-w-[30rem]">
+      <section className="mb-14 mt-12 sm:mb-16 sm:mt-14">
+        <div className="mx-auto max-w-[1120px]">
+          <div className={`glass-card rounded-[2rem] border border-line px-6 py-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-6 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),500px] lg:items-center">
+              <div className="max-w-[28rem]">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-[2.35rem]">
                   1. Upload your watch first
                 </h2>
-                <p className="mt-3 text-lg leading-8 text-muted">
-                  Get your own watch on the bench first. Then the Strap Box opens properly and the fit tools start making sense.
-                </p>
               </div>
 
               <div className="w-full">
                 <ImageUploader
                   id="watch"
                   label="Watch Photo"
-                  helperText="Front-on, straight shots work best. Retailer screenshots are the easy mode."
+                  helperText={"Get your own watch on the bench first. Then the Strap Box opens properly and the fit tools start making sense.\nFront-on, straight shots work best. Retailer screenshots are the easy mode."}
                   previewUrl={watchPreviewSrc}
                   onFileSelect={onUploadDial}
                   className="w-full"
@@ -1096,14 +1093,11 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setShowUploadGuide(false)}
-                  className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
+                  className="mb-2 flex w-full items-center rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
                   aria-expanded={showUploadGuide}
                   aria-controls="upload-guide-panel"
                 >
                   <p className="text-base font-semibold text-ink">Photo Tips</p>
-                  <span className="neo-button shrink-0 rounded-xl px-3 py-2 text-lg font-semibold text-ink">
-                    ←
-                  </span>
                 </button>
                 <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
                   {UPLOAD_GUIDE_ITEMS.map((item) => (
@@ -1768,7 +1762,7 @@ function FeaturedStrapTeaser({ strap }: FeaturedStrapTeaserProps) {
         <img
           src={strap.strapASrc}
           alt={`${strap.label} teaser`}
-          className="h-full w-full object-contain p-1"
+          className="h-full w-full object-contain p-0.5"
           loading="lazy"
         />
       </div>
@@ -1799,7 +1793,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         <img
           src={strap.strapASrc}
           alt={`${strap.label} thumbnail`}
-          className="h-full w-full object-contain p-1"
+          className="h-full w-full object-contain p-0"
           loading="lazy"
         />
       </div>

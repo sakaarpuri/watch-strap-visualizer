@@ -59,13 +59,15 @@ export default function ImageUploader({
 
   return (
     <div
-      className={`glass-card rounded-2xl border border-line ${accentActive ? "upload-attention-ring" : ""} ${compact ? "p-4 sm:p-4" : "p-6"} ${className}`}
+      className={`glass-card rounded-2xl border border-line ${accentActive ? "upload-attention-ring" : ""} ${compact ? "p-4 sm:p-4" : "p-5 sm:p-5"} ${className}`}
     >
       <p id={id} className="text-2xl font-semibold leading-tight text-ink sm:text-xl">
         {label}
       </p>
       {helperText ? (
-        <p className="mt-2 text-lg leading-snug text-ink/85 sm:text-base">{helperText}</p>
+        <p className="mt-2 whitespace-pre-line text-base leading-7 text-ink/85 sm:text-[15px]">
+          {helperText}
+        </p>
       ) : null}
       {showOrientationHints ? (
         <div className="mt-3 rounded-xl border border-line bg-canvas/60 p-3">
@@ -102,7 +104,7 @@ export default function ImageUploader({
           isDragOver
             ? "border-emerald-400 bg-emerald-50/60"
             : "border-line bg-canvas hover:border-emerald-200 hover:bg-white/70"
-        } ${compact ? "min-h-[9rem]" : "min-h-[15rem]"}`}
+        } ${compact ? "min-h-[9rem]" : "min-h-[13.25rem]"}`}
       >
         {previewUrl ? (
           <>

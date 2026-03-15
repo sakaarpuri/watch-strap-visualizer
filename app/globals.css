@@ -261,36 +261,66 @@ body {
 .upload-attention-ring {
   position: relative;
   animation: upload-guide-glow 10s ease-in-out both;
+  overflow: visible;
 }
 
 .upload-attention-ring::after {
   content: "";
   position: absolute;
-  inset: -2px;
-  border-radius: 1.15rem;
-  border: 1px solid rgba(96, 165, 250, 0.28);
-  background:
-    linear-gradient(120deg, rgba(125, 211, 252, 0.18), transparent 32%, rgba(251, 191, 36, 0.16) 66%, transparent 100%);
+  inset: -4px;
+  border-radius: inherit;
+  padding: 3px;
+  background: conic-gradient(
+    from 180deg,
+    rgba(125, 211, 252, 0.55),
+    rgba(251, 191, 36, 0.42),
+    rgba(52, 211, 153, 0.46),
+    rgba(125, 211, 252, 0.55)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  filter: blur(0.5px);
   pointer-events: none;
-  mix-blend-mode: screen;
+  opacity: 0.9;
   animation: upload-guide-sheen 1.6s ease-in-out 6;
 }
 
 .preview-attention-ring {
   position: relative;
   animation: preview-guide-glow 3.5s ease-in-out both;
+  overflow: visible;
 }
 
 .preview-attention-ring::after {
   content: "";
   position: absolute;
-  inset: -2px;
-  border-radius: 1.65rem;
-  border: 1px solid rgba(96, 165, 250, 0.24);
-  background:
-    linear-gradient(120deg, rgba(125, 211, 252, 0.14), transparent 34%, rgba(251, 191, 36, 0.12) 66%, transparent 100%);
+  inset: -4px;
+  border-radius: inherit;
+  padding: 3px;
+  background: conic-gradient(
+    from 180deg,
+    rgba(125, 211, 252, 0.4),
+    rgba(251, 191, 36, 0.26),
+    rgba(52, 211, 153, 0.28),
+    rgba(125, 211, 252, 0.4)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  filter: blur(0.5px);
   pointer-events: none;
-  mix-blend-mode: screen;
+  opacity: 0.8;
   animation: preview-guide-sheen 1.25s ease-in-out 2;
 }
 
@@ -324,7 +354,7 @@ body {
 @keyframes upload-guide-sheen {
   0% {
     opacity: 0;
-    transform: translateX(-3%) scale(0.995);
+    transform: rotate(0deg) scale(0.996);
   }
   18%,
   82% {
@@ -332,7 +362,7 @@ body {
   }
   100% {
     opacity: 0;
-    transform: translateX(3%) scale(1.005);
+    transform: rotate(360deg) scale(1.004);
   }
 }
 
@@ -356,7 +386,7 @@ body {
 @keyframes preview-guide-sheen {
   0% {
     opacity: 0;
-    transform: translateX(-2%) scale(0.997);
+    transform: rotate(0deg) scale(0.997);
   }
   22%,
   78% {
@@ -364,7 +394,7 @@ body {
   }
   100% {
     opacity: 0;
-    transform: translateX(2%) scale(1.003);
+    transform: rotate(360deg) scale(1.003);
   }
 }
 
