@@ -4,7 +4,7 @@ import { ChangeEvent, DragEvent, useId, useState } from "react";
 
 interface ImageUploaderProps {
   id: string;
-  label: string;
+  label?: string;
   helperText?: string;
   previewUrl?: string;
   onFileSelect: (file: File) => void;
@@ -61,9 +61,11 @@ export default function ImageUploader({
     <div
       className={`glass-card rounded-2xl border border-line ${accentActive ? "upload-attention-ring" : ""} ${compact ? "p-4 sm:p-4" : "p-5 sm:p-5"} ${className}`}
     >
-      <p id={id} className="text-2xl font-semibold leading-tight text-ink sm:text-xl">
-        {label}
-      </p>
+      {label ? (
+        <p id={id} className="text-2xl font-semibold leading-tight text-ink sm:text-xl">
+          {label}
+        </p>
+      ) : null}
       {helperText ? (
         <p className="mt-2 whitespace-pre-line text-base leading-7 text-ink/85 sm:text-[15px]">
           {helperText}
@@ -81,7 +83,7 @@ export default function ImageUploader({
           </div>
         </div>
       ) : null}
-      <div className="mt-3 flex items-center justify-between gap-3">
+      <div className={`${label || helperText ? "mt-3" : "mt-0"} flex items-center justify-between gap-3`}>
         <p className="text-sm font-medium text-muted">PNG, JPG, or a crisp retailer screenshot.</p>
         <span className={`truncate text-sm text-muted ${compact ? "max-w-[12rem]" : "max-w-[16rem] md:max-w-[22rem]"}`}>
           {fileName}
@@ -104,7 +106,7 @@ export default function ImageUploader({
           isDragOver
             ? "border-emerald-400 bg-emerald-50/60"
             : "border-line bg-canvas hover:border-emerald-200 hover:bg-white/70"
-        } ${compact ? "min-h-[9rem]" : "min-h-[13.25rem]"}`}
+        } ${compact ? "min-h-[9rem]" : "min-h-[15rem]"}`}
       >
         {previewUrl ? (
           <>
