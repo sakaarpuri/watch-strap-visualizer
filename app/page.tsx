@@ -1573,80 +1573,79 @@ export default function Home() {
                   />
                 ) : null}
                 {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
-
-                {strapSourceMode === "library" ? (
-                  <div
-                    className={`rounded-2xl border p-4 transition ${
-                      lockView
-                        ? "border-line bg-canvas/80"
-                        : "border-slate-200 bg-slate-100/70 opacity-80"
-                    }`}
-                  >
-                    <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                        Similar Straps Available For Buying Elsewhere
-                      </p>
-                      {lockView ? (
-                        <p className="mt-1 text-sm text-muted">
-                          We may earn affiliate commission from one of the listed purchase links.
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-sm text-muted">
-                          Lock the view to see matching buying options for the strap on the bench.
-                        </p>
-                      )}
-                    </div>
-                    {lockView ? (
-                      similarProductsLoading ? (
-                        <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
-                      ) : similarProducts.length ? (
-                        <div className="mt-4 space-y-3">
-                          {similarProducts.map((product) => (
-                            <a
-                              key={product.id}
-                              href={product.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center gap-3 rounded-2xl border border-line bg-white/85 p-3 transition hover:-translate-y-0.5 hover:bg-white"
-                            >
-                              <div className="w-20 shrink-0 overflow-hidden rounded-[1rem] border border-line bg-slate-50">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={product.imageSrc}
-                                  alt={product.title}
-                                  className="h-20 w-full object-contain p-2"
-                                />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                                <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                                  {product.store}
-                                </p>
-                              </div>
-                              <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
-                                View Product
-                              </span>
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-3 text-sm text-muted">
-                          No close store match yet for this locked strap.
-                        </p>
-                      )
-                    ) : (
-                      <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
-                        <p className="text-sm text-slate-500">
-                          Shopping links stay tucked away until the fit is locked in.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : null}
               </div>
 
             </div>
           </div>
+          {strapSourceMode === "library" ? (
+            <div
+              className={`glass-card mt-4 rounded-2xl p-4 transition ${
+                lockView
+                  ? ""
+                  : "opacity-80"
+              }`}
+            >
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Similar Straps Available For Buying Elsewhere
+                </p>
+                {lockView ? (
+                  <p className="mt-1 text-sm text-muted">
+                    We may earn affiliate commission from one of the listed purchase links.
+                  </p>
+                ) : (
+                  <p className="mt-1 text-sm text-muted">
+                    Lock the view to see matching buying options for the strap on the bench.
+                  </p>
+                )}
+              </div>
+              {lockView ? (
+                similarProductsLoading ? (
+                  <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+                ) : similarProducts.length ? (
+                  <div className="mt-4 space-y-3">
+                    {similarProducts.map((product) => (
+                      <a
+                        key={product.id}
+                        href={product.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-3 rounded-2xl border border-line bg-white/85 p-3 transition hover:-translate-y-0.5 hover:bg-white"
+                      >
+                        <div className="w-20 shrink-0 overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={product.imageSrc}
+                            alt={product.title}
+                            className="h-20 w-full object-contain p-2"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
+                            {product.store}
+                          </p>
+                        </div>
+                        <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
+                          View Product
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted">
+                    No close store match yet for this locked strap.
+                  </p>
+                )
+              ) : (
+                <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
+                  <p className="text-sm text-slate-500">
+                    Shopping links stay tucked away until the fit is locked in.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : null}
           {inlineMockupUrl ? (
             <div className="glass-card mt-4 rounded-2xl p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
