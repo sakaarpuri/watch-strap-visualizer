@@ -102,11 +102,11 @@ export default function ImageUploader({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-5 text-center transition ${
+        className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-4 text-center transition ${
           isDragOver
             ? "border-emerald-400 bg-emerald-50/60"
-            : "border-line bg-canvas hover:border-emerald-200 hover:bg-white/70"
-        } ${compact ? "min-h-[9rem]" : "min-h-[15rem]"}`}
+            : "border-slate-300 bg-canvas hover:border-emerald-300 hover:bg-white/70"
+        } ${compact ? "min-h-[8rem]" : "min-h-[12rem]"}`}
       >
         {previewUrl ? (
           <>
@@ -114,17 +114,17 @@ export default function ImageUploader({
             <img
               src={previewUrl}
               alt={`${label} preview`}
-              className={`${compact ? "h-20" : "h-28"} w-auto rounded-lg object-contain`}
+              className={`${compact ? "h-20" : "h-24"} w-auto rounded-lg object-contain`}
             />
-            <p className="mt-4 text-base font-semibold text-ink">Click or drop to replace</p>
+            <p className="mt-3 text-base font-semibold text-ink">Click or drop to replace</p>
             <p className="mt-1 text-sm text-muted">Keep the watch front-on and centered.</p>
           </>
         ) : (
           <>
-            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-line bg-white/80 text-xl text-muted">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 bg-white/80 text-xl text-muted">
               +
             </div>
-            <p className="mt-4 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
+            <p className="mt-3 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
             <p className="mt-2 text-sm text-muted">Best results come from straight, front-facing shots.</p>
           </>
         )}

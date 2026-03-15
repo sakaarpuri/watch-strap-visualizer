@@ -1048,16 +1048,16 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mb-12 mt-10 sm:mb-14 sm:mt-12">
+      <section className="mb-10 mt-9 sm:mb-12 sm:mt-11">
         <div className="mx-auto max-w-[1120px]">
-          <div className={`glass-card rounded-[2rem] border border-line px-6 py-4 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-5 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr),520px] lg:items-center">
+          <div className={`glass-card rounded-[2rem] border border-line px-6 py-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-4 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),520px] lg:items-center">
               <div className="max-w-[27rem]">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-[2.35rem]">
                   1. Upload your watch first
                 </h2>
-                <p className="mt-3 text-base leading-7 text-muted">
+                <p className="mt-2 text-base leading-7 text-muted">
                   Front-on, straight shots work best. Retailer screenshots are the easy mode.
                 </p>
               </div>
