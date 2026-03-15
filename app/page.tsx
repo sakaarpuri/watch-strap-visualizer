@@ -490,12 +490,8 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
 }
 
 export default function Home() {
-  const defaultAllCategoryIndex = Math.max(
-    0,
-    getStrapsForCategory("All categories").findIndex((strap) => strap.id === "rubber-olive-performance")
-  );
   const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
-  const [watchPreviewSrc, setWatchPreviewSrc] = useState("/mock-dial.svg");
+  const [watchPreviewSrc, setWatchPreviewSrc] = useState("");
   const [originalWatchSrc, setOriginalWatchSrc] = useState<string | null>(null);
   const [originalWatchFile, setOriginalWatchFile] = useState<File | null>(null);
   const [uploadedWatchFile, setUploadedWatchFile] = useState<File | null>(null);
@@ -507,7 +503,8 @@ export default function Home() {
   const [uploadedStrapPartA, setUploadedStrapPartA] = useState<UploadedSplitPart | null>(null);
   const [uploadedStrapPartB, setUploadedStrapPartB] = useState<UploadedSplitPart | null>(null);
   const [category, setCategory] = useState<StrapCategory>("All categories");
-  const [strapIndex, setStrapIndex] = useState(defaultAllCategoryIndex);
+  const [strapIndex, setStrapIndex] = useState(0);
+  const [hasSelectedLibraryStrap, setHasSelectedLibraryStrap] = useState(false);
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
   const [dialScale, setDialScale] = useState(1);
@@ -522,6 +519,7 @@ export default function Home() {
   const [inlineMockupUrl, setInlineMockupUrl] = useState<string | null>(null);
   const [showUploadGuide, setShowUploadGuide] = useState(false);
   const [highlightUploadGuide, setHighlightUploadGuide] = useState(true);
+  const [highlightPreviewWindow, setHighlightPreviewWindow] = useState(false);
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
   const [showControlCoachmark, setShowControlCoachmark] = useState(false);
   const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
@@ -561,17 +559,18 @@ export default function Home() {
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
   const libraryDrawerLocked = strapSourceMode === "library" && !hasUserUpload;
+  const activeLibraryStrap = hasSelectedLibraryStrap ? currentStrap : null;
   const activeStrapASrc =
-    strapSourceMode === "uploaded" && uploadedStrapPartA ? uploadedStrapPartA.url : currentStrap?.strapASrc;
+    strapSourceMode === "uploaded" && uploadedStrapPartA ? uploadedStrapPartA.url : activeLibraryStrap?.strapASrc;
   const activeStrapBSrc =
-    strapSourceMode === "uploaded" && uploadedStrapPartB ? uploadedStrapPartB.url : currentStrap?.strapBSrc;
+    strapSourceMode === "uploaded" && uploadedStrapPartB ? uploadedStrapPartB.url : activeLibraryStrap?.strapBSrc;
   const activeStrapLabel =
-    strapSourceMode === "uploaded" ? "Your Strap" : currentStrap?.label || "Selected strap";
-  const activeJoinShape = strapSourceMode === "uploaded" ? undefined : currentStrap?.joinShape;
+    strapSourceMode === "uploaded" ? "Your Strap" : activeLibraryStrap?.label || "Selected strap";
+  const activeJoinShape = strapSourceMode === "uploaded" ? undefined : activeLibraryStrap?.joinShape;
   const activeAutoFitWidthFactor =
-    strapSourceMode === "uploaded" ? 0.1 : currentStrap?.autoFitWidthFactor;
+    strapSourceMode === "uploaded" ? 0.1 : activeLibraryStrap?.autoFitWidthFactor;
   const activeAutoGapFactor =
-    strapSourceMode === "uploaded" ? undefined : currentStrap?.autoGapFactor;
+    strapSourceMode === "uploaded" ? undefined : activeLibraryStrap?.autoGapFactor;
   const canRender = useMemo(
     () => Boolean(partA && partB && activeStrapASrc && activeStrapBSrc),
     [partA, partB, activeStrapASrc, activeStrapBSrc]
@@ -630,9 +629,15 @@ export default function Home() {
 
   useEffect(() => {
     if (!highlightUploadGuide) return undefined;
-    const timeout = window.setTimeout(() => setHighlightUploadGuide(false), 5000);
+    const timeout = window.setTimeout(() => setHighlightUploadGuide(false), 10000);
     return () => window.clearTimeout(timeout);
   }, [highlightUploadGuide]);
+
+  useEffect(() => {
+    if (!highlightPreviewWindow) return undefined;
+    const timeout = window.setTimeout(() => setHighlightPreviewWindow(false), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [highlightPreviewWindow]);
 
   useEffect(() => {
     if (!canRender || showControlCoachmark) return;
@@ -669,6 +674,7 @@ export default function Home() {
     setUploadedWatchFile(file);
     setWatchPreviewSrc(sourceUrl);
     setWatchSrc(sourceUrl);
+    setHighlightPreviewWindow(true);
   };
 
   const applyCroppedDial = (file: File, previewUrl: string) => {
@@ -723,7 +729,7 @@ export default function Home() {
   }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor]);
 
   useEffect(() => {
-    if (strapSourceMode !== "library") return;
+    if (strapSourceMode !== "library" || !hasSelectedLibraryStrap) return;
     const total = strapsInCategory.length;
     if (!total) return;
     const neighborIndices = [
@@ -739,10 +745,10 @@ export default function Home() {
         return [loadStrapImage(strap.strapASrc), loadStrapImage(strap.strapBSrc)];
       })
     ).catch(() => undefined);
-  }, [category, strapIndex, strapSourceMode]);
+  }, [category, strapIndex, strapSourceMode, hasSelectedLibraryStrap]);
 
   const onCycleStrap = (direction: 1 | -1) => {
-    if (strapSourceMode !== "library") return;
+    if (strapSourceMode !== "library" || !hasSelectedLibraryStrap) return;
     setStrapIndex((prev) => {
       const total = strapsInCategory.length;
       return (prev + direction + total) % total;
@@ -788,7 +794,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (strapSourceMode !== "library" || !lockView || !currentStrap?.id) {
+    if (strapSourceMode !== "library" || !lockView || !activeLibraryStrap?.id) {
       setSimilarProducts([]);
       setSimilarProductsLoading(false);
       return;
@@ -796,7 +802,7 @@ export default function Home() {
 
     let active = true;
     setSimilarProductsLoading(true);
-    fetch(`/api/products/similar?strapId=${encodeURIComponent(currentStrap.id)}`)
+    fetch(`/api/products/similar?strapId=${encodeURIComponent(activeLibraryStrap.id)}`)
       .then(async (response) => {
         if (!response.ok) throw new Error("Could not load shopping matches.");
         return response.json() as Promise<{ products?: SimilarProductCard[] }>;
@@ -817,7 +823,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [currentStrap?.id, strapSourceMode, lockView]);
+  }, [activeLibraryStrap?.id, strapSourceMode, lockView]);
 
   const runCleanupFallback = async () => {
     if (!uploadedWatchFile) return;
@@ -1042,9 +1048,9 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mt-5">
+      <section className="mb-10 mt-8 sm:mb-12 sm:mt-10">
         <div className="mx-auto max-w-[980px]">
-          <div className="glass-card rounded-[2rem] border border-line px-5 py-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-8 sm:py-8">
+          <div className={`glass-card rounded-[2rem] border border-line px-5 py-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-8 sm:py-8 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),430px] lg:items-center">
               <div className="max-w-[30rem]">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
@@ -1063,14 +1069,13 @@ export default function Home() {
                   helperText="Front-on, straight shots work best. Retailer screenshots are the easy mode."
                   previewUrl={watchPreviewSrc}
                   onFileSelect={onUploadDial}
-                  accentActive={highlightUploadGuide}
                   className="w-full"
                 />
                 <div className="mt-3">
                   <button
                     type="button"
                     onClick={() => setShowUploadGuide((prev) => !prev)}
-                    className={`neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+                    className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
                     aria-expanded={showUploadGuide}
                     aria-controls="upload-guide-panel"
                   >
@@ -1145,7 +1150,9 @@ export default function Home() {
                 </p>
                 <p className="mt-1 text-sm text-muted">
                   {hasUserUpload
-                    ? "Your watch is loaded. Now start auditioning straps."
+                    ? hasSelectedLibraryStrap
+                      ? "Your watch is loaded. Now start auditioning straps."
+                      : "Your watch is loaded. Pick a strap from the drawer to start the preview."
                     : "Upload your watch above to unlock the full drawer."}
                 </p>
               </div>
@@ -1210,6 +1217,7 @@ export default function Home() {
                         onClick={() => {
                           setCategory(option);
                           setStrapIndex(0);
+                          setHasSelectedLibraryStrap(false);
                         }}
                         data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
                         className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
@@ -1230,7 +1238,9 @@ export default function Home() {
 
                 <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm uppercase tracking-[0.12em] text-muted">On Deck</p>
-                  <p className="mt-2 text-xl font-semibold text-ink">{currentStrap.label}</p>
+                  <p className="mt-2 text-xl font-semibold text-ink">
+                    {hasSelectedLibraryStrap ? currentStrap.label : "Choose a strap from the drawer"}
+                  </p>
                 </div>
 
                 <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
@@ -1239,11 +1249,14 @@ export default function Home() {
                   </p>
                   <div className="mt-3 max-h-[36rem] space-y-3 overflow-y-auto pr-1">
                     {strapsInCategory.map((strap, index) => {
-                      const active = index === strapIndex;
+                      const active = hasSelectedLibraryStrap && index === strapIndex;
                       return (
                         <StrapDrawerButton
                           key={strap.id}
-                          onClick={() => setStrapIndex(index)}
+                          onClick={() => {
+                            setStrapIndex(index);
+                            setHasSelectedLibraryStrap(true);
+                          }}
                           strap={strap}
                           active={active}
                           showCategory={category === "All categories"}
@@ -1411,110 +1424,114 @@ export default function Home() {
             </div>
           ) : null}
           {canRender ? (
-            <CanvasPreview
-              ref={canvasRef}
-              watchSrc={watchSrc}
-              strapASrc={activeStrapASrc as string}
-              strapBSrc={activeStrapBSrc as string}
-              partA={partA as PartTransform}
-              partB={partB as PartTransform}
-              style={currentStrap.tint}
-              joinShape={activeJoinShape}
-              watchScale={dialScale}
-              sceneZoom={sceneZoom}
-              locked={lockView}
-              showCycleControls={strapSourceMode === "library"}
-              onDragPartsChange={(nextA, nextB) => {
-                setPartA(nextA);
-                setPartB(nextB);
-              }}
-              onCycleStrap={onCycleStrap}
-              controls={
-                <div className="glass-card rounded-xl p-3">
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Fit Bench
-                  </p>
-                  <div className="mt-2 grid gap-2">
-                    <div className="relative">
+            <div className={highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""}>
+              <CanvasPreview
+                ref={canvasRef}
+                watchSrc={watchSrc}
+                strapASrc={activeStrapASrc as string}
+                strapBSrc={activeStrapBSrc as string}
+                partA={partA as PartTransform}
+                partB={partB as PartTransform}
+                style={currentStrap.tint}
+                joinShape={activeJoinShape}
+                watchScale={dialScale}
+                sceneZoom={sceneZoom}
+                locked={lockView}
+                showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
+                onDragPartsChange={(nextA, nextB) => {
+                  setPartA(nextA);
+                  setPartB(nextB);
+                }}
+                onCycleStrap={onCycleStrap}
+                controls={
+                  <div className="glass-card rounded-xl p-3">
+                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                      Fit Bench
+                    </p>
+                    <div className="mt-2 grid gap-2">
+                      <div className="relative">
+                        <SliderControl
+                          label="Strap Gap"
+                          min={250}
+                          max={900}
+                          step={10}
+                          value={strapGap}
+                          onChange={setGapHalf}
+                          disabled={lockView}
+                          highlighted={showControlCoachmark}
+                          hint="Closer ↔ Wider"
+                        />
+                        {showControlCoachmark ? (
+                          <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
+                            <div className="flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                              <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+                              Size first. Then trim the gap.
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                       <SliderControl
-                        label="Strap Gap"
-                        min={250}
-                        max={900}
-                        step={10}
-                        value={strapGap}
-                        onChange={setGapHalf}
+                        label="Strap Size"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={strapSizeUi}
+                        onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
                         disabled={lockView}
                         highlighted={showControlCoachmark}
-                        hint="Closer ↔ Wider"
+                        hint="Slimmer ↔ Fuller"
                       />
                       {showControlCoachmark ? (
-                        <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
-                          <div className="flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
-                            Size first. Then trim the gap.
+                        <div className="rounded-2xl border border-sky-200/80 bg-sky-50/80 px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-xs leading-5 text-slate-700">
+                              Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={dismissControlCoachmark}
+                              className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                            >
+                              Got it
+                            </button>
                           </div>
                         </div>
                       ) : null}
+                      <SliderControl
+                        label="Dial Size"
+                        min={DIAL_SCALE_MIN}
+                        max={DIAL_SCALE_MAX}
+                        step={0.02}
+                        value={dialScale}
+                        onChange={setDialScaleValue}
+                        disabled={lockView}
+                        hint="Smaller ↔ Larger"
+                      />
+                      <SliderControl
+                        label="View Zoom"
+                        min={0.2}
+                        max={1.4}
+                        step={0.02}
+                        value={sceneZoom}
+                        onChange={setSceneZoom}
+                        hint="Whole watch ↔ Detail"
+                      />
+                      <ToggleControl
+                        label="Lock Fit"
+                        description="Freeze the fit and just inspect the view"
+                        enabled={lockView}
+                        onToggle={() => setLockView((prev) => !prev)}
+                      />
                     </div>
-                    <SliderControl
-                      label="Strap Size"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={strapSizeUi}
-                      onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
-                      disabled={lockView}
-                      highlighted={showControlCoachmark}
-                      hint="Slimmer ↔ Fuller"
-                    />
-                    {showControlCoachmark ? (
-                      <div className="rounded-2xl border border-sky-200/80 bg-sky-50/80 px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="text-xs leading-5 text-slate-700">
-                            Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
-                          </p>
-                          <button
-                            type="button"
-                            onClick={dismissControlCoachmark}
-                            className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-                          >
-                            Got it
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                    <SliderControl
-                      label="Dial Size"
-                      min={DIAL_SCALE_MIN}
-                      max={DIAL_SCALE_MAX}
-                      step={0.02}
-                      value={dialScale}
-                      onChange={setDialScaleValue}
-                      disabled={lockView}
-                      hint="Smaller ↔ Larger"
-                    />
-                    <SliderControl
-                      label="View Zoom"
-                      min={0.2}
-                      max={1.4}
-                      step={0.02}
-                      value={sceneZoom}
-                      onChange={setSceneZoom}
-                      hint="Whole watch ↔ Detail"
-                    />
-                    <ToggleControl
-                      label="Lock Fit"
-                      description="Freeze the fit and just inspect the view"
-                      enabled={lockView}
-                      onToggle={() => setLockView((prev) => !prev)}
-                    />
                   </div>
-                </div>
-              }
-            />
+                }
+              />
+            </div>
           ) : (
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
-              Upload a watch photo, then give it a strap worth arguing about.
+              {hasUserUpload
+                ? "Watch loaded. Now choose a strap from the Strap Box to start the live preview."
+                : "Upload a watch photo, then choose a strap worth arguing about."}
             </div>
           )}
           <div className="glass-card mt-4 rounded-2xl p-4">

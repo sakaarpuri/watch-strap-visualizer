@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useId, useState } from "react";
+import { ChangeEvent, DragEvent, useId, useState } from "react";
 
 interface ImageUploaderProps {
   id: string;
@@ -27,15 +27,34 @@ export default function ImageUploader({
 }: ImageUploaderProps) {
   const inputId = useId();
   const [fileName, setFileName] = useState<string>("No file selected");
+  const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const acceptFile = (file?: File) => {
     if (!file) {
       setFileName("No file selected");
       return;
     }
     setFileName(file.name);
     onFileSelect(file);
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    acceptFile(event.target.files?.[0]);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    acceptFile(event.dataTransfer.files?.[0]);
   };
 
   return (
@@ -60,14 +79,9 @@ export default function ImageUploader({
           </div>
         </div>
       ) : null}
-      <div className={`mt-3 ${compact ? "flex flex-col gap-2 sm:flex-row sm:items-center" : "flex items-center gap-3"}`}>
-        <label
-          htmlFor={inputId}
-          className="neo-button cursor-pointer rounded-xl border border-line px-6 py-3 text-lg font-semibold text-ink transition hover:opacity-90 sm:px-5 sm:py-2.5 sm:text-base"
-        >
-          Choose File
-        </label>
-        <span className={`truncate text-base text-muted sm:text-sm ${compact ? "max-w-full" : "max-w-[160px] md:max-w-[220px]"}`}>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-muted">PNG, JPG, or a crisp retailer screenshot.</p>
+        <span className={`truncate text-sm text-muted ${compact ? "max-w-[12rem]" : "max-w-[16rem] md:max-w-[22rem]"}`}>
           {fileName}
         </span>
       </div>
@@ -79,18 +93,38 @@ export default function ImageUploader({
         onChange={handleChange}
         className="sr-only"
       />
-      <div className={`mt-3 flex items-center justify-center rounded-xl border border-dashed border-line bg-canvas ${compact ? "h-16 sm:h-16" : "h-24"}`}>
+      <label
+        htmlFor={inputId}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-5 text-center transition ${
+          isDragOver
+            ? "border-emerald-400 bg-emerald-50/60"
+            : "border-line bg-canvas hover:border-emerald-200 hover:bg-white/70"
+        } ${compact ? "min-h-[9rem]" : "min-h-[15rem]"}`}
+      >
         {previewUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={previewUrl}
-            alt={`${label} preview`}
-            className="h-14 w-auto rounded-md object-contain sm:h-12"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewUrl}
+              alt={`${label} preview`}
+              className={`${compact ? "h-20" : "h-28"} w-auto rounded-lg object-contain`}
+            />
+            <p className="mt-4 text-base font-semibold text-ink">Click or drop to replace</p>
+            <p className="mt-1 text-sm text-muted">Keep the watch front-on and centered.</p>
+          </>
         ) : (
-          <span className="text-sm text-muted sm:text-xs">No image selected</span>
+          <>
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-line bg-white/80 text-xl text-muted">
+              +
+            </div>
+            <p className="mt-4 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
+            <p className="mt-2 text-sm text-muted">Best results come from straight, front-facing shots.</p>
+          </>
         )}
-      </div>
+      </label>
     </div>
   );
 }

@@ -260,7 +260,7 @@ body {
 
 .upload-attention-ring {
   position: relative;
-  animation: upload-guide-glow 5s ease-in-out both;
+  animation: upload-guide-glow 10s ease-in-out both;
 }
 
 .upload-attention-ring::after {
@@ -273,7 +273,25 @@ body {
     linear-gradient(120deg, rgba(125, 211, 252, 0.18), transparent 32%, rgba(251, 191, 36, 0.16) 66%, transparent 100%);
   pointer-events: none;
   mix-blend-mode: screen;
-  animation: upload-guide-sheen 1.35s ease-in-out 4;
+  animation: upload-guide-sheen 1.6s ease-in-out 6;
+}
+
+.preview-attention-ring {
+  position: relative;
+  animation: preview-guide-glow 3.5s ease-in-out both;
+}
+
+.preview-attention-ring::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 1.65rem;
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  background:
+    linear-gradient(120deg, rgba(125, 211, 252, 0.14), transparent 34%, rgba(251, 191, 36, 0.12) 66%, transparent 100%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  animation: preview-guide-sheen 1.25s ease-in-out 2;
 }
 
 @keyframes upload-guide-glow {
@@ -315,6 +333,38 @@ body {
   100% {
     opacity: 0;
     transform: translateX(3%) scale(1.005);
+  }
+}
+
+@keyframes preview-guide-glow {
+  0%,
+  100% {
+    box-shadow: none;
+  }
+  30% {
+    box-shadow:
+      0 0 0 1px rgba(96, 165, 250, 0.18),
+      0 18px 36px rgba(14, 165, 233, 0.12);
+  }
+  65% {
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.14),
+      0 18px 36px rgba(251, 191, 36, 0.08);
+  }
+}
+
+@keyframes preview-guide-sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-2%) scale(0.997);
+  }
+  22%,
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(2%) scale(1.003);
   }
 }
 
