@@ -1033,10 +1033,10 @@ export default function Home() {
     <main className="mx-auto max-w-[108rem] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 xl:px-10">
       <header>
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+          <p className="text-base font-semibold uppercase tracking-[0.28em] text-slate-600 sm:text-lg">
             Watchstrapper
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-4xl">
             See any strap on your watch before you buy.
           </h1>
         </div>
