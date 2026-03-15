@@ -466,9 +466,9 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
           : "bg-rose-600/10 text-rose-700";
 
   return (
-    <div className={`rounded-2xl border bg-gradient-to-br ${shellTone} p-2.5`}>
+    <div className={`rounded-2xl border bg-gradient-to-br ${shellTone} p-2`}>
       <div className="rounded-[1rem] border border-white/70 bg-white/85 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-        <div className="relative h-24 overflow-hidden rounded-[0.85rem] bg-[linear-gradient(160deg,#f9fafb,#eef2f7)]">
+        <div className="relative h-20 overflow-hidden rounded-[0.85rem] bg-[linear-gradient(160deg,#f9fafb,#eef2f7)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.imageSrc}
@@ -477,7 +477,7 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
           />
         </div>
       </div>
-      <div className="mt-2.5">
+      <div className="mt-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[13px] font-semibold text-slate-900">{item.title}</p>
           <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${chipTone}`}>
@@ -598,9 +598,9 @@ export default function Home() {
     setWatchPreviewSrc(uploadedUrl);
     setWatchSrc(uploadedUrl);
     setCropSourceUrl(uploadedUrl);
+    setShowUploadGuide(false);
     setHighlightUploadGuide(true);
     if (!hasAutoOpenedUploadGuide) {
-      setShowUploadGuide(true);
       setHasAutoOpenedUploadGuide(true);
     }
   };
@@ -1043,68 +1043,73 @@ export default function Home() {
       </header>
 
       <section className="mt-5">
-        <div className="relative grid gap-4 lg:max-w-[1120px] lg:grid-cols-[420px,minmax(0,1fr)] lg:items-start">
-          <div className="w-full max-w-[420px] space-y-3">
-            <div className="glass-card rounded-3xl border border-line px-5 py-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-[2rem]">
-                1. Upload your watch first
-              </h2>
-              <p className="mt-2 max-w-[30rem] text-base leading-7 text-muted">
-                Get your own watch on the bench first. Then the Strap Box opens properly and the fit tools start making sense.
-              </p>
-            </div>
-            <ImageUploader
-              id="watch"
-              label="Watch Photo"
-              helperText="Front-on, straight shots work best. Retailer screenshots are the easy mode."
-              previewUrl={watchPreviewSrc}
-              onFileSelect={onUploadDial}
-              accentActive={highlightUploadGuide}
-              className="w-full max-w-[420px] shrink-0"
-            />
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={() => setShowUploadGuide((prev) => !prev)}
-                className={`neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
-                aria-expanded={showUploadGuide}
-                aria-controls="upload-guide-panel"
-              >
-                Photo Tips
-                <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
-              </button>
-            </div>
-          </div>
+        <div className="mx-auto max-w-[980px]">
+          <div className="glass-card rounded-[2rem] border border-line px-5 py-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-8 sm:py-8">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),430px] lg:items-center">
+              <div className="max-w-[30rem]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-[2.35rem]">
+                  1. Upload your watch first
+                </h2>
+                <p className="mt-3 text-lg leading-8 text-muted">
+                  Get your own watch on the bench first. Then the Strap Box opens properly and the fit tools start making sense.
+                </p>
+              </div>
 
-          {showUploadGuide ? (
-            <div
-              id="upload-guide-panel"
-              className={`glass-card z-20 mt-3 w-full max-w-[680px] overflow-hidden rounded-2xl border border-line p-3 transition-all duration-300 lg:absolute lg:left-[444px] lg:top-[84px] lg:mt-0 ${
-                highlightUploadGuide ? "upload-attention-ring" : ""
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => setShowUploadGuide(false)}
-                className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
-                aria-expanded={showUploadGuide}
-                aria-controls="upload-guide-panel"
-              >
-                <p className="text-base font-semibold text-ink">Photo Tips</p>
-                <span className="neo-button shrink-0 rounded-xl px-3 py-2 text-lg font-semibold text-ink">
-                  ←
-                </span>
-              </button>
-              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-                {UPLOAD_GUIDE_ITEMS.map((item) => (
-                  <div key={item.title} className="min-w-[170px] max-w-[180px] flex-1">
-                    <UploadGuideCard item={item} />
-                  </div>
-                ))}
+              <div className="w-full">
+                <ImageUploader
+                  id="watch"
+                  label="Watch Photo"
+                  helperText="Front-on, straight shots work best. Retailer screenshots are the easy mode."
+                  previewUrl={watchPreviewSrc}
+                  onFileSelect={onUploadDial}
+                  accentActive={highlightUploadGuide}
+                  className="w-full"
+                />
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowUploadGuide((prev) => !prev)}
+                    className={`neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+                    aria-expanded={showUploadGuide}
+                    aria-controls="upload-guide-panel"
+                  >
+                    Photo Tips
+                    <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
+                  </button>
+                </div>
               </div>
             </div>
-          ) : null}
+
+            {showUploadGuide ? (
+              <div
+                id="upload-guide-panel"
+                className={`mt-4 overflow-hidden rounded-2xl border border-line bg-white/65 p-3 transition-all duration-300 ${
+                  highlightUploadGuide ? "upload-attention-ring" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowUploadGuide(false)}
+                  className="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
+                  aria-expanded={showUploadGuide}
+                  aria-controls="upload-guide-panel"
+                >
+                  <p className="text-base font-semibold text-ink">Photo Tips</p>
+                  <span className="neo-button shrink-0 rounded-xl px-3 py-2 text-lg font-semibold text-ink">
+                    ←
+                  </span>
+                </button>
+                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+                  {UPLOAD_GUIDE_ITEMS.map((item) => (
+                    <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
+                      <UploadGuideCard item={item} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -1536,7 +1541,7 @@ export default function Home() {
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
               </div>
 
-              <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
+              <div className="min-w-[15rem] snap-start space-y-3 md:min-w-0">
                 <ToolButton
                   title="Create Catalogue Image"
                   disabled={!canRender || !lockView}
@@ -1554,6 +1559,76 @@ export default function Home() {
                   />
                 ) : null}
                 {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
+
+                {strapSourceMode === "library" ? (
+                  <div
+                    className={`rounded-2xl border p-4 transition ${
+                      lockView
+                        ? "border-line bg-canvas/80"
+                        : "border-slate-200 bg-slate-100/70 opacity-80"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                        Similar Straps Available For Buying Elsewhere
+                      </p>
+                      {lockView ? (
+                        <p className="mt-1 text-sm text-muted">
+                          We may earn affiliate commission from one of the listed purchase links.
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-sm text-muted">
+                          Lock the view to see matching buying options for the strap on the bench.
+                        </p>
+                      )}
+                    </div>
+                    {lockView ? (
+                      similarProductsLoading ? (
+                        <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+                      ) : similarProducts.length ? (
+                        <div className="mt-4 space-y-3">
+                          {similarProducts.map((product) => (
+                            <a
+                              key={product.id}
+                              href={product.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-3 rounded-2xl border border-line bg-white/85 p-3 transition hover:-translate-y-0.5 hover:bg-white"
+                            >
+                              <div className="w-20 shrink-0 overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={product.imageSrc}
+                                  alt={product.title}
+                                  className="h-20 w-full object-contain p-2"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
+                                <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
+                                  {product.store}
+                                </p>
+                              </div>
+                              <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
+                                View Product
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-sm text-muted">
+                          No close store match yet for this locked strap.
+                        </p>
+                      )
+                    ) : (
+                      <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
+                        <p className="text-sm text-slate-500">
+                          Shopping links stay tucked away until the fit is locked in.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
 
             </div>
@@ -1587,55 +1662,6 @@ export default function Home() {
                 alt="Generated product mockup"
                 className="w-full rounded-xl border border-line bg-white object-contain"
               />
-            </div>
-          ) : null}
-          {strapSourceMode === "library" && lockView ? (
-            <div className="glass-card mt-4 rounded-2xl p-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Buy Similar Straps From Brands You Love
-                </p>
-                <p className="mt-1 text-sm text-muted">
-                  We may earn affiliate commission from one of the listed purchase links.
-                </p>
-              </div>
-              {similarProductsLoading ? (
-                <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
-              ) : similarProducts.length ? (
-                <div className="mt-4 space-y-3">
-                  {similarProducts.map((product) => (
-                    <a
-                      key={product.id}
-                      href={product.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-3 rounded-2xl border border-line bg-canvas/80 p-3 transition hover:-translate-y-0.5 hover:bg-white"
-                    >
-                      <div className="w-24 shrink-0 overflow-hidden rounded-[1rem] border border-line bg-slate-50">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={product.imageSrc}
-                          alt={product.title}
-                          className="h-24 w-full object-contain p-2"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                          {product.store}
-                        </p>
-                      </div>
-                      <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
-                        View Product
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-muted">
-                  No close store match yet for this locked strap.
-                </p>
-              )}
             </div>
           ) : null}
           <p className="mt-3 text-sm text-muted">
