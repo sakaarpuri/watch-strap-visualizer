@@ -1034,14 +1034,11 @@ export default function Home() {
       <header>
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-            Watch Strap Visualizer
+            Watchstrapper
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
             See any strap on your watch before you buy.
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-lg leading-8 text-muted sm:text-xl">
-            Your current favourite watch is looking for a strap partner.
-          </p>
         </div>
       </header>
 

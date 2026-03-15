@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Watch Strap Visualizer",
+  title: "Watchstrapper",
   description: "Preview strap aesthetics behind your watch photo."
 };
 
