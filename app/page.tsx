@@ -1037,7 +1037,7 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-[108rem] px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 md:px-8 md:pb-12 md:pt-5 xl:px-10">
-      <header>
+      <header className="-mb-8 sm:-mb-10">
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
