@@ -382,7 +382,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/rubber-blue-tropic-buckle.png`,
       strapBSrc: `${SEL}/rubber-blue-tropic-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.125
+      autoFitWidthFactor: 0.3
     },
     {
       id: "rubber-orange-tropic",
@@ -391,7 +391,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/rubber-orange-tropic-buckle.png`,
       strapBSrc: `${SEL}/rubber-orange-tropic-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.125
+      autoFitWidthFactor: 0.3
     },
     {
       id: "rubber-sand-fkm",
@@ -400,7 +400,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/rubber-sand-fkm-buckle.png`,
       strapBSrc: `${SEL}/rubber-sand-fkm-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.13
+      autoFitWidthFactor: 0.31
     },
     {
       id: "rubber-navy-performance",
@@ -409,7 +409,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/rubber-navy-performance-buckle.png`,
       strapBSrc: `${SEL}/rubber-navy-performance-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.125
+      autoFitWidthFactor: 0.3
     },
     {
       id: "rubber-olive-performance",
@@ -418,7 +418,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/olive-performance-rubber-buckle.png`,
       strapBSrc: `${SEL}/olive-performance-rubber-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.125
+      autoFitWidthFactor: 0.3
     }
   ],
   Fabric: [
@@ -429,7 +429,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/grey-canvas-buckle.png`,
       strapBSrc: `${SEL}/grey-canvas-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.105
+      autoFitWidthFactor: 0.28
     },
     {
       id: "fabric-navy-canvas",
@@ -438,7 +438,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/navy-canvas-buckle.png`,
       strapBSrc: `${SEL}/navy-canvas-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.105
+      autoFitWidthFactor: 0.28
     },
     {
       id: "fabric-sand-canvas",
@@ -447,7 +447,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/fabric-sand-canvas-buckle.png`,
       strapBSrc: `${SEL}/fabric-sand-canvas-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.105
+      autoFitWidthFactor: 0.28
     },
     {
       id: "fabric-khaki-canvas",
@@ -456,7 +456,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/fabric-khaki-canvas-buckle.png`,
       strapBSrc: `${SEL}/fabric-khaki-canvas-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.105
+      autoFitWidthFactor: 0.28
     },
     {
       id: "fabric-black-sailcloth",
@@ -465,7 +465,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/fabric-black-sailcloth-buckle.png`,
       strapBSrc: `${SEL}/fabric-black-sailcloth-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.105
+      autoFitWidthFactor: 0.28
     },
     {
       id: "fabric-grey-sailcloth",
@@ -474,7 +474,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/fabric-grey-sailcloth-buckle.png`,
       strapBSrc: `${SEL}/fabric-grey-sailcloth-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.105
+      autoFitWidthFactor: 0.28
     },
     {
       id: "fabric-bond-nato",
@@ -483,7 +483,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/fabric-bond-nato-buckle.png`,
       strapBSrc: `${SEL}/fabric-bond-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-olive-seatbelt-nato",
@@ -492,7 +492,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/clean/olive-seatbelt-nato-buckle.png`,
       strapBSrc: `${SEL}/clean/olive-seatbelt-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-navy-bond-nato",
@@ -501,7 +501,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/clean/navy-bond-nato-buckle.png`,
       strapBSrc: `${SEL}/clean/navy-bond-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-sand-stripe-nato",
@@ -510,7 +510,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/clean/sand-stripe-nato-buckle.png`,
       strapBSrc: `${SEL}/clean/sand-stripe-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-charcoal-seatbelt-nato",
@@ -519,7 +519,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/clean/charcoal-seatbelt-nato-buckle.png`,
       strapBSrc: `${SEL}/clean/charcoal-seatbelt-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-olive-nato",
@@ -528,7 +528,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/olive-nato-buckle.png`,
       strapBSrc: `${SEL}/olive-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-jaipur-saffron-nato",
@@ -537,7 +537,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/jaipur-saffron-nato-buckle.png`,
       strapBSrc: `${SEL}/jaipur-saffron-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-indigo-block-nato",
@@ -546,7 +546,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/indigo-block-nato-buckle.png`,
       strapBSrc: `${SEL}/indigo-block-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-holi-stripe-nato",
@@ -555,7 +555,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/holi-stripe-nato-buckle.png`,
       strapBSrc: `${SEL}/holi-stripe-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-oaxaca-serape-nato",
@@ -564,7 +564,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/oaxaca-serape-nato-buckle.png`,
       strapBSrc: `${SEL}/oaxaca-serape-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     },
     {
       id: "fabric-talavera-blue-nato",
@@ -573,7 +573,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/talavera-blue-nato-buckle.png`,
       strapBSrc: `${SEL}/talavera-blue-nato-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.1
+      autoFitWidthFactor: 0.27
     }
   ],
   Metal: [
@@ -584,7 +584,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/steel-bracelet-buckle.png`,
       strapBSrc: `${SEL}/steel-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.125,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     },
     {
@@ -594,7 +594,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/steel-link-bracelet-buckle.png`,
       strapBSrc: `${SEL}/steel-link-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.125,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     },
     {
@@ -604,7 +604,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/black-pvd-bracelet-buckle.png`,
       strapBSrc: `${SEL}/black-pvd-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.125,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     }
   ]

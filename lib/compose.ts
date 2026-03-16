@@ -826,15 +826,23 @@ export const calculateAutoPlacement = async (
     -baselineWatchRect.w * 0.04,
     baselineWatchRect.w * 0.04
   );
-  const blend = clamp((fittedWatch.geometry.confidence - 0.55) / 0.3, 0, 1);
+  const blend = lugOverrides ? 1 : clamp((fittedWatch.geometry.confidence - 0.55) / 0.3, 0, 1);
   const metricsA = getImageMetrics(partAImage);
   const metricsB = getImageMetrics(partBImage);
   const baselineTargetWidth = baselineWatchRect.w * targetWidthFactor;
   const inferredJoinWidth =
     ((effectiveTopWidth + effectiveBottomWidth) / 2) * 0.9;
-  const safeTargetWidth =
-    blend > 0
-      ? Math.min(baselineTargetWidth, clamp(inferredJoinWidth, baselineTargetWidth * 0.62, baselineTargetWidth))
+  const safeTargetWidth = lugOverrides
+    ? clamp(
+        inferredJoinWidth,
+        Math.min(baselineTargetWidth * 0.9, baselineWatchRect.w * 0.16),
+        baselineWatchRect.w * 0.42
+      )
+    : blend > 0
+      ? Math.min(
+          baselineTargetWidth,
+          clamp(inferredJoinWidth, baselineTargetWidth * 0.62, baselineTargetWidth)
+        )
       : baselineTargetWidth;
   const anchorScaleA = clamp((safeTargetWidth / metricsA.bottomWidth) * 100, 30, 230);
   const anchorScaleB = clamp((safeTargetWidth / metricsB.topWidth) * 100, 30, 230);
