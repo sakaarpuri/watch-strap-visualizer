@@ -1037,7 +1037,7 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-[108rem] px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 md:px-8 md:pb-12 md:pt-5 xl:px-10">
-      <header className="-mb-8 sm:-mb-10">
+      <header className="mb-4 sm:mb-5">
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -1051,7 +1051,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mb-40 mt-0 sm:mb-48 sm:mt-1">
+      <section className="mb-40 mt-1 sm:mb-48 sm:mt-2">
         <div className="mx-auto max-w-[1120px]">
           <div className={`glass-card rounded-[2rem] border border-line px-6 py-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-4 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),520px] lg:items-center">
