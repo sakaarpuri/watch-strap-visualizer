@@ -1547,8 +1547,8 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
-            <div className="hide-scrollbar mt-4 -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2 md:mx-0 md:grid md:grid-cols-2 md:items-start md:gap-4 md:overflow-visible md:px-0">
-              <div className="min-w-[15rem] snap-start space-y-2 md:min-w-0">
+            <div className="mt-4 space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-4 md:space-y-0">
+              <div className="space-y-2">
                 <ToolButton
                   title="Extract Watch"
                   disabled={!hasUserUpload}
@@ -1558,7 +1558,7 @@ export default function Home() {
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
               </div>
 
-              <div className="min-w-[15rem] snap-start space-y-3 md:min-w-0">
+              <div className="space-y-3">
                 <ToolButton
                   title="Create Catalogue Image"
                   disabled={!canRender || !lockView}
@@ -1847,7 +1847,7 @@ function ToolButton({
 }) {
   return (
     <div className="neo-control rounded-2xl p-4">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         {sampleImageSrc ? (
           <div className="w-24 shrink-0 overflow-hidden rounded-2xl border border-line bg-white/90 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1859,7 +1859,7 @@ function ToolButton({
           </div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-lg font-semibold leading-tight text-ink">{title}</p>
             <button
               type="button"
