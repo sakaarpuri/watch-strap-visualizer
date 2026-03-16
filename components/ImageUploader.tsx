@@ -125,7 +125,6 @@ export default function ImageUploader({
               +
             </div>
             <p className="mt-3 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
-            <p className="mt-2 text-sm text-muted">Best results come from straight, front-facing shots.</p>
           </>
         )}
       </label>
