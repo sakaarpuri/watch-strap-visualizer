@@ -780,23 +780,43 @@ export const calculateAutoPlacement = async (
 
   const fittedWatch = getWatchObjectPlacement(watchSrc, watch, 1);
   const baselineWatchRect = getWatchRect(watch, 1);
-  const baselineTopEdge = baselineWatchRect.y - CANVAS_SIZE / 2;
-  const baselineBottomEdge = baselineWatchRect.y + baselineWatchRect.h - CANVAS_SIZE / 2;
   const lugTopEdge = fittedWatch.topAnchorY - CANVAS_SIZE / 2;
   const lugBottomEdge = fittedWatch.bottomAnchorY - CANVAS_SIZE / 2;
-  const centerOffsetX = fittedWatch.centerX - CANVAS_SIZE / 2;
+  const centerOffsetX = clamp(
+    fittedWatch.centerX - CANVAS_SIZE / 2,
+    -baselineWatchRect.w * 0.04,
+    baselineWatchRect.w * 0.04
+  );
   const blend = clamp((fittedWatch.geometry.confidence - 0.55) / 0.3, 0, 1);
+  const metricsA = getImageMetrics(partAImage);
+  const metricsB = getImageMetrics(partBImage);
+  const baselineTargetWidth = baselineWatchRect.w * targetWidthFactor;
+  const inferredJoinWidth =
+    ((fittedWatch.topAnchorWidth + fittedWatch.bottomAnchorWidth) / 2) * 0.9;
+  const safeTargetWidth =
+    blend > 0
+      ? Math.min(baselineTargetWidth, clamp(inferredJoinWidth, baselineTargetWidth * 0.62, baselineTargetWidth))
+      : baselineTargetWidth;
+  const anchorScaleA = clamp((safeTargetWidth / metricsA.bottomWidth) * 100, 30, 230);
+  const anchorScaleB = clamp((safeTargetWidth / metricsB.topWidth) * 100, 30, 230);
+  const scaleA = baseline.partA.scale + (anchorScaleA - baseline.partA.scale) * blend;
+  const scaleB = baseline.partB.scale + (anchorScaleB - baseline.partB.scale) * blend;
+  const visualGap = Math.max(18, baselineWatchRect.h * 0.045) * gapFactor;
+  const anchorYPartA =
+    lugTopEdge + (partAImage.height / 2 - metricsA.bottomY) * (scaleA / 100) - visualGap;
+  const anchorYPartB =
+    lugBottomEdge - (metricsB.topY - partBImage.height / 2) * (scaleB / 100) + visualGap;
   const partA: PartTransform = {
-    scale: baseline.partA.scale,
+    scale: scaleA,
     x: baseline.partA.x + centerOffsetX * blend,
-    y: baseline.partA.y + (lugTopEdge - baselineTopEdge) * blend,
+    y: baseline.partA.y + (anchorYPartA - baseline.partA.y) * blend,
     rotation: 0,
     opacity: 1
   };
   const partB: PartTransform = {
-    scale: baseline.partB.scale,
+    scale: scaleB,
     x: baseline.partB.x + centerOffsetX * blend,
-    y: baseline.partB.y + (lugBottomEdge - baselineBottomEdge) * blend,
+    y: baseline.partB.y + (anchorYPartB - baseline.partB.y) * blend,
     rotation: 0,
     opacity: 1
   };
