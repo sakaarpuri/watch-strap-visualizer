@@ -52,6 +52,9 @@ const clamp = (value: number, min: number, max: number) =>
 
 const PART_SCALE_MIN = 5;
 const PART_SCALE_MAX = 260;
+const GUIDE_MIN_WIDTH = 48;
+
+type GuideDragMode = "move" | "resize-left" | "resize-right";
 
 const scalePairByAverage = (
   startScaleA: number,
@@ -106,11 +109,14 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const lugDragRef = useRef<{
       pointerId: number;
       guide: "top" | "bottom";
+      mode: GuideDragMode;
       startX: number;
       startY: number;
       initialCenterX: number;
       initialTopY: number;
       initialBottomY: number;
+      initialTopWidth: number;
+      initialBottomWidth: number;
     } | null>(null);
     const strapImageSizeRef = useRef<{ aW: number; aH: number; bW: number; bH: number } | null>(
       null
@@ -253,14 +259,17 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
         if (hitGuide) {
           lugDragRef.current = {
             pointerId: event.pointerId,
-            guide: hitGuide,
+            guide: hitGuide.guide,
+            mode: hitGuide.mode,
             startX: canvasPoint.x,
             startY: canvasPoint.y,
             initialCenterX: effectiveLugGuides.centerX,
             initialTopY: effectiveLugGuides.topY,
-            initialBottomY: effectiveLugGuides.bottomY
+            initialBottomY: effectiveLugGuides.bottomY,
+            initialTopWidth: effectiveLugGuides.topWidth,
+            initialBottomWidth: effectiveLugGuides.bottomWidth
           };
-          setCursor("move");
+          setCursor(hitGuide.mode === "move" ? "move" : "ew-resize");
           canvasRef.current.setPointerCapture(event.pointerId);
           return;
         }
@@ -326,7 +335,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
         if (!canvasPoint) return;
         const deltaX = (canvasPoint.x - guideDrag.startX) / sceneZoom;
         const deltaY = (canvasPoint.y - guideDrag.startY) / sceneZoom;
-        const nextCenterX = clamp(
+        const nextCenterXBase = clamp(
           guideDrag.initialCenterX + deltaX,
           CANVAS_SIZE * 0.2,
           CANVAS_SIZE * 0.8
@@ -337,11 +346,17 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             CANVAS_SIZE * 0.12,
             guideDrag.initialBottomY - 60
           );
+          const nextTopWidthState = getNextGuideWidthState(
+            guideDrag.mode,
+            guideDrag.initialCenterX,
+            guideDrag.initialTopWidth,
+            deltaX
+          );
           onLugGuidesChange({
-            centerX: nextCenterX,
+            centerX: nextTopWidthState?.centerX ?? nextCenterXBase,
             topY: nextTopY,
             bottomY: effectiveLugGuides.bottomY,
-            topWidth: effectiveLugGuides.topWidth,
+            topWidth: nextTopWidthState?.width ?? effectiveLugGuides.topWidth,
             bottomWidth: effectiveLugGuides.bottomWidth
           });
         } else {
@@ -350,12 +365,18 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             guideDrag.initialTopY + 60,
             CANVAS_SIZE * 0.88
           );
+          const nextBottomWidthState = getNextGuideWidthState(
+            guideDrag.mode,
+            guideDrag.initialCenterX,
+            guideDrag.initialBottomWidth,
+            deltaX
+          );
           onLugGuidesChange({
-            centerX: nextCenterX,
+            centerX: nextBottomWidthState?.centerX ?? nextCenterXBase,
             topY: effectiveLugGuides.topY,
             bottomY: nextBottomY,
             topWidth: effectiveLugGuides.topWidth,
-            bottomWidth: effectiveLugGuides.bottomWidth
+            bottomWidth: nextBottomWidthState?.width ?? effectiveLugGuides.bottomWidth
           });
         }
         return;
@@ -476,7 +497,7 @@ const getGuideHitTarget = (
   point: { x: number; y: number },
   guides: PreviewLugGuides,
   sceneZoom: number
-): "top" | "bottom" | null => {
+): { guide: "top" | "bottom"; mode: GuideDragMode } | null => {
   const toScreen = (value: number) => CANVAS_SIZE / 2 + (value - CANVAS_SIZE / 2) * sceneZoom;
   const centerX = toScreen(guides.centerX);
   const topY = toScreen(guides.topY);
@@ -484,16 +505,52 @@ const getGuideHitTarget = (
   const topWidth = guides.topWidth * sceneZoom;
   const bottomWidth = guides.bottomWidth * sceneZoom;
   const hitBand = 18;
+  const handleBand = 16;
   const inHorizontalRange = (x: number, width: number) =>
     x >= centerX - width / 2 - 12 && x <= centerX + width / 2 + 12;
+  const topLeft = centerX - topWidth / 2;
+  const topRight = centerX + topWidth / 2;
+  const bottomLeft = centerX - bottomWidth / 2;
+  const bottomRight = centerX + bottomWidth / 2;
 
+  if (Math.abs(point.x - topLeft) <= handleBand && Math.abs(point.y - topY) <= handleBand) {
+    return { guide: "top", mode: "resize-left" };
+  }
+  if (Math.abs(point.x - topRight) <= handleBand && Math.abs(point.y - topY) <= handleBand) {
+    return { guide: "top", mode: "resize-right" };
+  }
   if (Math.abs(point.y - topY) <= hitBand && inHorizontalRange(point.x, topWidth)) {
-    return "top";
+    return { guide: "top", mode: "move" };
+  }
+  if (Math.abs(point.x - bottomLeft) <= handleBand && Math.abs(point.y - bottomY) <= handleBand) {
+    return { guide: "bottom", mode: "resize-left" };
+  }
+  if (Math.abs(point.x - bottomRight) <= handleBand && Math.abs(point.y - bottomY) <= handleBand) {
+    return { guide: "bottom", mode: "resize-right" };
   }
   if (Math.abs(point.y - bottomY) <= hitBand && inHorizontalRange(point.x, bottomWidth)) {
-    return "bottom";
+    return { guide: "bottom", mode: "move" };
   }
   return null;
+};
+
+const getNextGuideWidthState = (
+  mode: GuideDragMode,
+  initialCenterX: number,
+  initialWidth: number,
+  deltaX: number
+) => {
+  if (mode === "move") return null;
+  const initialLeft = initialCenterX - initialWidth / 2;
+  const initialRight = initialCenterX + initialWidth / 2;
+  if (mode === "resize-left") {
+    const nextLeft = clamp(initialLeft + deltaX, CANVAS_SIZE * 0.08, initialRight - GUIDE_MIN_WIDTH);
+    const width = initialRight - nextLeft;
+    return { centerX: (nextLeft + initialRight) / 2, width };
+  }
+  const nextRight = clamp(initialRight + deltaX, initialLeft + GUIDE_MIN_WIDTH, CANVAS_SIZE * 0.92);
+  const width = nextRight - initialLeft;
+  return { centerX: (initialLeft + nextRight) / 2, width };
 };
 
 function LugGuideOverlay({
@@ -574,6 +631,24 @@ function GuideLine({
       >
         {label}
       </div>
+      <div
+        className={`absolute rounded-full border bg-white ${colorClasses}`}
+        style={{
+          left: `${centerX - width / 2 - 7}px`,
+          top: `${y - 7}px`,
+          width: "14px",
+          height: "14px"
+        }}
+      />
+      <div
+        className={`absolute rounded-full border bg-white ${colorClasses}`}
+        style={{
+          left: `${centerX + width / 2 - 7}px`,
+          top: `${y - 7}px`,
+          width: "14px",
+          height: "14px"
+        }}
+      />
     </>
   );
 }

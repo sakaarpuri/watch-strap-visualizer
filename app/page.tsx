@@ -104,6 +104,7 @@ const applyCenterToPair = (
 type AiToolKey = "cleanup" | "rescue" | "final";
 type StrapSourceMode = "library" | "uploaded";
 type FitState = "auto" | "adjusted" | "locked";
+type GuideDragMode = "move" | "resize-left" | "resize-right";
 
 interface AiToolState {
   loading: boolean;
@@ -1931,11 +1932,14 @@ function WatchOnlyPreview({
   const dragRef = useRef<{
     pointerId: number;
     guide: "top" | "bottom";
+    mode: GuideDragMode;
     startX: number;
     startY: number;
     initialCenterX: number;
     initialTopY: number;
     initialBottomY: number;
+    initialTopWidth: number;
+    initialBottomWidth: number;
   } | null>(null);
 
   useEffect(() => {
@@ -1986,12 +1990,15 @@ function WatchOnlyPreview({
     if (!hit) return;
     dragRef.current = {
       pointerId: event.pointerId,
-      guide: hit,
+      guide: hit.guide,
+      mode: hit.mode,
       startX: point.x,
       startY: point.y,
       initialCenterX: effectiveLugGuides.centerX,
       initialTopY: effectiveLugGuides.topY,
-      initialBottomY: effectiveLugGuides.bottomY
+      initialBottomY: effectiveLugGuides.bottomY,
+      initialTopWidth: effectiveLugGuides.topWidth,
+      initialBottomWidth: effectiveLugGuides.bottomWidth
     };
     canvasRef.current.setPointerCapture(event.pointerId);
   };
@@ -2003,24 +2010,36 @@ function WatchOnlyPreview({
     if (!point) return;
     const deltaX = point.x - drag.startX;
     const deltaY = point.y - drag.startY;
-    const nextCenterX = clamp(drag.initialCenterX + deltaX, CANVAS_SIZE * 0.2, CANVAS_SIZE * 0.8);
+    const nextCenterXBase = clamp(drag.initialCenterX + deltaX, CANVAS_SIZE * 0.2, CANVAS_SIZE * 0.8);
     if (drag.guide === "top") {
       const nextTopY = clamp(drag.initialTopY + deltaY, CANVAS_SIZE * 0.12, drag.initialBottomY - 60);
+      const nextTopWidthState = getWatchOnlyGuideWidthState(
+        drag.mode,
+        drag.initialCenterX,
+        drag.initialTopWidth,
+        deltaX
+      );
       onLugGuidesChange({
-        centerX: nextCenterX,
+        centerX: nextTopWidthState?.centerX ?? nextCenterXBase,
         topY: nextTopY,
         bottomY: effectiveLugGuides.bottomY,
-        topWidth: effectiveLugGuides.topWidth,
+        topWidth: nextTopWidthState?.width ?? effectiveLugGuides.topWidth,
         bottomWidth: effectiveLugGuides.bottomWidth
       });
     } else {
       const nextBottomY = clamp(drag.initialBottomY + deltaY, drag.initialTopY + 60, CANVAS_SIZE * 0.88);
+      const nextBottomWidthState = getWatchOnlyGuideWidthState(
+        drag.mode,
+        drag.initialCenterX,
+        drag.initialBottomWidth,
+        deltaX
+      );
       onLugGuidesChange({
-        centerX: nextCenterX,
+        centerX: nextBottomWidthState?.centerX ?? nextCenterXBase,
         topY: effectiveLugGuides.topY,
         bottomY: nextBottomY,
         topWidth: effectiveLugGuides.topWidth,
-        bottomWidth: effectiveLugGuides.bottomWidth
+        bottomWidth: nextBottomWidthState?.width ?? effectiveLugGuides.bottomWidth
       });
     }
   };
@@ -2107,8 +2126,24 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
         style={{ left: `${topLeft}%`, top: `${topY}%`, width: `${topWidth}%` }}
       />
       <div
+        className="absolute rounded-full border border-cyan-300 bg-white"
+        style={{ left: `calc(${topLeft}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
+      />
+      <div
+        className="absolute rounded-full border border-cyan-300 bg-white"
+        style={{ left: `calc(${topLeft + topWidth}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
+      />
+      <div
         className="absolute h-[2px] rounded-full border border-fuchsia-300 bg-fuchsia-400/12"
         style={{ left: `${bottomLeft}%`, top: `${bottomY}%`, width: `${bottomWidth}%` }}
+      />
+      <div
+        className="absolute rounded-full border border-fuchsia-300 bg-white"
+        style={{ left: `calc(${bottomLeft}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
+      />
+      <div
+        className="absolute rounded-full border border-fuchsia-300 bg-white"
+        style={{ left: `calc(${bottomLeft + bottomWidth}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
       />
       <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-slate-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
         Estimated lug guides. Strap fit will land here first.
@@ -2120,23 +2155,64 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
 function getWatchOnlyGuideHitTarget(
   point: { x: number; y: number },
   guides: PreviewLugGuides
-): "top" | "bottom" | null {
+): { guide: "top" | "bottom"; mode: GuideDragMode } | null {
   const hitBand = 18;
+  const handleBand = 16;
   const topLeft = guides.centerX - guides.topWidth / 2;
+  const topRight = guides.centerX + guides.topWidth / 2;
   const bottomLeft = guides.centerX - guides.bottomWidth / 2;
+  const bottomRight = guides.centerX + guides.bottomWidth / 2;
   const inRange = (x: number, left: number, width: number) =>
     x >= left - 12 && x <= left + width + 12;
 
+  if (Math.abs(point.x - topLeft) <= handleBand && Math.abs(point.y - guides.topY) <= handleBand) {
+    return { guide: "top", mode: "resize-left" };
+  }
+  if (Math.abs(point.x - topRight) <= handleBand && Math.abs(point.y - guides.topY) <= handleBand) {
+    return { guide: "top", mode: "resize-right" };
+  }
   if (Math.abs(point.y - guides.topY) <= hitBand && inRange(point.x, topLeft, guides.topWidth)) {
-    return "top";
+    return { guide: "top", mode: "move" };
+  }
+  if (
+    Math.abs(point.x - bottomLeft) <= handleBand &&
+    Math.abs(point.y - guides.bottomY) <= handleBand
+  ) {
+    return { guide: "bottom", mode: "resize-left" };
+  }
+  if (
+    Math.abs(point.x - bottomRight) <= handleBand &&
+    Math.abs(point.y - guides.bottomY) <= handleBand
+  ) {
+    return { guide: "bottom", mode: "resize-right" };
   }
   if (
     Math.abs(point.y - guides.bottomY) <= hitBand &&
     inRange(point.x, bottomLeft, guides.bottomWidth)
   ) {
-    return "bottom";
+    return { guide: "bottom", mode: "move" };
   }
   return null;
+}
+
+function getWatchOnlyGuideWidthState(
+  mode: GuideDragMode,
+  initialCenterX: number,
+  initialWidth: number,
+  deltaX: number
+) {
+  if (mode === "move") return null;
+  const minWidth = 48;
+  const initialLeft = initialCenterX - initialWidth / 2;
+  const initialRight = initialCenterX + initialWidth / 2;
+  if (mode === "resize-left") {
+    const nextLeft = clamp(initialLeft + deltaX, CANVAS_SIZE * 0.08, initialRight - minWidth);
+    const width = initialRight - nextLeft;
+    return { centerX: (nextLeft + initialRight) / 2, width };
+  }
+  const nextRight = clamp(initialRight + deltaX, initialLeft + minWidth, CANVAS_SIZE * 0.92);
+  const width = nextRight - initialLeft;
+  return { centerX: (initialLeft + nextRight) / 2, width };
 }
 
 const snapToStep = (value: number, min: number, step: number) => {
