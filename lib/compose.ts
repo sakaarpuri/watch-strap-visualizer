@@ -226,6 +226,29 @@ interface StrapMetrics {
   bottomWidth: number;
 }
 
+interface ObjectMaskBounds {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+interface WatchFitGeometry {
+  bounds: ObjectMaskBounds;
+  centerX: number;
+  topAnchorY: number;
+  bottomAnchorY: number;
+  topAnchorWidth: number;
+  bottomAnchorWidth: number;
+  confidence: number;
+}
+
+interface AutoPlacementResult {
+  partA: PartTransform;
+  partB: PartTransform;
+  confidence: number;
+}
+
 const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetrics => {
   const canvas = document.createElement("canvas");
   canvas.width = image.width;
@@ -293,6 +316,221 @@ const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetr
     bottomY,
     topWidth: average(sampledTopWidths),
     bottomWidth: average(sampledBottomWidths)
+  };
+};
+
+const watchFitCache = new Map<string, WatchFitGeometry>();
+
+const buildObjectMaskBounds = (
+  image: HTMLImageElement,
+  bg: { r: number; g: number; b: number }
+): ObjectMaskBounds | null => {
+  const canvas = document.createElement("canvas");
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.drawImage(image, 0, 0);
+  const width = canvas.width;
+  const height = canvas.height;
+  const { data } = ctx.getImageData(0, 0, width, height);
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const i = (y * width + x) * 4;
+      const alpha = data[i + 3];
+      if (alpha < 18) continue;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const dist = colorDistance(r, g, b, bg.r, bg.g, bg.b);
+      const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+      if (dist < 36 && saturation < 24) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+
+  if (maxX < minX || maxY < minY) return null;
+  return { left: minX, top: minY, right: maxX, bottom: maxY };
+};
+
+const detectWatchFitGeometry = (src: string, image: HTMLImageElement): WatchFitGeometry => {
+  const cached = watchFitCache.get(src);
+  if (cached) return cached;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    const fallback: WatchFitGeometry = {
+      bounds: { left: 0, top: 0, right: image.width - 1, bottom: image.height - 1 },
+      centerX: image.width / 2,
+      topAnchorY: image.height * 0.22,
+      bottomAnchorY: image.height * 0.78,
+      topAnchorWidth: image.width * 0.32,
+      bottomAnchorWidth: image.width * 0.32,
+      confidence: 0.35
+    };
+    watchFitCache.set(src, fallback);
+    return fallback;
+  }
+
+  ctx.drawImage(image, 0, 0);
+  const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const bg = averageCornerColor(data, width, height);
+  const bounds = buildObjectMaskBounds(image, bg) || {
+    left: 0,
+    top: 0,
+    right: width - 1,
+    bottom: height - 1
+  };
+
+  const objectWidth = bounds.right - bounds.left + 1;
+  const objectHeight = bounds.bottom - bounds.top + 1;
+  const rowStats: Array<{ y: number; width: number; centerX: number }> = [];
+
+  for (let y = bounds.top; y <= bounds.bottom; y += 1) {
+    let minX = width;
+    let maxX = -1;
+    for (let x = bounds.left; x <= bounds.right; x += 1) {
+      const i = (y * width + x) * 4;
+      const alpha = data[i + 3];
+      if (alpha < 18) continue;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const dist = colorDistance(r, g, b, bg.r, bg.g, bg.b);
+      const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+      if (dist < 36 && saturation < 24) continue;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+    }
+    if (maxX >= minX) {
+      rowStats.push({ y, width: maxX - minX + 1, centerX: (minX + maxX) / 2 });
+    }
+  }
+
+  if (!rowStats.length) {
+    const fallback: WatchFitGeometry = {
+      bounds,
+      centerX: (bounds.left + bounds.right) / 2,
+      topAnchorY: bounds.top + objectHeight * 0.2,
+      bottomAnchorY: bounds.bottom - objectHeight * 0.2,
+      topAnchorWidth: objectWidth * 0.3,
+      bottomAnchorWidth: objectWidth * 0.3,
+      confidence: 0.35
+    };
+    watchFitCache.set(src, fallback);
+    return fallback;
+  }
+
+  const objectCenterX =
+    rowStats.reduce((sum, row) => sum + row.centerX, 0) / rowStats.length;
+  const maxRowWidth = Math.max(...rowStats.map((row) => row.width));
+  const topBandStart = bounds.top + objectHeight * 0.08;
+  const topBandEnd = bounds.top + objectHeight * 0.38;
+  const bottomBandStart = bounds.top + objectHeight * 0.62;
+  const bottomBandEnd = bounds.top + objectHeight * 0.92;
+
+  const scoreRow = (row: { y: number; width: number; centerX: number }, targetBandCenter: number) => {
+    const normalizedWidth = clamp(row.width / Math.max(1, maxRowWidth), 0, 1);
+    const widthPreference = 1 - Math.abs(normalizedWidth - 0.34);
+    const centerPenalty = Math.abs(row.centerX - objectCenterX) / Math.max(1, objectWidth * 0.18);
+    const bandPenalty = Math.abs(row.y - targetBandCenter) / Math.max(1, objectHeight * 0.12);
+    return widthPreference - centerPenalty * 0.45 - bandPenalty * 0.35;
+  };
+
+  const topBandRows = rowStats.filter((row) => row.y >= topBandStart && row.y <= topBandEnd);
+  const bottomBandRows = rowStats.filter((row) => row.y >= bottomBandStart && row.y <= bottomBandEnd);
+  const topBandCenter = (topBandStart + topBandEnd) / 2;
+  const bottomBandCenter = (bottomBandStart + bottomBandEnd) / 2;
+
+  const pickBestRow = (
+    rows: Array<{ y: number; width: number; centerX: number }>,
+    bandCenter: number,
+    fallbackY: number
+  ) => {
+    if (!rows.length) {
+      return {
+        y: fallbackY,
+        width: objectWidth * 0.32
+      };
+    }
+    return rows.reduce((best, row) => {
+      const score = scoreRow(row, bandCenter);
+      if (!best || score > best.score) {
+        return { y: row.y, width: row.width, score };
+      }
+      return best;
+    }, null as null | { y: number; width: number; score: number }) || {
+      y: fallbackY,
+      width: objectWidth * 0.32,
+      score: 0
+    };
+  };
+
+  const topBest = pickBestRow(topBandRows, topBandCenter, bounds.top + objectHeight * 0.22);
+  const bottomBest = pickBestRow(bottomBandRows, bottomBandCenter, bounds.bottom - objectHeight * 0.22);
+
+  const centerSpread =
+    rowStats.reduce((sum, row) => sum + Math.abs(row.centerX - objectCenterX), 0) /
+    Math.max(1, rowStats.length);
+  const symmetryScore = 1 - clamp(centerSpread / Math.max(1, objectWidth * 0.08), 0, 1);
+  const coverageScore = clamp((objectWidth * objectHeight) / Math.max(1, width * height * 0.22), 0, 1);
+  const anchorScore =
+    1 -
+    clamp(
+      Math.abs(topBest.width - bottomBest.width) / Math.max(1, Math.max(topBest.width, bottomBest.width)),
+      0,
+      1
+    );
+  const confidence = clamp(symmetryScore * 0.35 + coverageScore * 0.25 + anchorScore * 0.4, 0.2, 0.95);
+
+  const geometry: WatchFitGeometry = {
+    bounds,
+    centerX: objectCenterX,
+    topAnchorY: topBest.y,
+    bottomAnchorY: bottomBest.y,
+    topAnchorWidth: clamp(topBest.width, objectWidth * 0.18, objectWidth * 0.48),
+    bottomAnchorWidth: clamp(bottomBest.width, objectWidth * 0.18, objectWidth * 0.48),
+    confidence
+  };
+  watchFitCache.set(src, geometry);
+  return geometry;
+};
+
+const getWatchObjectPlacement = (
+  src: string,
+  image: HTMLImageElement,
+  watchScale = 1
+) => {
+  const watchRect = getWatchRect(image, watchScale);
+  const geometry = detectWatchFitGeometry(src, image);
+  const scaleX = watchRect.w / image.width;
+  const scaleY = watchRect.h / image.height;
+  const bounds = {
+    left: watchRect.x + geometry.bounds.left * scaleX,
+    right: watchRect.x + geometry.bounds.right * scaleX,
+    top: watchRect.y + geometry.bounds.top * scaleY,
+    bottom: watchRect.y + geometry.bounds.bottom * scaleY
+  };
+  return {
+    geometry,
+    bounds,
+    centerX: watchRect.x + geometry.centerX * scaleX,
+    topAnchorY: watchRect.y + geometry.topAnchorY * scaleY,
+    bottomAnchorY: watchRect.y + geometry.bottomAnchorY * scaleY,
+    topAnchorWidth: geometry.topAnchorWidth * scaleX,
+    bottomAnchorWidth: geometry.bottomAnchorWidth * scaleX
   };
 };
 
@@ -446,30 +684,37 @@ export const calculateAutoPlacement = async (
   strapBSrc: string,
   targetWidthFactor = 0.32,
   gapFactor = 1
-): Promise<{ partA: PartTransform; partB: PartTransform }> => {
+): Promise<AutoPlacementResult> => {
   const [watch, partAImage, partBImage] = await Promise.all([
     loadImage(watchSrc),
     loadStrapImage(strapASrc),
     loadStrapImage(strapBSrc)
   ]);
 
-  const watchRect = getWatchRect(watch, 1);
-  const targetStrapWidth = watchRect.w * targetWidthFactor;
-  const visualGap = Math.max(18, watchRect.h * 0.045) * gapFactor;
+  const fittedWatch = getWatchObjectPlacement(watchSrc, watch, 1);
+  const objectWidth = fittedWatch.bounds.right - fittedWatch.bounds.left;
+  const objectHeight = fittedWatch.bounds.bottom - fittedWatch.bounds.top;
+  const targetStrapWidth = clamp(
+    (fittedWatch.topAnchorWidth + fittedWatch.bottomAnchorWidth) / 2,
+    objectWidth * 0.18,
+    objectWidth * Math.max(0.24, targetWidthFactor + 0.08)
+  );
+  const visualGap = Math.max(10, objectHeight * 0.018) * (gapFactor ?? 1);
   const metricsA = getImageMetrics(partAImage);
   const metricsB = getImageMetrics(partBImage);
 
   const scaleA = clamp((targetStrapWidth / metricsA.bottomWidth) * 100, 30, 230);
   const scaleB = clamp((targetStrapWidth / metricsB.topWidth) * 100, 30, 230);
 
-  const topEdge = watchRect.y - CANVAS_SIZE / 2;
-  const bottomEdge = watchRect.y + watchRect.h - CANVAS_SIZE / 2;
+  const topEdge = fittedWatch.topAnchorY - CANVAS_SIZE / 2;
+  const bottomEdge = fittedWatch.bottomAnchorY - CANVAS_SIZE / 2;
   const visibleBottomOffsetA = (partAImage.height / 2 - metricsA.bottomY) * (scaleA / 100);
   const visibleTopOffsetB = (metricsB.topY - partBImage.height / 2) * (scaleB / 100);
+  const centerOffsetX = fittedWatch.centerX - (CANVAS_SIZE / 2);
 
   const partA: PartTransform = {
     scale: scaleA,
-    x: 0,
+    x: centerOffsetX,
     y: topEdge + visibleBottomOffsetA - visualGap,
     rotation: 0,
     opacity: 1
@@ -477,7 +722,7 @@ export const calculateAutoPlacement = async (
 
   const partB: PartTransform = {
     scale: scaleB,
-    x: 0,
+    x: centerOffsetX,
     y: bottomEdge - visibleTopOffsetB + visualGap,
     rotation: 0,
     opacity: 1
@@ -498,7 +743,7 @@ export const calculateAutoPlacement = async (
     partB.y -= visibleBottomB - bottomViewport;
   }
 
-  return { partA, partB };
+  return { partA, partB, confidence: fittedWatch.geometry.confidence };
 };
 
 const colorDistance = (r1: number, g1: number, b1: number, r2: number, g2: number, b2: number) =>

@@ -94,6 +94,7 @@ const applyCenterToPair = (
 
 type AiToolKey = "cleanup" | "rescue" | "final";
 type StrapSourceMode = "library" | "uploaded";
+type FitState = "auto" | "adjusted" | "locked";
 
 interface AiToolState {
   loading: boolean;
@@ -511,6 +512,9 @@ export default function Home() {
   const [sceneZoom, setSceneZoom] = useState(1);
   const [preserveSettings, setPreserveSettings] = useState(true);
   const [lockView, setLockView] = useState(false);
+  const [fitState, setFitState] = useState<FitState>("auto");
+  const [fitConfidence, setFitConfidence] = useState(0);
+  const [showFitBench, setShowFitBench] = useState(false);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [aiTools, setAiTools] = useState<Record<AiToolKey, AiToolState>>(defaultToolState);
   const [generatedResults, setGeneratedResults] = useState<GeneratedResultState>({
@@ -626,6 +630,8 @@ export default function Home() {
     });
     setStrapSplitSourceUrl(null);
     setStrapSourceMode("uploaded");
+    setShowFitBench(false);
+    setFitState("auto");
   };
 
   useEffect(() => {
@@ -697,31 +703,38 @@ export default function Home() {
           latestPartB &&
           (preserveSettingsRef.current || lockViewRef.current)
       );
-      let aligned = await calculateAutoPlacement(
+      const aligned = await calculateAutoPlacement(
         watchSrc,
         activeStrapASrc,
         activeStrapBSrc,
         activeAutoFitWidthFactor,
         activeAutoGapFactor
       );
+      let nextPartA = aligned.partA;
+      let nextPartB = aligned.partB;
 
       if (shouldPreserve && latestPartA && latestPartB) {
         const preservedHalfGap = (latestPartB.y - latestPartA.y) / 2;
         const preservedAverageScale = getAverageScale(latestPartA, latestPartB);
         const preservedCenterX = (latestPartA.x + latestPartB.x) / 2;
         const preservedCenterY = (latestPartA.y + latestPartB.y) / 2;
-        aligned = applyScaleToPair(aligned.partA, aligned.partB, preservedAverageScale);
-        aligned = applyGapToPair(aligned.partA, aligned.partB, preservedHalfGap);
-        aligned = applyCenterToPair(
-          aligned.partA,
-          aligned.partB,
+        let preserved = applyScaleToPair(nextPartA, nextPartB, preservedAverageScale);
+        preserved = applyGapToPair(preserved.partA, preserved.partB, preservedHalfGap);
+        preserved = applyCenterToPair(
+          preserved.partA,
+          preserved.partB,
           preservedCenterX,
           preservedCenterY
         );
+        nextPartA = preserved.partA;
+        nextPartB = preserved.partB;
       }
 
-      setPartA(aligned.partA);
-      setPartB(aligned.partB);
+      setPartA(nextPartA);
+      setPartB(nextPartB);
+      setFitConfidence(aligned.confidence);
+      setFitState(lockViewRef.current ? "locked" : shouldPreserve ? "adjusted" : "auto");
+      setShowFitBench(lockViewRef.current ? true : shouldPreserve);
     } finally {
       setIsAutoAligning(false);
     }
@@ -764,6 +777,7 @@ export default function Home() {
     const nextPair = applyGapToPair(partA, partB, nextHalfGap);
     setPartA(nextPair.partA);
     setPartB(nextPair.partB);
+    setFitState("adjusted");
   };
 
   const setStrapScale = (nextScale: number) => {
@@ -771,10 +785,17 @@ export default function Home() {
     const nextPair = applyScaleToPair(partA, partB, nextScale);
     setPartA(nextPair.partA);
     setPartB(nextPair.partB);
+    setFitState("adjusted");
   };
 
   const setDialScaleValue = (nextScale: number) => {
     setDialScale(clamp(nextScale, DIAL_SCALE_MIN, DIAL_SCALE_MAX));
+    setFitState("adjusted");
+  };
+
+  const setSceneZoomValue = (nextScale: number) => {
+    setSceneZoom(nextScale);
+    setFitState("adjusted");
   };
 
   const setToolLoading = (tool: AiToolKey, loading: boolean, error: string | null = null) => {
@@ -1222,6 +1243,8 @@ export default function Home() {
                           setCategory(option);
                           setStrapIndex(0);
                           setHasSelectedLibraryStrap(false);
+                          setShowFitBench(false);
+                          setFitState("auto");
                         }}
                         data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
                         className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
@@ -1260,6 +1283,12 @@ export default function Home() {
                           onClick={() => {
                             setStrapIndex(index);
                             setHasSelectedLibraryStrap(true);
+                            setShowFitBench(false);
+                            setFitState("auto");
+                            setHighlightPreviewWindow(true);
+                            window.setTimeout(() => {
+                              previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }, 80);
                           }}
                           strap={strap}
                           active={active}
@@ -1401,13 +1430,28 @@ export default function Home() {
                   <p className="mt-1 text-sm text-muted">
                     {lockView
                       ? "Fit locked. Save the pairing or send it down to the catalogue image tool."
-                      : "Happy with the pairing? Lock the fit first, then export with confidence."}
+                      : fitConfidence >= 0.65
+                        ? "Auto-fit landed cleanly. Export it now or open Adjust fit for a finer pass."
+                        : "Auto-fit made its best guess. If the strap needs a nudge, open Adjust fit."}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={() => setLockView((prev) => !prev)}
+                    onClick={() => setShowFitBench((prev) => !prev)}
+                    className="rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-white"
+                  >
+                    {showFitBench ? "Hide Fit Tools" : "Adjust Fit"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLockView((prev) => {
+                        const next = !prev;
+                        setFitState(next ? "locked" : showFitBench ? "adjusted" : "auto");
+                        return next;
+                      })
+                    }
                     className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
                       lockView
                         ? "border-emerald-300 bg-emerald-50 text-emerald-900"
@@ -1445,13 +1489,33 @@ export default function Home() {
                 onDragPartsChange={(nextA, nextB) => {
                   setPartA(nextA);
                   setPartB(nextB);
+                  setFitState("adjusted");
+                  setShowFitBench(true);
                 }}
                 onCycleStrap={onCycleStrap}
-                controls={
+                controls={showFitBench ? (
                   <div className="glass-card rounded-xl p-3">
-                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                      Fit Bench
-                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                          Fit Bench
+                        </p>
+                        <p className="mt-1 text-xs text-muted">
+                          {fitState === "locked"
+                            ? "Locked and ready to export."
+                            : fitState === "adjusted"
+                              ? "Your refined fit stays with this strap."
+                              : "Auto-fit started you close to the lugs."}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowFitBench(false)}
+                        className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                      >
+                        Hide
+                      </button>
+                    </div>
                     <div className="mt-2 grid gap-2">
                       <div className="relative">
                         <SliderControl
@@ -1517,7 +1581,7 @@ export default function Home() {
                         max={1.4}
                         step={0.02}
                         value={sceneZoom}
-                        onChange={setSceneZoom}
+                        onChange={setSceneZoomValue}
                         hint="Whole watch ↔ Detail"
                       />
                       <ToggleControl
@@ -1528,7 +1592,7 @@ export default function Home() {
                       />
                     </div>
                   </div>
-                }
+                ) : undefined}
               />
             </div>
           ) : (
