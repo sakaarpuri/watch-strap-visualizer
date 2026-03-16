@@ -1038,14 +1038,14 @@ export default function Home() {
   return (
     <main className="mx-auto max-w-[108rem] px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 md:px-8 md:pb-12 md:pt-5 xl:px-10">
       <header>
-        <div className="text-center pb-2 sm:pb-3">
+        <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/watchstrapper-logo.png"
             alt="Watchstrapper"
             className="mx-auto h-auto w-[18rem] object-contain sm:w-[22rem] lg:w-[24rem]"
           />
-          <h1 className="-mt-2 text-2xl font-semibold tracking-tight text-ink sm:-mt-3 sm:text-4xl">
+          <h1 className="-mt-2 text-2xl font-semibold leading-none tracking-tight text-ink sm:-mt-3 sm:text-4xl">
             See any strap on your watch before you buy.
           </h1>
         </div>
