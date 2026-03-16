@@ -519,7 +519,7 @@ export default function Home() {
   const [lockView, setLockView] = useState(false);
   const [fitState, setFitState] = useState<FitState>("auto");
   const [fitConfidence, setFitConfidence] = useState(0);
-  const [showFitBench, setShowFitBench] = useState(false);
+  const [showFitBench, setShowFitBench] = useState(true);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [aiTools, setAiTools] = useState<Record<AiToolKey, AiToolState>>(defaultToolState);
   const [generatedResults, setGeneratedResults] = useState<GeneratedResultState>({
@@ -636,7 +636,7 @@ export default function Home() {
     });
     setStrapSplitSourceUrl(null);
     setStrapSourceMode("uploaded");
-    setShowFitBench(false);
+    setShowFitBench(true);
     setFitState("auto");
   };
 
@@ -740,7 +740,7 @@ export default function Home() {
       setPartB(nextPartB);
       setFitConfidence(aligned.confidence);
       setFitState(lockViewRef.current ? "locked" : shouldPreserve ? "adjusted" : "auto");
-      setShowFitBench(lockViewRef.current ? true : shouldPreserve);
+      setShowFitBench(true);
     } finally {
       setIsAutoAligning(false);
     }
