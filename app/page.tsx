@@ -1051,7 +1051,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mb-40 mt-20 sm:mb-48 sm:mt-24">
+      <section className="mb-40 mt-24 sm:mb-48 sm:mt-28">
         <div className="mx-auto max-w-[1120px]">
           <div className={`glass-card rounded-[2rem] border border-line px-6 py-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-4 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),520px] lg:items-center">
@@ -1588,19 +1588,24 @@ export default function Home() {
                   : "opacity-80"
               }`}
             >
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Similar Straps Available For Buying Elsewhere
-                </p>
-                {lockView ? (
-                  <p className="mt-1 text-sm text-muted">
-                    We may earn affiliate commission from one of the listed purchase links.
                   </p>
-                ) : (
-                  <p className="mt-1 text-sm text-muted">
-                    Lock the view to see matching buying options for the strap on the bench.
-                  </p>
-                )}
+                  {lockView ? (
+                    <p className="mt-1 text-sm text-muted">
+                      We may earn affiliate commission from one of the listed purchase links.
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted">
+                      Lock the view to see matching buying options for the strap on the bench.
+                    </p>
+                  )}
+                </div>
+                <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+                  Coming soon
+                </span>
               </div>
               {lockView ? (
                 similarProductsLoading ? (
