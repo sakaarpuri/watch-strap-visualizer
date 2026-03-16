@@ -580,6 +580,7 @@ export default function Home() {
     () => Boolean(partA && partB && activeStrapASrc && activeStrapBSrc),
     [partA, partB, activeStrapASrc, activeStrapBSrc]
   );
+  const canShowWatchOnlyPreview = hasUserUpload && !canRender;
 
   useEffect(() => {
     latestPartARef.current = partA;
@@ -1594,6 +1595,31 @@ export default function Home() {
                   </div>
                 ) : undefined}
               />
+            </div>
+          ) : canShowWatchOnlyPreview ? (
+            <div className={highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""}>
+              <div className="rounded-2xl border p-2.5 transition sm:p-3"
+                style={{
+                  background:
+                    "linear-gradient(150deg, color-mix(in srgb, var(--canvas-bg) 62%, white 38%), color-mix(in srgb, var(--canvas-bg) 84%, white 16%))",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,.8), 0 12px 30px rgba(15,23,42,.08)",
+                  backdropFilter: "blur(8px)"
+                }}
+              >
+                <div className="rounded-xl border border-line bg-canvas p-3">
+                  <div className="aspect-square overflow-hidden rounded-xl border border-line bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={watchSrc}
+                      alt="Cropped watch preview"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <p className="mt-3 text-sm text-muted">
+                    Watch loaded. Pick a strap from the Strap Box and we&apos;ll try it on automatically.
+                  </p>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">

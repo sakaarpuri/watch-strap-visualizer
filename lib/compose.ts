@@ -534,6 +534,61 @@ const getWatchObjectPlacement = (
   };
 };
 
+const calculateBaselinePlacement = (
+  watch: HTMLImageElement,
+  partAImage: HTMLImageElement | HTMLCanvasElement,
+  partBImage: HTMLImageElement | HTMLCanvasElement,
+  targetWidthFactor = 0.32,
+  gapFactor = 1
+) => {
+  const watchRect = getWatchRect(watch, 1);
+  const targetStrapWidth = watchRect.w * targetWidthFactor;
+  const visualGap = Math.max(18, watchRect.h * 0.045) * gapFactor;
+  const metricsA = getImageMetrics(partAImage);
+  const metricsB = getImageMetrics(partBImage);
+
+  const scaleA = clamp((targetStrapWidth / metricsA.bottomWidth) * 100, 30, 230);
+  const scaleB = clamp((targetStrapWidth / metricsB.topWidth) * 100, 30, 230);
+
+  const topEdge = watchRect.y - CANVAS_SIZE / 2;
+  const bottomEdge = watchRect.y + watchRect.h - CANVAS_SIZE / 2;
+  const visibleBottomOffsetA = (partAImage.height / 2 - metricsA.bottomY) * (scaleA / 100);
+  const visibleTopOffsetB = (metricsB.topY - partBImage.height / 2) * (scaleB / 100);
+
+  const partA: PartTransform = {
+    scale: scaleA,
+    x: 0,
+    y: topEdge + visibleBottomOffsetA - visualGap,
+    rotation: 0,
+    opacity: 1
+  };
+
+  const partB: PartTransform = {
+    scale: scaleB,
+    x: 0,
+    y: bottomEdge - visibleTopOffsetB + visualGap,
+    rotation: 0,
+    opacity: 1
+  };
+
+  const viewportMargin = 28;
+  const topViewport = -CANVAS_SIZE / 2 + viewportMargin;
+  const bottomViewport = CANVAS_SIZE / 2 - viewportMargin;
+
+  const visibleTopA = partA.y + (metricsA.topY - partAImage.height / 2) * (scaleA / 100);
+  if (visibleTopA < topViewport) {
+    partA.y += topViewport - visibleTopA;
+  }
+
+  const visibleBottomB =
+    partB.y + (metricsB.bottomY - partBImage.height / 2) * (scaleB / 100);
+  if (visibleBottomB > bottomViewport) {
+    partB.y -= visibleBottomB - bottomViewport;
+  }
+
+  return { partA, partB };
+};
+
 const drawPart = (
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement | HTMLCanvasElement,
@@ -691,6 +746,14 @@ export const calculateAutoPlacement = async (
     loadStrapImage(strapBSrc)
   ]);
 
+  const baseline = calculateBaselinePlacement(
+    watch,
+    partAImage,
+    partBImage,
+    targetWidthFactor,
+    gapFactor
+  );
+
   const fittedWatch = getWatchObjectPlacement(watchSrc, watch, 1);
   const objectWidth = fittedWatch.bounds.right - fittedWatch.bounds.left;
   const objectHeight = fittedWatch.bounds.bottom - fittedWatch.bounds.top;
@@ -712,7 +775,7 @@ export const calculateAutoPlacement = async (
   const visibleTopOffsetB = (metricsB.topY - partBImage.height / 2) * (scaleB / 100);
   const centerOffsetX = fittedWatch.centerX - (CANVAS_SIZE / 2);
 
-  const partA: PartTransform = {
+  const lugPartA: PartTransform = {
     scale: scaleA,
     x: centerOffsetX,
     y: topEdge + visibleBottomOffsetA - visualGap,
@@ -720,7 +783,7 @@ export const calculateAutoPlacement = async (
     opacity: 1
   };
 
-  const partB: PartTransform = {
+  const lugPartB: PartTransform = {
     scale: scaleB,
     x: centerOffsetX,
     y: bottomEdge - visibleTopOffsetB + visualGap,
@@ -732,16 +795,32 @@ export const calculateAutoPlacement = async (
   const topViewport = -CANVAS_SIZE / 2 + viewportMargin;
   const bottomViewport = CANVAS_SIZE / 2 - viewportMargin;
 
-  const visibleTopA = partA.y + (metricsA.topY - partAImage.height / 2) * (scaleA / 100);
+  const visibleTopA = lugPartA.y + (metricsA.topY - partAImage.height / 2) * (scaleA / 100);
   if (visibleTopA < topViewport) {
-    partA.y += topViewport - visibleTopA;
+    lugPartA.y += topViewport - visibleTopA;
   }
 
   const visibleBottomB =
-    partB.y + (metricsB.bottomY - partBImage.height / 2) * (scaleB / 100);
+    lugPartB.y + (metricsB.bottomY - partBImage.height / 2) * (scaleB / 100);
   if (visibleBottomB > bottomViewport) {
-    partB.y -= visibleBottomB - bottomViewport;
+    lugPartB.y -= visibleBottomB - bottomViewport;
   }
+
+  const blend = clamp((fittedWatch.geometry.confidence - 0.45) / 0.35, 0, 1);
+  const partA: PartTransform = {
+    scale: baseline.partA.scale + (lugPartA.scale - baseline.partA.scale) * blend,
+    x: baseline.partA.x + (lugPartA.x - baseline.partA.x) * blend,
+    y: baseline.partA.y + (lugPartA.y - baseline.partA.y) * blend,
+    rotation: 0,
+    opacity: 1
+  };
+  const partB: PartTransform = {
+    scale: baseline.partB.scale + (lugPartB.scale - baseline.partB.scale) * blend,
+    x: baseline.partB.x + (lugPartB.x - baseline.partB.x) * blend,
+    y: baseline.partB.y + (lugPartB.y - baseline.partB.y) * blend,
+    rotation: 0,
+    opacity: 1
+  };
 
   return { partA, partB, confidence: fittedWatch.geometry.confidence };
 };
