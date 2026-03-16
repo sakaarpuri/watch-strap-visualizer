@@ -1051,7 +1051,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mb-40 mt-12 sm:mb-48 sm:mt-14">
+      <section className="mb-40 mt-20 sm:mb-48 sm:mt-24">
         <div className="mx-auto max-w-[1120px]">
           <div className={`glass-card rounded-[2rem] border border-line px-6 py-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-4 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),520px] lg:items-center">
