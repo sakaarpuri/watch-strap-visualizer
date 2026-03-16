@@ -531,6 +531,7 @@ export default function Home() {
   });
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
+  const previewSectionRef = useRef<HTMLElement | null>(null);
   const strapUploadInputRef = useRef<HTMLInputElement>(null);
   const latestPartARef = useRef<PartTransform | null>(null);
   const latestPartBRef = useRef<PartTransform | null>(null);
@@ -675,6 +676,9 @@ export default function Home() {
     setWatchPreviewSrc(sourceUrl);
     setWatchSrc(sourceUrl);
     setHighlightPreviewWindow(true);
+    window.setTimeout(() => {
+      previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
   };
 
   const applyCroppedDial = (file: File, previewUrl: string) => {
@@ -1385,7 +1389,7 @@ export default function Home() {
           </div>
         </aside>
 
-        <section className="min-w-0">
+        <section ref={previewSectionRef} className="min-w-0">
           <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
             3. Live Preview
           </h2>
