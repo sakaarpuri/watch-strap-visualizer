@@ -552,6 +552,7 @@ export default function Home() {
   const latestPartBRef = useRef<PartTransform | null>(null);
   const preserveSettingsRef = useRef(true);
   const lockViewRef = useRef(false);
+  const previousDialScaleRef = useRef(dialScale);
 
   const handleLugGuidesChange = (nextOverrides: PreviewLugGuideOverrides) => {
     setLugGuideOverrides((prev) => {
@@ -624,6 +625,39 @@ export default function Home() {
   useEffect(() => {
     lockViewRef.current = lockView;
   }, [lockView]);
+
+  useEffect(() => {
+    const previous = previousDialScaleRef.current;
+    if (!lugGuideOverrides || previous === dialScale) {
+      previousDialScaleRef.current = dialScale;
+      return;
+    }
+    const ratio = dialScale / previous;
+    setLugGuideOverrides((current) => {
+      if (!current) return current;
+      return {
+        centerX:
+          typeof current.centerX === "number"
+            ? CANVAS_SIZE / 2 + (current.centerX - CANVAS_SIZE / 2) * ratio
+            : current.centerX,
+        topY:
+          typeof current.topY === "number"
+            ? CANVAS_SIZE / 2 + (current.topY - CANVAS_SIZE / 2) * ratio
+            : current.topY,
+        bottomY:
+          typeof current.bottomY === "number"
+            ? CANVAS_SIZE / 2 + (current.bottomY - CANVAS_SIZE / 2) * ratio
+            : current.bottomY,
+        topWidth:
+          typeof current.topWidth === "number" ? current.topWidth * ratio : current.topWidth,
+        bottomWidth:
+          typeof current.bottomWidth === "number"
+            ? current.bottomWidth * ratio
+            : current.bottomWidth
+      };
+    });
+    previousDialScaleRef.current = dialScale;
+  }, [dialScale, lugGuideOverrides]);
 
   const onUploadDial = (file: File) => {
     const uploadedUrl = URL.createObjectURL(file);
@@ -1520,7 +1554,7 @@ export default function Home() {
                 watchScale={dialScale}
                 sceneZoom={sceneZoom}
                 locked={lockView}
-                showLugGuides={showFitBench || fitConfidence < 0.72}
+                showLugGuides={!lockView && (showFitBench || fitConfidence < 0.72)}
                 lugGuideOverrides={lugGuideOverrides}
                 onLugGuidesChange={handleLugGuidesChange}
                 showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}

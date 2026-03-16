@@ -840,7 +840,8 @@ export const calculateAutoPlacement = async (
   const anchorScaleB = clamp((safeTargetWidth / metricsB.topWidth) * 100, 30, 230);
   const scaleA = baseline.partA.scale + (anchorScaleA - baseline.partA.scale) * blend;
   const scaleB = baseline.partB.scale + (anchorScaleB - baseline.partB.scale) * blend;
-  const visualGap = Math.max(18, baselineWatchRect.h * 0.045) * gapFactor;
+  const defaultVisualGap = Math.max(18, baselineWatchRect.h * 0.045) * gapFactor;
+  const visualGap = lugOverrides ? Math.max(4, defaultVisualGap * 0.18) : defaultVisualGap;
   const anchorYPartA =
     lugTopEdge + (partAImage.height / 2 - metricsA.bottomY) * (scaleA / 100) - visualGap;
   const anchorYPartB =
