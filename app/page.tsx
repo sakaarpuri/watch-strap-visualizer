@@ -1036,22 +1036,22 @@ export default function Home() {
   const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-    <main className="mx-auto max-w-[108rem] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 xl:px-10">
+    <main className="mx-auto max-w-[108rem] px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 md:px-8 md:pb-12 md:pt-5 xl:px-10">
       <header>
-        <div className="text-center pb-6 sm:pb-8">
+        <div className="text-center pb-2 sm:pb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/watchstrapper-logo.png"
             alt="Watchstrapper"
-            className="mx-auto -mt-2 h-auto w-[18rem] object-contain sm:w-[22rem] lg:w-[24rem]"
+            className="mx-auto h-auto w-[18rem] object-contain sm:w-[22rem] lg:w-[24rem]"
           />
-          <h1 className="-mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-4xl">
+          <h1 className="mt-0 text-2xl font-semibold tracking-tight text-ink sm:text-4xl">
             See any strap on your watch before you buy.
           </h1>
         </div>
       </header>
 
-      <section className="mb-40 mt-3 sm:mb-48 sm:mt-4">
+      <section className="mb-40 mt-0 sm:mb-48 sm:mt-1">
         <div className="mx-auto max-w-[1120px]">
           <div className={`glass-card rounded-[2rem] border border-line px-6 py-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-4 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),520px] lg:items-center">
