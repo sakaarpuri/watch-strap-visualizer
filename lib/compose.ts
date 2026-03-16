@@ -243,9 +243,18 @@ interface WatchFitGeometry {
   confidence: number;
 }
 
-interface AutoPlacementResult {
+export interface AutoPlacementResult {
   partA: PartTransform;
   partB: PartTransform;
+  confidence: number;
+}
+
+export interface PreviewLugGuides {
+  centerX: number;
+  topY: number;
+  bottomY: number;
+  topWidth: number;
+  bottomWidth: number;
   confidence: number;
 }
 
@@ -531,6 +540,22 @@ const getWatchObjectPlacement = (
     bottomAnchorY: watchRect.y + geometry.bottomAnchorY * scaleY,
     topAnchorWidth: geometry.topAnchorWidth * scaleX,
     bottomAnchorWidth: geometry.bottomAnchorWidth * scaleX
+  };
+};
+
+export const detectPreviewLugGuides = async (
+  watchSrc: string,
+  watchScale = 1
+): Promise<PreviewLugGuides> => {
+  const watch = await loadImage(watchSrc);
+  const placement = getWatchObjectPlacement(watchSrc, watch, watchScale);
+  return {
+    centerX: placement.centerX,
+    topY: placement.topAnchorY,
+    bottomY: placement.bottomAnchorY,
+    topWidth: placement.topAnchorWidth,
+    bottomWidth: placement.bottomAnchorWidth,
+    confidence: placement.geometry.confidence
   };
 };
 

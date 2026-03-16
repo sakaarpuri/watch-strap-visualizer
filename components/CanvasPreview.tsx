@@ -12,9 +12,11 @@ import {
 } from "react";
 import {
   CANVAS_SIZE,
+  detectPreviewLugGuides,
   JoinShape,
   loadStrapImage,
   PartTransform,
+  PreviewLugGuides,
   StrapStyle,
   renderComposition
 } from "@/lib/compose";
@@ -34,6 +36,7 @@ interface CanvasPreviewProps {
   onCycleStrap: (direction: 1 | -1) => void;
   showCycleControls?: boolean;
   controls?: ReactNode;
+  showLugGuides?: boolean;
 }
 
 export interface CanvasPreviewRef {
@@ -85,7 +88,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       onDragPartsChange,
       onCycleStrap,
       showCycleControls = true,
-      controls
+      controls,
+      showLugGuides = false
     },
     ref
   ) => {
@@ -93,6 +97,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const [error, setError] = useState<string>("");
     const [isTicking, setIsTicking] = useState(false);
     const [cursor, setCursor] = useState<CSSProperties["cursor"]>("grab");
+    const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
     const strapImageSizeRef = useRef<{ aW: number; aH: number; bW: number; bH: number } | null>(
       null
     );
@@ -138,6 +143,24 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
         active = false;
       };
     }, [watchSrc, strapASrc, strapBSrc, partA, partB, style, joinShape, watchScale, sceneZoom]);
+
+    useEffect(() => {
+      let active = true;
+      const loadGuides = async () => {
+        try {
+          const guides = await detectPreviewLugGuides(watchSrc, watchScale);
+          if (!active) return;
+          setLugGuides(guides);
+        } catch {
+          if (!active) return;
+          setLugGuides(null);
+        }
+      };
+      void loadGuides();
+      return () => {
+        active = false;
+      };
+    }, [watchSrc, watchScale]);
 
     useEffect(() => {
       let active = true;
@@ -328,6 +351,9 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             style={{ touchAction: "none", cursor: locked ? "default" : cursor }}
             aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
           />
+            {showLugGuides && lugGuides ? (
+              <LugGuideOverlay guides={lugGuides} sceneZoom={sceneZoom} />
+            ) : null}
             {showCycleControls ? (
               <button
                 type="button"
@@ -355,3 +381,85 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 CanvasPreview.displayName = "CanvasPreview";
 
 export default CanvasPreview;
+
+function LugGuideOverlay({
+  guides,
+  sceneZoom
+}: {
+  guides: PreviewLugGuides;
+  sceneZoom: number;
+}) {
+  const toScreen = (value: number) => CANVAS_SIZE / 2 + (value - CANVAS_SIZE / 2) * sceneZoom;
+  const centerX = toScreen(guides.centerX);
+  const topY = toScreen(guides.topY);
+  const bottomY = toScreen(guides.bottomY);
+  const topWidth = guides.topWidth * sceneZoom;
+  const bottomWidth = guides.bottomWidth * sceneZoom;
+  const confident = guides.confidence >= 0.72;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[5] overflow-hidden rounded-xl">
+      <GuideLine
+        label={confident ? "Top lug fit" : "Top lug guide"}
+        centerX={centerX}
+        y={topY}
+        width={topWidth}
+        tone="cyan"
+      />
+      <GuideLine
+        label={confident ? "Bottom lug fit" : "Bottom lug guide"}
+        centerX={centerX}
+        y={bottomY}
+        width={bottomWidth}
+        tone="fuchsia"
+      />
+      {!confident ? (
+        <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-amber-200 bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          Auto-fit is using estimated lug guides. Fine-tune if needed.
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function GuideLine({
+  label,
+  centerX,
+  y,
+  width,
+  tone
+}: {
+  label: string;
+  centerX: number;
+  y: number;
+  width: number;
+  tone: "cyan" | "fuchsia";
+}) {
+  const colorClasses =
+    tone === "cyan"
+      ? "border-cyan-300 bg-cyan-400/12 text-cyan-700"
+      : "border-fuchsia-300 bg-fuchsia-400/12 text-fuchsia-700";
+
+  return (
+    <>
+      <div
+        className={`absolute -translate-x-1/2 rounded-full border ${colorClasses}`}
+        style={{
+          left: `${centerX}px`,
+          top: `${y - 1}px`,
+          width: `${Math.max(32, width)}px`,
+          height: "2px"
+        }}
+      />
+      <div
+        className={`absolute -translate-x-1/2 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorClasses}`}
+        style={{
+          left: `${centerX}px`,
+          top: `${y - 24}px`
+        }}
+      >
+        {label}
+      </div>
+    </>
+  );
+}

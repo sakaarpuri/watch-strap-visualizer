@@ -7,9 +7,12 @@ import CropEditor from "@/components/CropEditor";
 import ImageUploader from "@/components/ImageUploader";
 import StrapSplitEditor from "@/components/StrapSplitEditor";
 import {
+  CANVAS_SIZE,
   calculateAutoPlacement,
+  detectPreviewLugGuides,
   loadStrapImage,
   PartTransform,
+  PreviewLugGuides,
   renderWatchOnlyComposition
 } from "@/lib/compose";
 import {
@@ -1491,6 +1494,7 @@ export default function Home() {
                 watchScale={dialScale}
                 sceneZoom={sceneZoom}
                 locked={lockView}
+                showLugGuides={showFitBench || fitConfidence < 0.72}
                 showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
                 onDragPartsChange={(nextA, nextB) => {
                   setPartA(nextA);
@@ -1907,6 +1911,7 @@ function WatchOnlyPreview({
   highlighted: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -1924,6 +1929,24 @@ function WatchOnlyPreview({
     };
   }, [watchSrc]);
 
+  useEffect(() => {
+    let active = true;
+    const loadGuides = async () => {
+      try {
+        const guides = await detectPreviewLugGuides(watchSrc);
+        if (!active) return;
+        setLugGuides(guides);
+      } catch {
+        if (!active) return;
+        setLugGuides(null);
+      }
+    };
+    void loadGuides();
+    return () => {
+      active = false;
+    };
+  }, [watchSrc]);
+
   return (
     <div className={highlighted ? "preview-attention-ring rounded-[1.75rem]" : ""}>
       <div
@@ -1936,15 +1959,43 @@ function WatchOnlyPreview({
         }}
       >
         <div className="rounded-xl border border-line bg-canvas p-3">
-          <canvas
-            ref={canvasRef}
-            className="aspect-square w-full rounded-xl border border-line bg-white"
-            aria-label="Watch preview canvas"
-          />
+          <div className="relative">
+            <canvas
+              ref={canvasRef}
+              className="aspect-square w-full rounded-xl border border-line bg-white"
+              aria-label="Watch preview canvas"
+            />
+            {lugGuides ? <WatchOnlyLugGuideOverlay guides={lugGuides} /> : null}
+          </div>
           <p className="mt-3 text-sm text-muted">
             Watch loaded. Pick a strap from the Strap Box and we&apos;ll try it on automatically.
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
+  const topLeft = ((guides.centerX - guides.topWidth / 2) / CANVAS_SIZE) * 100;
+  const topWidth = (guides.topWidth / CANVAS_SIZE) * 100;
+  const topY = (guides.topY / CANVAS_SIZE) * 100;
+  const bottomLeft = ((guides.centerX - guides.bottomWidth / 2) / CANVAS_SIZE) * 100;
+  const bottomWidth = (guides.bottomWidth / CANVAS_SIZE) * 100;
+  const bottomY = (guides.bottomY / CANVAS_SIZE) * 100;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
+      <div
+        className="absolute h-[2px] rounded-full border border-cyan-300 bg-cyan-400/12"
+        style={{ left: `${topLeft}%`, top: `${topY}%`, width: `${topWidth}%` }}
+      />
+      <div
+        className="absolute h-[2px] rounded-full border border-fuchsia-300 bg-fuchsia-400/12"
+        style={{ left: `${bottomLeft}%`, top: `${bottomY}%`, width: `${bottomWidth}%` }}
+      />
+      <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-slate-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+        Estimated lug guides. Strap fit will land here first.
       </div>
     </div>
   );
