@@ -1776,7 +1776,7 @@ function FeaturedStrapTeaser({ strap }: FeaturedStrapTeaserProps) {
         <img
           src={strap.strapASrc}
           alt={`${strap.label} teaser`}
-          className="h-full w-full object-contain p-0.5"
+          className="h-full w-full scale-[1.55] object-contain"
           loading="lazy"
         />
       </div>
@@ -1807,7 +1807,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         <img
           src={strap.strapASrc}
           alt={`${strap.label} thumbnail`}
-          className="h-full w-full object-contain p-0"
+          className="h-full w-full scale-[1.75] object-contain"
           loading="lazy"
         />
       </div>
