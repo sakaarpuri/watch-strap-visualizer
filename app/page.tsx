@@ -553,6 +553,25 @@ export default function Home() {
   const preserveSettingsRef = useRef(true);
   const lockViewRef = useRef(false);
 
+  const handleLugGuidesChange = (nextOverrides: PreviewLugGuideOverrides) => {
+    setLugGuideOverrides((prev) => {
+      if (!Object.keys(nextOverrides).length) return null;
+      const merged = { ...(prev ?? {}), ...nextOverrides };
+      const syncedWidth =
+        nextOverrides.topWidth ?? nextOverrides.bottomWidth ?? merged.topWidth ?? merged.bottomWidth;
+      if (typeof syncedWidth === "number") {
+        merged.topWidth = syncedWidth;
+        merged.bottomWidth = syncedWidth;
+      }
+      if (typeof merged.centerX !== "number") {
+        delete merged.centerX;
+      }
+      return merged;
+    });
+    setFitState(lockViewRef.current ? "locked" : "adjusted");
+    setShowFitBench(true);
+  };
+
   const strapsInCategory = useMemo(() => {
     const straps = [...getStrapsForCategory(category)];
     return straps.sort((a, b) => {
@@ -715,6 +734,7 @@ export default function Home() {
       const shouldPreserve = Boolean(
         latestPartA &&
           latestPartB &&
+          !lugGuideOverrides &&
           (preserveSettingsRef.current || lockViewRef.current)
       );
       const aligned = await calculateAutoPlacement(
@@ -1502,7 +1522,7 @@ export default function Home() {
                 locked={lockView}
                 showLugGuides={showFitBench || fitConfidence < 0.72}
                 lugGuideOverrides={lugGuideOverrides}
-                onLugGuidesChange={setLugGuideOverrides}
+                onLugGuidesChange={handleLugGuidesChange}
                 showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
                 onDragPartsChange={(nextA, nextB) => {
                   setPartA(nextA);
@@ -1618,7 +1638,7 @@ export default function Home() {
               watchSrc={watchSrc}
               highlighted={highlightPreviewWindow}
               lugGuideOverrides={lugGuideOverrides}
-              onLugGuidesChange={setLugGuideOverrides}
+              onLugGuidesChange={handleLugGuidesChange}
             />
           ) : (
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
