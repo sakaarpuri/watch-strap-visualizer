@@ -16,6 +16,7 @@ import {
   JoinShape,
   loadStrapImage,
   PartTransform,
+  PreviewLugGuideOverrides,
   PreviewLugGuides,
   StrapStyle,
   renderComposition
@@ -37,6 +38,8 @@ interface CanvasPreviewProps {
   showCycleControls?: boolean;
   controls?: ReactNode;
   showLugGuides?: boolean;
+  lugGuideOverrides?: PreviewLugGuideOverrides | null;
+  onLugGuidesChange?: (overrides: PreviewLugGuideOverrides) => void;
 }
 
 export interface CanvasPreviewRef {
@@ -89,7 +92,9 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       onCycleStrap,
       showCycleControls = true,
       controls,
-      showLugGuides = false
+      showLugGuides = false,
+      lugGuideOverrides,
+      onLugGuidesChange
     },
     ref
   ) => {
@@ -98,6 +103,15 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const [isTicking, setIsTicking] = useState(false);
     const [cursor, setCursor] = useState<CSSProperties["cursor"]>("grab");
     const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
+    const lugDragRef = useRef<{
+      pointerId: number;
+      guide: "top" | "bottom";
+      startX: number;
+      startY: number;
+      initialCenterX: number;
+      initialTopY: number;
+      initialBottomY: number;
+    } | null>(null);
     const strapImageSizeRef = useRef<{ aW: number; aH: number; bW: number; bH: number } | null>(
       null
     );
@@ -162,6 +176,18 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       };
     }, [watchSrc, watchScale]);
 
+    const effectiveLugGuides =
+      lugGuides
+        ? {
+            ...lugGuides,
+            centerX: lugGuideOverrides?.centerX ?? lugGuides.centerX,
+            topY: lugGuideOverrides?.topY ?? lugGuides.topY,
+            bottomY: lugGuideOverrides?.bottomY ?? lugGuides.bottomY,
+            topWidth: lugGuideOverrides?.topWidth ?? lugGuides.topWidth,
+            bottomWidth: lugGuideOverrides?.bottomWidth ?? lugGuides.bottomWidth
+          }
+        : null;
+
     useEffect(() => {
       let active = true;
       const loadSizes = async () => {
@@ -222,6 +248,24 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       if (!canvasPoint || !canvasRef.current) return;
       if (locked) return;
 
+      if (showLugGuides && effectiveLugGuides && onLugGuidesChange) {
+        const hitGuide = getGuideHitTarget(canvasPoint, effectiveLugGuides, sceneZoom);
+        if (hitGuide) {
+          lugDragRef.current = {
+            pointerId: event.pointerId,
+            guide: hitGuide,
+            startX: canvasPoint.x,
+            startY: canvasPoint.y,
+            initialCenterX: effectiveLugGuides.centerX,
+            initialTopY: effectiveLugGuides.topY,
+            initialBottomY: effectiveLugGuides.bottomY
+          };
+          setCursor("move");
+          canvasRef.current.setPointerCapture(event.pointerId);
+          return;
+        }
+      }
+
       const size = strapImageSizeRef.current;
       let mode: "move" | "resize" = "move";
       if (size) {
@@ -276,6 +320,46 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 
     const onPointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
       const drag = dragStateRef.current;
+      const guideDrag = lugDragRef.current;
+      if (guideDrag?.pointerId === event.pointerId && effectiveLugGuides && onLugGuidesChange) {
+        const canvasPoint = getCanvasPoint(event);
+        if (!canvasPoint) return;
+        const deltaX = (canvasPoint.x - guideDrag.startX) / sceneZoom;
+        const deltaY = (canvasPoint.y - guideDrag.startY) / sceneZoom;
+        const nextCenterX = clamp(
+          guideDrag.initialCenterX + deltaX,
+          CANVAS_SIZE * 0.2,
+          CANVAS_SIZE * 0.8
+        );
+        if (guideDrag.guide === "top") {
+          const nextTopY = clamp(
+            guideDrag.initialTopY + deltaY,
+            CANVAS_SIZE * 0.12,
+            guideDrag.initialBottomY - 60
+          );
+          onLugGuidesChange({
+            centerX: nextCenterX,
+            topY: nextTopY,
+            bottomY: effectiveLugGuides.bottomY,
+            topWidth: effectiveLugGuides.topWidth,
+            bottomWidth: effectiveLugGuides.bottomWidth
+          });
+        } else {
+          const nextBottomY = clamp(
+            guideDrag.initialBottomY + deltaY,
+            guideDrag.initialTopY + 60,
+            CANVAS_SIZE * 0.88
+          );
+          onLugGuidesChange({
+            centerX: nextCenterX,
+            topY: effectiveLugGuides.topY,
+            bottomY: nextBottomY,
+            topWidth: effectiveLugGuides.topWidth,
+            bottomWidth: effectiveLugGuides.bottomWidth
+          });
+        }
+        return;
+      }
       if (!drag || drag.pointerId !== event.pointerId) return;
       if (locked) return;
 
@@ -305,6 +389,12 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     };
 
     const endDrag = (event: PointerEvent<HTMLCanvasElement>) => {
+      if (lugDragRef.current?.pointerId === event.pointerId) {
+        lugDragRef.current = null;
+        canvasRef.current?.releasePointerCapture(event.pointerId);
+        setCursor("grab");
+        return;
+      }
       if (dragStateRef.current?.pointerId !== event.pointerId) return;
       dragStateRef.current = null;
       canvasRef.current?.releasePointerCapture(event.pointerId);
@@ -351,8 +441,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             style={{ touchAction: "none", cursor: locked ? "default" : cursor }}
             aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
           />
-            {showLugGuides && lugGuides ? (
-              <LugGuideOverlay guides={lugGuides} sceneZoom={sceneZoom} />
+            {showLugGuides && effectiveLugGuides ? (
+              <LugGuideOverlay guides={effectiveLugGuides} sceneZoom={sceneZoom} />
             ) : null}
             {showCycleControls ? (
               <button
@@ -381,6 +471,30 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 CanvasPreview.displayName = "CanvasPreview";
 
 export default CanvasPreview;
+
+const getGuideHitTarget = (
+  point: { x: number; y: number },
+  guides: PreviewLugGuides,
+  sceneZoom: number
+): "top" | "bottom" | null => {
+  const toScreen = (value: number) => CANVAS_SIZE / 2 + (value - CANVAS_SIZE / 2) * sceneZoom;
+  const centerX = toScreen(guides.centerX);
+  const topY = toScreen(guides.topY);
+  const bottomY = toScreen(guides.bottomY);
+  const topWidth = guides.topWidth * sceneZoom;
+  const bottomWidth = guides.bottomWidth * sceneZoom;
+  const hitBand = 18;
+  const inHorizontalRange = (x: number, width: number) =>
+    x >= centerX - width / 2 - 12 && x <= centerX + width / 2 + 12;
+
+  if (Math.abs(point.y - topY) <= hitBand && inHorizontalRange(point.x, topWidth)) {
+    return "top";
+  }
+  if (Math.abs(point.y - bottomY) <= hitBand && inHorizontalRange(point.x, bottomWidth)) {
+    return "bottom";
+  }
+  return null;
+};
 
 function LugGuideOverlay({
   guides,

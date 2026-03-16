@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import CropEditor from "@/components/CropEditor";
@@ -12,6 +12,7 @@ import {
   detectPreviewLugGuides,
   loadStrapImage,
   PartTransform,
+  PreviewLugGuideOverrides,
   PreviewLugGuides,
   renderWatchOnlyComposition
 } from "@/lib/compose";
@@ -534,6 +535,7 @@ export default function Home() {
   const [highlightPreviewWindow, setHighlightPreviewWindow] = useState(false);
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
   const [showControlCoachmark, setShowControlCoachmark] = useState(false);
+  const [lugGuideOverrides, setLugGuideOverrides] = useState<PreviewLugGuideOverrides | null>(null);
   const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
   const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
@@ -611,6 +613,7 @@ export default function Home() {
     setWatchPreviewSrc(uploadedUrl);
     setWatchSrc(uploadedUrl);
     setCropSourceUrl(uploadedUrl);
+    setLugGuideOverrides(null);
     setShowUploadGuide(false);
     setHighlightUploadGuide(true);
     if (!hasAutoOpenedUploadGuide) {
@@ -690,6 +693,7 @@ export default function Home() {
     setUploadedWatchFile(file);
     setWatchPreviewSrc(sourceUrl);
     setWatchSrc(sourceUrl);
+    setLugGuideOverrides(null);
     setHighlightPreviewWindow(true);
     window.setTimeout(() => {
       previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -717,7 +721,8 @@ export default function Home() {
         activeStrapASrc,
         activeStrapBSrc,
         activeAutoFitWidthFactor,
-        activeAutoGapFactor
+        activeAutoGapFactor,
+        lugGuideOverrides ?? undefined
       );
       let nextPartA = aligned.partA;
       let nextPartB = aligned.partB;
@@ -752,7 +757,7 @@ export default function Home() {
   useEffect(() => {
     void autoAlignStraps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor]);
+  }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor, lugGuideOverrides]);
 
   useEffect(() => {
     if (strapSourceMode !== "library" || !hasSelectedLibraryStrap) return;
@@ -1495,6 +1500,8 @@ export default function Home() {
                 sceneZoom={sceneZoom}
                 locked={lockView}
                 showLugGuides={showFitBench || fitConfidence < 0.72}
+                lugGuideOverrides={lugGuideOverrides}
+                onLugGuidesChange={setLugGuideOverrides}
                 showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
                 onDragPartsChange={(nextA, nextB) => {
                   setPartA(nextA);
@@ -1606,7 +1613,12 @@ export default function Home() {
               />
             </div>
           ) : canShowWatchOnlyPreview ? (
-            <WatchOnlyPreview watchSrc={watchSrc} highlighted={highlightPreviewWindow} />
+            <WatchOnlyPreview
+              watchSrc={watchSrc}
+              highlighted={highlightPreviewWindow}
+              lugGuideOverrides={lugGuideOverrides}
+              onLugGuidesChange={setLugGuideOverrides}
+            />
           ) : (
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
               {hasUserUpload
@@ -1905,13 +1917,26 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
 
 function WatchOnlyPreview({
   watchSrc,
-  highlighted
+  highlighted,
+  lugGuideOverrides,
+  onLugGuidesChange
 }: {
   watchSrc: string;
   highlighted: boolean;
+  lugGuideOverrides: PreviewLugGuideOverrides | null;
+  onLugGuidesChange: (overrides: PreviewLugGuideOverrides) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    guide: "top" | "bottom";
+    startX: number;
+    startY: number;
+    initialCenterX: number;
+    initialTopY: number;
+    initialBottomY: number;
+  } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -1928,6 +1953,83 @@ function WatchOnlyPreview({
       active = false;
     };
   }, [watchSrc]);
+
+  const effectiveLugGuides =
+    lugGuides
+      ? {
+          ...lugGuides,
+          centerX: lugGuideOverrides?.centerX ?? lugGuides.centerX,
+          topY: lugGuideOverrides?.topY ?? lugGuides.topY,
+          bottomY: lugGuideOverrides?.bottomY ?? lugGuides.bottomY,
+          topWidth: lugGuideOverrides?.topWidth ?? lugGuides.topWidth,
+          bottomWidth: lugGuideOverrides?.bottomWidth ?? lugGuides.bottomWidth
+        }
+      : null;
+
+  const getCanvasPoint = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY
+    };
+  };
+
+  const onGuidePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!effectiveLugGuides || !canvasRef.current) return;
+    const point = getCanvasPoint(event);
+    if (!point) return;
+    const hit = getWatchOnlyGuideHitTarget(point, effectiveLugGuides);
+    if (!hit) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      guide: hit,
+      startX: point.x,
+      startY: point.y,
+      initialCenterX: effectiveLugGuides.centerX,
+      initialTopY: effectiveLugGuides.topY,
+      initialBottomY: effectiveLugGuides.bottomY
+    };
+    canvasRef.current.setPointerCapture(event.pointerId);
+  };
+
+  const onGuidePointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId || !effectiveLugGuides) return;
+    const point = getCanvasPoint(event);
+    if (!point) return;
+    const deltaX = point.x - drag.startX;
+    const deltaY = point.y - drag.startY;
+    const nextCenterX = clamp(drag.initialCenterX + deltaX, CANVAS_SIZE * 0.2, CANVAS_SIZE * 0.8);
+    if (drag.guide === "top") {
+      const nextTopY = clamp(drag.initialTopY + deltaY, CANVAS_SIZE * 0.12, drag.initialBottomY - 60);
+      onLugGuidesChange({
+        centerX: nextCenterX,
+        topY: nextTopY,
+        bottomY: effectiveLugGuides.bottomY,
+        topWidth: effectiveLugGuides.topWidth,
+        bottomWidth: effectiveLugGuides.bottomWidth
+      });
+    } else {
+      const nextBottomY = clamp(drag.initialBottomY + deltaY, drag.initialTopY + 60, CANVAS_SIZE * 0.88);
+      onLugGuidesChange({
+        centerX: nextCenterX,
+        topY: effectiveLugGuides.topY,
+        bottomY: nextBottomY,
+        topWidth: effectiveLugGuides.topWidth,
+        bottomWidth: effectiveLugGuides.bottomWidth
+      });
+    }
+  };
+
+  const onGuidePointerEnd = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    canvasRef.current?.releasePointerCapture(event.pointerId);
+  };
 
   useEffect(() => {
     let active = true;
@@ -1964,12 +2066,26 @@ function WatchOnlyPreview({
               ref={canvasRef}
               className="aspect-square w-full rounded-xl border border-line bg-white"
               aria-label="Watch preview canvas"
+              onPointerDown={onGuidePointerDown}
+              onPointerMove={onGuidePointerMove}
+              onPointerUp={onGuidePointerEnd}
+              onPointerCancel={onGuidePointerEnd}
+              style={{ touchAction: "none" }}
             />
-            {lugGuides ? <WatchOnlyLugGuideOverlay guides={lugGuides} /> : null}
+            {effectiveLugGuides ? <WatchOnlyLugGuideOverlay guides={effectiveLugGuides} /> : null}
           </div>
-          <p className="mt-3 text-sm text-muted">
-            Watch loaded. Pick a strap from the Strap Box and we&apos;ll try it on automatically.
-          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted">
+              Watch loaded. Drag the top and bottom lug guides if needed, then pick a strap.
+            </p>
+            <button
+              type="button"
+              onClick={() => onLugGuidesChange({})}
+              className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+            >
+              Reset lug guides
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1999,6 +2115,28 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
       </div>
     </div>
   );
+}
+
+function getWatchOnlyGuideHitTarget(
+  point: { x: number; y: number },
+  guides: PreviewLugGuides
+): "top" | "bottom" | null {
+  const hitBand = 18;
+  const topLeft = guides.centerX - guides.topWidth / 2;
+  const bottomLeft = guides.centerX - guides.bottomWidth / 2;
+  const inRange = (x: number, left: number, width: number) =>
+    x >= left - 12 && x <= left + width + 12;
+
+  if (Math.abs(point.y - guides.topY) <= hitBand && inRange(point.x, topLeft, guides.topWidth)) {
+    return "top";
+  }
+  if (
+    Math.abs(point.y - guides.bottomY) <= hitBand &&
+    inRange(point.x, bottomLeft, guides.bottomWidth)
+  ) {
+    return "bottom";
+  }
+  return null;
 }
 
 const snapToStep = (value: number, min: number, step: number) => {

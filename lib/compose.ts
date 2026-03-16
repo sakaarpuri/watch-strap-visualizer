@@ -258,6 +258,14 @@ export interface PreviewLugGuides {
   confidence: number;
 }
 
+export interface PreviewLugGuideOverrides {
+  centerX?: number;
+  topY?: number;
+  bottomY?: number;
+  topWidth?: number;
+  bottomWidth?: number;
+}
+
 const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetrics => {
   const canvas = document.createElement("canvas");
   canvas.width = image.width;
@@ -787,7 +795,8 @@ export const calculateAutoPlacement = async (
   strapASrc: string,
   strapBSrc: string,
   targetWidthFactor = 0.32,
-  gapFactor = 1
+  gapFactor = 1,
+  lugOverrides?: PreviewLugGuideOverrides
 ): Promise<AutoPlacementResult> => {
   const [watch, partAImage, partBImage] = await Promise.all([
     loadImage(watchSrc),
@@ -804,11 +813,16 @@ export const calculateAutoPlacement = async (
   );
 
   const fittedWatch = getWatchObjectPlacement(watchSrc, watch, 1);
+  const effectiveCenterX = lugOverrides?.centerX ?? fittedWatch.centerX;
+  const effectiveTopY = lugOverrides?.topY ?? fittedWatch.topAnchorY;
+  const effectiveBottomY = lugOverrides?.bottomY ?? fittedWatch.bottomAnchorY;
+  const effectiveTopWidth = lugOverrides?.topWidth ?? fittedWatch.topAnchorWidth;
+  const effectiveBottomWidth = lugOverrides?.bottomWidth ?? fittedWatch.bottomAnchorWidth;
   const baselineWatchRect = getWatchRect(watch, 1);
-  const lugTopEdge = fittedWatch.topAnchorY - CANVAS_SIZE / 2;
-  const lugBottomEdge = fittedWatch.bottomAnchorY - CANVAS_SIZE / 2;
+  const lugTopEdge = effectiveTopY - CANVAS_SIZE / 2;
+  const lugBottomEdge = effectiveBottomY - CANVAS_SIZE / 2;
   const centerOffsetX = clamp(
-    fittedWatch.centerX - CANVAS_SIZE / 2,
+    effectiveCenterX - CANVAS_SIZE / 2,
     -baselineWatchRect.w * 0.04,
     baselineWatchRect.w * 0.04
   );
@@ -817,7 +831,7 @@ export const calculateAutoPlacement = async (
   const metricsB = getImageMetrics(partBImage);
   const baselineTargetWidth = baselineWatchRect.w * targetWidthFactor;
   const inferredJoinWidth =
-    ((fittedWatch.topAnchorWidth + fittedWatch.bottomAnchorWidth) / 2) * 0.9;
+    ((effectiveTopWidth + effectiveBottomWidth) / 2) * 0.9;
   const safeTargetWidth =
     blend > 0
       ? Math.min(baselineTargetWidth, clamp(inferredJoinWidth, baselineTargetWidth * 0.62, baselineTargetWidth))
