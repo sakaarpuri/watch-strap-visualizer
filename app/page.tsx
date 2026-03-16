@@ -1043,9 +1043,9 @@ export default function Home() {
           <img
             src="/watchstrapper-logo.png"
             alt="Watchstrapper"
-            className="mx-auto h-auto w-[18rem] object-contain sm:w-[22rem] lg:w-[24rem]"
+            className="mx-auto mb-2 h-auto w-[18rem] object-contain sm:mb-3 sm:w-[22rem] lg:w-[24rem]"
           />
-          <h1 className="-mt-10 text-2xl font-semibold leading-none tracking-tight text-ink sm:-mt-12 sm:text-4xl">
+          <h1 className="text-2xl font-semibold leading-none tracking-tight text-ink sm:text-4xl">
             See any strap on your watch before you buy.
           </h1>
         </div>
