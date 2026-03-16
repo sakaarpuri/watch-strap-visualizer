@@ -830,13 +830,12 @@ export const calculateAutoPlacement = async (
   const metricsA = getImageMetrics(partAImage);
   const metricsB = getImageMetrics(partBImage);
   const baselineTargetWidth = baselineWatchRect.w * targetWidthFactor;
-  const inferredJoinWidth =
-    ((effectiveTopWidth + effectiveBottomWidth) / 2) * 0.9;
+  const inferredJoinWidth = (effectiveTopWidth + effectiveBottomWidth) / 2;
   const safeTargetWidth = lugOverrides
     ? clamp(
         inferredJoinWidth,
         Math.min(baselineTargetWidth * 0.9, baselineWatchRect.w * 0.16),
-        baselineWatchRect.w * 0.42
+        baselineWatchRect.w * 0.82
       )
     : blend > 0
       ? Math.min(
