@@ -3,8 +3,24 @@
 import { PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 
 const VIEWPORT_SIZE = 480;
+const DEFAULT_CROP_SIZE = 360;
+const MIN_CROP_SIZE = 220;
+
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
+
+type DragMode =
+  | { type: "image"; startX: number; startY: number; offsetX: number; offsetY: number }
+  | { type: "crop"; startX: number; startY: number; cropX: number; cropY: number }
+  | {
+      type: "resize";
+      corner: "nw" | "ne" | "sw" | "se";
+      startX: number;
+      startY: number;
+      cropX: number;
+      cropY: number;
+      cropSize: number;
+    };
 
 interface CropEditorProps {
   file: File;
@@ -17,14 +33,21 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
   const [zoom, setZoom] = useState(1);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
+  const [cropSize, setCropSize] = useState(DEFAULT_CROP_SIZE);
+  const [cropX, setCropX] = useState((VIEWPORT_SIZE - DEFAULT_CROP_SIZE) / 2);
+  const [cropY, setCropY] = useState((VIEWPORT_SIZE - DEFAULT_CROP_SIZE) / 2);
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
+  const [statusText, setStatusText] = useState("Drag the image and resize the crop box to frame the watch.");
+  const dragRef = useRef<DragMode | null>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setZoom(1);
     setOffsetX(0);
     setOffsetY(0);
+    setCropSize(DEFAULT_CROP_SIZE);
+    setCropX((VIEWPORT_SIZE - DEFAULT_CROP_SIZE) / 2);
+    setCropY((VIEWPORT_SIZE - DEFAULT_CROP_SIZE) / 2);
   }, [sourceUrl]);
 
   const layout = useMemo(() => {
@@ -53,45 +76,141 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
     setOffsetY((prev) => clamp(prev, -layout.limitY, layout.limitY));
   }, [layout]);
 
-  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+  useEffect(() => {
+    setCropSize((prev) => clamp(prev, MIN_CROP_SIZE, VIEWPORT_SIZE - 40));
+  }, []);
+
+  useEffect(() => {
+    setCropX((prev) => clamp(prev, 0, VIEWPORT_SIZE - cropSize));
+    setCropY((prev) => clamp(prev, 0, VIEWPORT_SIZE - cropSize));
+  }, [cropSize]);
+
+  const beginImageDrag = (event: PointerEvent<HTMLDivElement>) => {
     if (!layout) return;
     dragRef.current = {
-      x: event.clientX,
-      y: event.clientY,
+      type: "image",
+      startX: event.clientX,
+      startY: event.clientY,
       offsetX,
       offsetY
     };
-    setIsDragging(true);
+    setStatusText("Repositioning the watch inside the crop.");
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (!layout || !dragRef.current) return;
-    const deltaX = event.clientX - dragRef.current.x;
-    const deltaY = event.clientY - dragRef.current.y;
-    setOffsetX(clamp(dragRef.current.offsetX + deltaX, -layout.limitX, layout.limitX));
-    setOffsetY(clamp(dragRef.current.offsetY + deltaY, -layout.limitY, layout.limitY));
+  const beginCropDrag = (event: PointerEvent<HTMLDivElement>) => {
+    dragRef.current = {
+      type: "crop",
+      startX: event.clientX,
+      startY: event.clientY,
+      cropX,
+      cropY
+    };
+    setStatusText("Moving the crop box.");
+    event.stopPropagation();
+    viewportRef.current?.setPointerCapture(event.pointerId);
   };
 
-  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+  const beginResizeDrag =
+    (corner: "nw" | "ne" | "sw" | "se") => (event: PointerEvent<HTMLButtonElement>) => {
+      dragRef.current = {
+        type: "resize",
+        corner,
+        startX: event.clientX,
+        startY: event.clientY,
+        cropX,
+        cropY,
+        cropSize
+      };
+      setStatusText("Resizing the crop box.");
+      event.stopPropagation();
+      viewportRef.current?.setPointerCapture(event.pointerId);
+    };
+
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || !layout) return;
+
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+
+    if (drag.type === "image") {
+      setOffsetX(clamp(drag.offsetX + deltaX, -layout.limitX, layout.limitX));
+      setOffsetY(clamp(drag.offsetY + deltaY, -layout.limitY, layout.limitY));
+      return;
+    }
+
+    if (drag.type === "crop") {
+      setCropX(clamp(drag.cropX + deltaX, 0, VIEWPORT_SIZE - cropSize));
+      setCropY(clamp(drag.cropY + deltaY, 0, VIEWPORT_SIZE - cropSize));
+      return;
+    }
+
+    const delta = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY;
+    if (drag.corner === "nw") {
+      const nextSize = clamp(drag.cropSize - delta, MIN_CROP_SIZE, drag.cropSize + Math.min(drag.cropX, drag.cropY));
+      const sizeDelta = drag.cropSize - nextSize;
+      setCropSize(nextSize);
+      setCropX(clamp(drag.cropX + sizeDelta, 0, VIEWPORT_SIZE - nextSize));
+      setCropY(clamp(drag.cropY + sizeDelta, 0, VIEWPORT_SIZE - nextSize));
+      return;
+    }
+    if (drag.corner === "ne") {
+      const maxSize = Math.min(VIEWPORT_SIZE - drag.cropX, drag.cropY + drag.cropSize);
+      const nextSize = clamp(drag.cropSize + delta, MIN_CROP_SIZE, maxSize);
+      const sizeDelta = nextSize - drag.cropSize;
+      setCropSize(nextSize);
+      setCropY(clamp(drag.cropY - sizeDelta, 0, VIEWPORT_SIZE - nextSize));
+      return;
+    }
+    if (drag.corner === "sw") {
+      const maxSize = Math.min(drag.cropX + drag.cropSize, VIEWPORT_SIZE - drag.cropY);
+      const nextSize = clamp(drag.cropSize - delta, MIN_CROP_SIZE, maxSize);
+      const sizeDelta = drag.cropSize - nextSize;
+      setCropSize(nextSize);
+      setCropX(clamp(drag.cropX + sizeDelta, 0, VIEWPORT_SIZE - nextSize));
+      return;
+    }
+    const maxSize = Math.min(VIEWPORT_SIZE - drag.cropX, VIEWPORT_SIZE - drag.cropY);
+    const nextSize = clamp(drag.cropSize + delta, MIN_CROP_SIZE, maxSize);
+    setCropSize(nextSize);
+  };
+
+  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
     dragRef.current = null;
-    setIsDragging(false);
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    setStatusText("Drag the image and resize the crop box to frame the watch.");
+    if (viewportRef.current?.hasPointerCapture(event.pointerId)) {
+      viewportRef.current.releasePointerCapture(event.pointerId);
+    }
   };
 
   const applyCrop = async () => {
     if (!layout || !naturalSize) return;
     const bitmap = await createImageBitmap(file);
-    const cropX = clamp(-(layout.baseX + offsetX) / layout.scale, 0, bitmap.width);
-    const cropY = clamp(-(layout.baseY + offsetY) / layout.scale, 0, bitmap.height);
-    const cropSize = Math.min(bitmap.width - cropX, bitmap.height - cropY, VIEWPORT_SIZE / layout.scale);
+    const cropSourceX = clamp((cropX - (layout.baseX + offsetX)) / layout.scale, 0, bitmap.width);
+    const cropSourceY = clamp((cropY - (layout.baseY + offsetY)) / layout.scale, 0, bitmap.height);
+    const cropSourceSize = Math.min(
+      cropSize / layout.scale,
+      bitmap.width - cropSourceX,
+      bitmap.height - cropSourceY
+    );
     const outputSize = 1200;
     const canvas = document.createElement("canvas");
     canvas.width = outputSize;
     canvas.height = outputSize;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.drawImage(bitmap, cropX, cropY, cropSize, cropSize, 0, 0, outputSize, outputSize);
+    ctx.drawImage(
+      bitmap,
+      cropSourceX,
+      cropSourceY,
+      cropSourceSize,
+      cropSourceSize,
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob((nextBlob) => resolve(nextBlob), "image/png")
     );
@@ -102,13 +221,16 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
     onApply(nextFile, nextUrl);
   };
 
+  const cropRight = VIEWPORT_SIZE - cropX - cropSize;
+  const cropBottom = VIEWPORT_SIZE - cropY - cropSize;
+
   return (
     <div className="glass-card rounded-2xl p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-lg font-semibold text-ink">Crop Photo</p>
           <p className="mt-1 text-sm text-muted">
-            Drag to frame the watch. Use zoom to tighten the crop before preview.
+            Drag the image and resize the crop box to frame the watch before preview.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -118,6 +240,9 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
               setZoom(1);
               setOffsetX(0);
               setOffsetY(0);
+              setCropSize(DEFAULT_CROP_SIZE);
+              setCropX((VIEWPORT_SIZE - DEFAULT_CROP_SIZE) / 2);
+              setCropY((VIEWPORT_SIZE - DEFAULT_CROP_SIZE) / 2);
             }}
             className="neo-button rounded-xl px-4 py-2 text-sm font-medium text-ink"
           >
@@ -136,13 +261,14 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,540px),1fr] xl:items-center">
         <div className="mx-auto w-full max-w-[540px]">
           <div
-            className="relative mx-auto aspect-square w-full max-w-[480px] overflow-hidden rounded-[28px] border border-line bg-canvas/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_40px_rgba(15,23,42,0.14)]"
-            onPointerDown={onPointerDown}
+            ref={viewportRef}
+            className="relative mx-auto aspect-square w-full max-w-[480px] overflow-hidden rounded-[28px] border border-slate-300 bg-canvas/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_40px_rgba(15,23,42,0.14)]"
+            onPointerDown={beginImageDrag}
             onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
             role="application"
-            aria-label="Crop tool. Drag image to position the watch inside the square."
+            aria-label="Crop tool. Drag image or resize the crop box to frame the watch."
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -167,8 +293,50 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
                   : undefined
               }
             />
-            <div className="pointer-events-none absolute inset-0 rounded-[28px] border border-white/60 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08),inset_0_0_0_999px_rgba(255,255,255,0.06)]" />
-            <div className="pointer-events-none absolute inset-[18px] rounded-[22px] border border-white/70 shadow-[0_0_0_1px_rgba(15,23,42,0.06)]" />
+
+            <div className="pointer-events-none absolute inset-0 rounded-[28px] border border-white/60 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08)]" />
+            <div
+              className="pointer-events-none absolute left-0 top-0 bg-slate-900/28"
+              style={{ width: "100%", height: `${cropY}px` }}
+            />
+            <div
+              className="pointer-events-none absolute left-0 bg-slate-900/28"
+              style={{ top: `${cropY}px`, width: `${cropX}px`, height: `${cropSize}px` }}
+            />
+            <div
+              className="pointer-events-none absolute right-0 bg-slate-900/28"
+              style={{ top: `${cropY}px`, width: `${cropRight}px`, height: `${cropSize}px` }}
+            />
+            <div
+              className="pointer-events-none absolute bottom-0 left-0 bg-slate-900/28"
+              style={{ width: "100%", height: `${cropBottom}px` }}
+            />
+
+            <div
+              className="absolute rounded-[24px] border-2 border-cyan-300 shadow-[0_0_0_1px_rgba(255,255,255,0.75),0_0_0_999px_rgba(255,255,255,0.02)]"
+              style={{ left: `${cropX}px`, top: `${cropY}px`, width: `${cropSize}px`, height: `${cropSize}px` }}
+              onPointerDown={beginCropDrag}
+            >
+              {(["nw", "ne", "sw", "se"] as const).map((corner) => (
+                <button
+                  key={corner}
+                  type="button"
+                  aria-label={`Resize crop ${corner}`}
+                  onPointerDown={beginResizeDrag(corner)}
+                  className="absolute h-5 w-5 rounded-full border-2 border-cyan-300 bg-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]"
+                  style={{
+                    left: corner.includes("w") ? "-10px" : undefined,
+                    right: corner.includes("e") ? "-10px" : undefined,
+                    top: corner.includes("n") ? "-10px" : undefined,
+                    bottom: corner.includes("s") ? "-10px" : undefined,
+                    cursor:
+                      corner === "nw" || corner === "se"
+                        ? "nwse-resize"
+                        : "nesw-resize"
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -211,7 +379,7 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
               Cancel
             </button>
             <div className="rounded-2xl border border-line bg-canvas/70 px-4 py-3 text-sm text-muted shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
-              {isDragging ? "Repositioning crop..." : "Square crop keeps the dial centered for preview."}
+              {statusText}
             </div>
           </div>
         </div>

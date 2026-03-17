@@ -453,17 +453,17 @@ const detectWatchFitGeometry = (src: string, image: HTMLImageElement): WatchFitG
   const objectCenterX =
     rowStats.reduce((sum, row) => sum + row.centerX, 0) / rowStats.length;
   const maxRowWidth = Math.max(...rowStats.map((row) => row.width));
-  const topBandStart = bounds.top + objectHeight * 0.08;
-  const topBandEnd = bounds.top + objectHeight * 0.38;
-  const bottomBandStart = bounds.top + objectHeight * 0.62;
-  const bottomBandEnd = bounds.top + objectHeight * 0.92;
+  const topBandStart = bounds.top + objectHeight * 0.01;
+  const topBandEnd = bounds.top + objectHeight * 0.2;
+  const bottomBandStart = bounds.top + objectHeight * 0.8;
+  const bottomBandEnd = bounds.top + objectHeight * 0.99;
 
   const scoreRow = (row: { y: number; width: number; centerX: number }, targetBandCenter: number) => {
     const normalizedWidth = clamp(row.width / Math.max(1, maxRowWidth), 0, 1);
-    const widthPreference = 1 - Math.abs(normalizedWidth - 0.34);
+    const widthPreference = 1 - Math.abs(normalizedWidth - 0.26);
     const centerPenalty = Math.abs(row.centerX - objectCenterX) / Math.max(1, objectWidth * 0.18);
-    const bandPenalty = Math.abs(row.y - targetBandCenter) / Math.max(1, objectHeight * 0.12);
-    return widthPreference - centerPenalty * 0.45 - bandPenalty * 0.35;
+    const bandPenalty = Math.abs(row.y - targetBandCenter) / Math.max(1, objectHeight * 0.09);
+    return widthPreference - centerPenalty * 0.42 - bandPenalty * 0.28;
   };
 
   const topBandRows = rowStats.filter((row) => row.y >= topBandStart && row.y <= topBandEnd);
@@ -497,6 +497,13 @@ const detectWatchFitGeometry = (src: string, image: HTMLImageElement): WatchFitG
 
   const topBest = pickBestRow(topBandRows, topBandCenter, bounds.top + objectHeight * 0.22);
   const bottomBest = pickBestRow(bottomBandRows, bottomBandCenter, bounds.bottom - objectHeight * 0.22);
+  const anchorOffset = clamp(objectHeight * 0.018, 10, 22);
+  const topAnchorY = clamp(topBest.y - anchorOffset, bounds.top - anchorOffset, bounds.top + objectHeight * 0.18);
+  const bottomAnchorY = clamp(
+    bottomBest.y + anchorOffset,
+    bounds.bottom - objectHeight * 0.18,
+    bounds.bottom + anchorOffset
+  );
 
   const centerSpread =
     rowStats.reduce((sum, row) => sum + Math.abs(row.centerX - objectCenterX), 0) /
@@ -515,10 +522,10 @@ const detectWatchFitGeometry = (src: string, image: HTMLImageElement): WatchFitG
   const geometry: WatchFitGeometry = {
     bounds,
     centerX: objectCenterX,
-    topAnchorY: topBest.y,
-    bottomAnchorY: bottomBest.y,
-    topAnchorWidth: clamp(topBest.width, objectWidth * 0.18, objectWidth * 0.48),
-    bottomAnchorWidth: clamp(bottomBest.width, objectWidth * 0.18, objectWidth * 0.48),
+    topAnchorY,
+    bottomAnchorY,
+    topAnchorWidth: clamp(topBest.width, objectWidth * 0.16, objectWidth * 0.52),
+    bottomAnchorWidth: clamp(bottomBest.width, objectWidth * 0.16, objectWidth * 0.52),
     confidence
   };
   watchFitCache.set(src, geometry);
@@ -572,9 +579,10 @@ const calculateBaselinePlacement = (
   partAImage: HTMLImageElement | HTMLCanvasElement,
   partBImage: HTMLImageElement | HTMLCanvasElement,
   targetWidthFactor = 0.32,
-  gapFactor = 1
+  gapFactor = 1,
+  watchScale = 1
 ) => {
-  const watchRect = getWatchRect(watch, 1);
+  const watchRect = getWatchRect(watch, watchScale);
   const targetStrapWidth = watchRect.w * targetWidthFactor;
   const visualGap = Math.max(18, watchRect.h * 0.045) * gapFactor;
   const metricsA = getImageMetrics(partAImage);
@@ -796,6 +804,7 @@ export const calculateAutoPlacement = async (
   strapBSrc: string,
   targetWidthFactor = 0.32,
   gapFactor = 1,
+  watchScale = 1,
   lugOverrides?: PreviewLugGuideOverrides
 ): Promise<AutoPlacementResult> => {
   const [watch, partAImage, partBImage] = await Promise.all([
@@ -809,16 +818,17 @@ export const calculateAutoPlacement = async (
     partAImage,
     partBImage,
     targetWidthFactor,
-    gapFactor
+    gapFactor,
+    watchScale
   );
 
-  const fittedWatch = getWatchObjectPlacement(watchSrc, watch, 1);
+  const fittedWatch = getWatchObjectPlacement(watchSrc, watch, watchScale);
   const effectiveCenterX = lugOverrides?.centerX ?? fittedWatch.centerX;
   const effectiveTopY = lugOverrides?.topY ?? fittedWatch.topAnchorY;
   const effectiveBottomY = lugOverrides?.bottomY ?? fittedWatch.bottomAnchorY;
   const effectiveTopWidth = lugOverrides?.topWidth ?? fittedWatch.topAnchorWidth;
   const effectiveBottomWidth = lugOverrides?.bottomWidth ?? fittedWatch.bottomAnchorWidth;
-  const baselineWatchRect = getWatchRect(watch, 1);
+  const baselineWatchRect = getWatchRect(watch, watchScale);
   const lugTopEdge = effectiveTopY - CANVAS_SIZE / 2;
   const lugBottomEdge = effectiveBottomY - CANVAS_SIZE / 2;
   const centerOffsetX = clamp(

@@ -582,7 +582,7 @@ function LugGuideOverlay({
         centerX={centerX}
         y={bottomY}
         width={bottomWidth}
-        tone="fuchsia"
+        tone="cyan"
       />
       {!confident ? (
         <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-amber-200 bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">

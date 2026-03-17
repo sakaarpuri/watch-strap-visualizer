@@ -30,6 +30,7 @@ const STRAP_SCALE_MIN = 5;
 const STRAP_SCALE_MAX = 260;
 const DIAL_SCALE_MIN = 0.7;
 const DIAL_SCALE_MAX = 1.8;
+const DEFAULT_WATCH_PREVIEW_SCALE = 0.88;
 const strapScaleToUi = (scale: number) => {
   const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
   return Math.cbrt(t) * 100;
@@ -518,7 +519,7 @@ export default function Home() {
   const [hasSelectedLibraryStrap, setHasSelectedLibraryStrap] = useState(false);
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
-  const [dialScale, setDialScale] = useState(1);
+  const [dialScale, setDialScale] = useState(DEFAULT_WATCH_PREVIEW_SCALE);
   const [sceneZoom, setSceneZoom] = useState(1);
   const [preserveSettings, setPreserveSettings] = useState(true);
   const [lockView, setLockView] = useState(false);
@@ -666,6 +667,8 @@ export default function Home() {
     setOriginalWatchSrc(uploadedUrl);
     setWatchPreviewSrc(uploadedUrl);
     setWatchSrc(uploadedUrl);
+    setDialScale(DEFAULT_WATCH_PREVIEW_SCALE);
+    previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
     setCropSourceUrl(uploadedUrl);
     setLugGuideOverrides(null);
     setShowUploadGuide(false);
@@ -747,6 +750,8 @@ export default function Home() {
     setUploadedWatchFile(file);
     setWatchPreviewSrc(sourceUrl);
     setWatchSrc(sourceUrl);
+    setDialScale(DEFAULT_WATCH_PREVIEW_SCALE);
+    previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
     setLugGuideOverrides(null);
     setHighlightPreviewWindow(true);
     window.setTimeout(() => {
@@ -777,6 +782,7 @@ export default function Home() {
         activeStrapBSrc,
         activeAutoFitWidthFactor,
         activeAutoGapFactor,
+        dialScale,
         lugGuideOverrides ?? undefined
       );
       let nextPartA = aligned.partA;
@@ -812,7 +818,7 @@ export default function Home() {
   useEffect(() => {
     void autoAlignStraps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor, lugGuideOverrides]);
+  }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor, dialScale, lugGuideOverrides]);
 
   useEffect(() => {
     if (strapSourceMode !== "library" || !hasSelectedLibraryStrap) return;
@@ -1670,6 +1676,7 @@ export default function Home() {
           ) : canShowWatchOnlyPreview ? (
             <WatchOnlyPreview
               watchSrc={watchSrc}
+              watchScale={dialScale}
               highlighted={highlightPreviewWindow}
               lugGuideOverrides={lugGuideOverrides}
               onLugGuidesChange={handleLugGuidesChange}
@@ -1698,6 +1705,7 @@ export default function Home() {
               <div className="space-y-2">
                 <ToolButton
                   title="Extract Watch"
+                  subtitle="from messy backgrounds"
                   disabled={!hasUserUpload}
                   loading={aiTools.cleanup.loading}
                   onClick={() => void runCleanupFallback()}
@@ -1972,11 +1980,13 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
 
 function WatchOnlyPreview({
   watchSrc,
+  watchScale,
   highlighted,
   lugGuideOverrides,
   onLugGuidesChange
 }: {
   watchSrc: string;
+  watchScale: number;
   highlighted: boolean;
   lugGuideOverrides: PreviewLugGuideOverrides | null;
   onLugGuidesChange: (overrides: PreviewLugGuideOverrides) => void;
@@ -2001,7 +2011,7 @@ function WatchOnlyPreview({
     const draw = async () => {
       if (!canvasRef.current) return;
       try {
-        await renderWatchOnlyComposition(canvasRef.current, watchSrc);
+        await renderWatchOnlyComposition(canvasRef.current, watchSrc, watchScale);
       } catch {
         if (!active) return;
       }
@@ -2010,7 +2020,7 @@ function WatchOnlyPreview({
     return () => {
       active = false;
     };
-  }, [watchSrc]);
+  }, [watchSrc, watchScale]);
 
   const effectiveLugGuides =
     lugGuides
@@ -2108,9 +2118,8 @@ function WatchOnlyPreview({
     let active = true;
     const loadGuides = async () => {
       try {
-        const guides = await detectPreviewLugGuides(watchSrc);
-        if (!active) return;
-        setLugGuides(guides);
+        const scaledGuides = await detectPreviewLugGuides(watchSrc, watchScale);
+        setLugGuides(scaledGuides);
       } catch {
         if (!active) return;
         setLugGuides(null);
@@ -2120,7 +2129,7 @@ function WatchOnlyPreview({
     return () => {
       active = false;
     };
-  }, [watchSrc]);
+  }, [watchSrc, watchScale]);
 
   return (
     <div className={highlighted ? "preview-attention-ring rounded-[1.75rem]" : ""}>
@@ -2188,15 +2197,15 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
         style={{ left: `calc(${topLeft + topWidth}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
       />
       <div
-        className="absolute h-[2px] rounded-full border border-fuchsia-300 bg-fuchsia-400/12"
+        className="absolute h-[2px] rounded-full border border-cyan-300 bg-cyan-400/12"
         style={{ left: `${bottomLeft}%`, top: `${bottomY}%`, width: `${bottomWidth}%` }}
       />
       <div
-        className="absolute rounded-full border border-fuchsia-300 bg-white"
+        className="absolute rounded-full border border-cyan-300 bg-white"
         style={{ left: `calc(${bottomLeft}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
       />
       <div
-        className="absolute rounded-full border border-fuchsia-300 bg-white"
+        className="absolute rounded-full border border-cyan-300 bg-white"
         style={{ left: `calc(${bottomLeft + bottomWidth}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
       />
       <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-slate-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
@@ -2283,6 +2292,7 @@ const pulseHaptic = () => {
 
 function ToolButton({
   title,
+  subtitle,
   disabled,
   loading,
   sampleImageSrc,
@@ -2290,6 +2300,7 @@ function ToolButton({
   onClick
 }: {
   title: string;
+  subtitle?: string;
   disabled?: boolean;
   loading?: boolean;
   sampleImageSrc?: string;
@@ -2311,7 +2322,12 @@ function ToolButton({
         ) : null}
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-lg font-semibold leading-tight text-ink">{title}</p>
+            <div className="min-w-0">
+              <p className="text-lg font-semibold leading-tight text-ink">{title}</p>
+              {subtitle ? (
+                <p className="mt-1 text-sm leading-5 text-muted">{subtitle}</p>
+              ) : null}
+            </div>
             <button
               type="button"
               onClick={onClick}
