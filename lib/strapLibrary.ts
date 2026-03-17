@@ -763,8 +763,7 @@ export const STRAP_CATEGORIES: StrapCategory[] = [
   "Leather",
   "Rubber",
   "Fabric",
-  "Metal",
-  "Women"
+  "Metal"
 ];
 
 export const getStrapsForCategory = (category: StrapCategory): StrapVariant[] => {
@@ -773,8 +772,7 @@ export const getStrapsForCategory = (category: StrapCategory): StrapVariant[] =>
       ...STRAP_LIBRARY.Leather,
       ...STRAP_LIBRARY.Rubber,
       ...STRAP_LIBRARY.Fabric,
-      ...STRAP_LIBRARY.Metal,
-      ...STRAP_LIBRARY.Women
+      ...STRAP_LIBRARY.Metal
     ];
   }
   return STRAP_LIBRARY[category];

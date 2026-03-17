@@ -777,6 +777,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!canRender) return;
+    setShowLugGuides(false);
     if (showLugGuideOnboarding) {
       dismissLugGuideOnboarding();
     }
@@ -2296,25 +2297,33 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
         style={{ left: `${topLeft}%`, top: `${topY}%`, width: `${topWidth}%` }}
       />
       <div
-        className="absolute rounded-full border border-cyan-300 bg-white"
+        className="absolute rounded-full border border-cyan-300 bg-white relative"
         style={{ left: `calc(${topLeft}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
-      />
+      >
+        <span className="absolute inset-[-5px] rounded-full border border-cyan-300/70 animate-ping" />
+      </div>
       <div
-        className="absolute rounded-full border border-cyan-300 bg-white"
+        className="absolute rounded-full border border-cyan-300 bg-white relative"
         style={{ left: `calc(${topLeft + topWidth}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
-      />
+      >
+        <span className="absolute inset-[-5px] rounded-full border border-cyan-300/70 animate-ping" />
+      </div>
       <div
         className="absolute h-[2px] rounded-full border border-cyan-300 bg-cyan-400/12"
         style={{ left: `${bottomLeft}%`, top: `${bottomY}%`, width: `${bottomWidth}%` }}
       />
       <div
-        className="absolute rounded-full border border-cyan-300 bg-white"
+        className="absolute rounded-full border border-cyan-300 bg-white relative"
         style={{ left: `calc(${bottomLeft}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
-      />
+      >
+        <span className="absolute inset-[-5px] rounded-full border border-cyan-300/70 animate-ping" />
+      </div>
       <div
-        className="absolute rounded-full border border-cyan-300 bg-white"
+        className="absolute rounded-full border border-cyan-300 bg-white relative"
         style={{ left: `calc(${bottomLeft + bottomWidth}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
-      />
+      >
+        <span className="absolute inset-[-5px] rounded-full border border-cyan-300/70 animate-ping" />
+      </div>
       <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-slate-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
         Estimated lug guides. Strap fit will land here first.
       </div>
