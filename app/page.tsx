@@ -540,6 +540,7 @@ export default function Home() {
   const [lugGuideOverrides, setLugGuideOverrides] = useState<PreviewLugGuideOverrides | null>(null);
   const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
   const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
+  const [mockupReadyHighlight, setMockupReadyHighlight] = useState(false);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
     tool: null,
     label: "",
@@ -554,6 +555,15 @@ export default function Home() {
   const preserveSettingsRef = useRef(true);
   const lockViewRef = useRef(false);
   const previousDialScaleRef = useRef(dialScale);
+  const mockupReadyTimeoutRef = useRef<number | null>(null);
+
+  const clearMockupReadyHighlight = () => {
+    setMockupReadyHighlight(false);
+    if (mockupReadyTimeoutRef.current) {
+      window.clearTimeout(mockupReadyTimeoutRef.current);
+      mockupReadyTimeoutRef.current = null;
+    }
+  };
 
   const handleLugGuidesChange = (nextOverrides: PreviewLugGuideOverrides) => {
     setLugGuideOverrides((prev) => {
@@ -716,6 +726,14 @@ export default function Home() {
   }, [highlightPreviewWindow]);
 
   useEffect(() => {
+    return () => {
+      if (mockupReadyTimeoutRef.current) {
+        window.clearTimeout(mockupReadyTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!canRender || showControlCoachmark) return;
     try {
       if (window.localStorage.getItem(CONTROL_COACHMARK_STORAGE_KEY) === "1") return;
@@ -743,6 +761,7 @@ export default function Home() {
   };
 
   const onSaveMockupImage = async (url: string) => {
+    clearMockupReadyHighlight();
     await saveUrlAsPng(url, "watch-strap-catalogue.png");
   };
 
@@ -1125,6 +1144,12 @@ export default function Home() {
       });
       setGeneratedResults((prev) => ({ ...prev, final: imageUrl }));
       setInlineMockupUrl(imageUrl);
+      clearMockupReadyHighlight();
+      setMockupReadyHighlight(true);
+      mockupReadyTimeoutRef.current = window.setTimeout(() => {
+        setMockupReadyHighlight(false);
+        mockupReadyTimeoutRef.current = null;
+      }, 7000);
       setToolLoading("final", false);
     } catch (error) {
       setToolLoading("final", false, formatAiError(error));
@@ -1719,6 +1744,7 @@ export default function Home() {
                   disabled={!canRender || !lockView}
                   loading={aiTools.final.loading}
                   sampleImageSrc="/catalogue-mockup-sample.png"
+                  highlighted={mockupReadyHighlight}
                   note="Lock the view with your favourite strap, then create a catalogue-style shot."
                   onClick={() => void runFinalRender()}
                 />
@@ -1726,7 +1752,10 @@ export default function Home() {
                   <ResultActions
                     url={generatedResults.final}
                     label="View mockup"
-                    onOpenInPage={() => setInlineMockupUrl(generatedResults.final)}
+                    onOpenInPage={() => {
+                      clearMockupReadyHighlight();
+                      setInlineMockupUrl(generatedResults.final);
+                    }}
                     onSave={() => void onSaveMockupImage(generatedResults.final as string)}
                   />
                 ) : null}
@@ -1825,7 +1854,10 @@ export default function Home() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setInlineMockupUrl(null)}
+                    onClick={() => {
+                      clearMockupReadyHighlight();
+                      setInlineMockupUrl(null);
+                    }}
                     className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
                   >
                     Close
@@ -1833,11 +1865,13 @@ export default function Home() {
                 </div>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={inlineMockupUrl}
-                alt="Generated product mockup"
-                className="w-full rounded-xl border border-line bg-white object-contain"
-              />
+              <div className="mx-auto w-full max-w-[85%]">
+                <img
+                  src={inlineMockupUrl}
+                  alt="Generated product mockup"
+                  className="w-full rounded-xl border border-line bg-white object-contain"
+                />
+              </div>
             </div>
           ) : null}
           <p className="mt-3 text-sm text-muted">
@@ -2295,6 +2329,7 @@ function ToolButton({
   subtitle,
   disabled,
   loading,
+  highlighted,
   sampleImageSrc,
   note,
   onClick
@@ -2303,12 +2338,19 @@ function ToolButton({
   subtitle?: string;
   disabled?: boolean;
   loading?: boolean;
+  highlighted?: boolean;
   sampleImageSrc?: string;
   note?: string;
   onClick: () => void;
 }) {
   return (
-    <div className="neo-control rounded-2xl p-4">
+    <div
+      className={`neo-control rounded-2xl p-4 transition ${
+        highlighted
+          ? "animate-pulse border-amber-300/90 bg-amber-50/70 shadow-[0_0_0_1px_rgba(245,158,11,0.22),0_16px_30px_rgba(245,158,11,0.14)]"
+          : ""
+      }`}
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         {sampleImageSrc ? (
           <div className="w-24 shrink-0 overflow-hidden rounded-2xl border border-line bg-white/90 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
@@ -2332,13 +2374,15 @@ function ToolButton({
               type="button"
               onClick={onClick}
               disabled={disabled || loading}
-              className={`neo-button min-w-[84px] shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold text-ink transition disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`neo-button min-w-[84px] shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 loading
                   ? "ai-pulse border-slate-300/80 bg-slate-100"
-                  : "hover:opacity-90"
+                  : highlighted
+                    ? "border-amber-800 bg-amber-700 text-white shadow-[0_12px_24px_rgba(180,83,9,0.28)] hover:opacity-95"
+                    : "text-ink hover:opacity-90"
               }`}
             >
-              {loading ? "Working" : "Run"}
+              {loading ? "Working" : highlighted ? "Ready" : "Run"}
             </button>
           </div>
           {note ? <p className="mt-2 max-w-[28rem] text-sm leading-5 text-muted">{note}</p> : null}
