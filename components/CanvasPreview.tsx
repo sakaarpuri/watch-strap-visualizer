@@ -434,7 +434,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
           backdropFilter: "blur(8px)"
         }}
       >
-        <div className={controls ? "grid gap-3 xl:grid-cols-[minmax(0,1fr),248px]" : ""}>
+        <div className={controls ? "grid gap-3 xl:grid-cols-[minmax(0,1fr),220px]" : ""}>
           <div className="relative">
             {showCycleControls ? (
               <button

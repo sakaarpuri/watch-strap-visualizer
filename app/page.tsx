@@ -31,6 +31,7 @@ const STRAP_SCALE_MAX = 260;
 const DIAL_SCALE_MIN = 0.7;
 const DIAL_SCALE_MAX = 1.8;
 const DEFAULT_WATCH_PREVIEW_SCALE = 0.88;
+const DEFAULT_SCENE_ZOOM = 0.75;
 const DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.28;
 const strapScaleToUi = (scale: number) => {
   const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
@@ -524,7 +525,7 @@ export default function Home() {
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
   const [dialScale, setDialScale] = useState(DEFAULT_WATCH_PREVIEW_SCALE);
-  const [sceneZoom, setSceneZoom] = useState(1);
+  const [sceneZoom, setSceneZoom] = useState(DEFAULT_SCENE_ZOOM);
   const [preserveSettings, setPreserveSettings] = useState(true);
   const [lockView, setLockView] = useState(false);
   const [fitState, setFitState] = useState<FitState>("auto");
@@ -695,6 +696,7 @@ export default function Home() {
     setWatchPreviewSrc(uploadedUrl);
     setWatchSrc(uploadedUrl);
     setDialScale(DEFAULT_WATCH_PREVIEW_SCALE);
+    setSceneZoom(DEFAULT_SCENE_ZOOM);
     previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
     setCropSourceUrl(uploadedUrl);
     setLugGuideOverrides(null);
@@ -808,6 +810,7 @@ export default function Home() {
     setWatchPreviewSrc(sourceUrl);
     setWatchSrc(sourceUrl);
     setDialScale(DEFAULT_WATCH_PREVIEW_SCALE);
+    setSceneZoom(DEFAULT_SCENE_ZOOM);
     previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
     setLugGuideOverrides(null);
     setShowLugGuides(true);
@@ -949,6 +952,7 @@ export default function Home() {
     const previewSrc = toProxyPreviewSrc(nextSrc);
     setWatchSrc(previewSrc);
     setWatchPreviewSrc(previewSrc);
+    setSceneZoom(DEFAULT_SCENE_ZOOM);
   };
 
   useEffect(() => {
@@ -1200,14 +1204,14 @@ export default function Home() {
   const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-    <main className="mx-auto max-w-[108rem] px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 md:px-8 md:pb-12 md:pt-5 xl:px-10">
+    <main className="mx-auto max-w-[84rem] px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 md:px-6 md:pb-10 md:pt-5 xl:px-8">
       <header className="mb-4 sm:mb-5">
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/watchstrapper-logo.png"
             alt="Watchstrapper"
-            className="mx-auto mb-2 h-auto w-[18rem] object-contain sm:mb-3 sm:w-[22rem] lg:w-[24rem]"
+            className="mx-auto mb-2 h-auto w-[18rem] object-contain sm:mb-3 sm:w-[22rem] lg:w-[20rem]"
           />
           <h1 className="text-2xl font-semibold leading-none tracking-tight text-ink sm:text-4xl">
             See any strap on your watch before you buy.
@@ -1216,10 +1220,10 @@ export default function Home() {
       </header>
 
       <section className="mb-40 mt-24 sm:mb-48 sm:mt-28">
-        <div className="mx-auto max-w-[1120px]">
+        <div className="mx-auto max-w-[920px]">
           <div className={`glass-card rounded-[2rem] border border-line px-6 py-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-4 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),520px] lg:items-center">
-              <div className="max-w-[27rem]">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),420px] lg:items-center">
+              <div className="max-w-[23rem]">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-[2.35rem]">
                   1. Upload your watch first
@@ -1283,7 +1287,7 @@ export default function Home() {
       </section>
 
       {cropSourceUrl && originalWatchFile ? (
-        <section className="mt-4 w-full max-w-[1080px]">
+        <section className="mt-4 w-full max-w-[900px]">
           <CropEditor
             file={originalWatchFile}
             sourceUrl={cropSourceUrl}
@@ -1294,7 +1298,7 @@ export default function Home() {
       ) : null}
 
       {strapSplitSourceUrl && uploadedStrapSheetFile ? (
-        <section className="mt-4 w-full max-w-[1100px]">
+        <section className="mt-4 w-full max-w-[920px]">
           <StrapSplitEditor
             file={uploadedStrapSheetFile}
             sourceUrl={strapSplitSourceUrl}
@@ -1304,7 +1308,7 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[480px,1fr]">
+      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[380px,1fr]">
         <aside className="space-y-5">
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <div className="flex items-start justify-between gap-3">
@@ -1413,7 +1417,7 @@ export default function Home() {
                   <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                     {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
                   </p>
-                  <div className="mt-3 max-h-[36rem] space-y-3 overflow-y-auto pr-1">
+                  <div className="mt-3 max-h-[30rem] space-y-3 overflow-y-auto pr-1">
                     {strapsInCategory.map((strap, index) => {
                       const active = hasSelectedLibraryStrap && index === strapIndex;
                       return (
@@ -1547,6 +1551,7 @@ export default function Home() {
                     }
                     setWatchSrc(originalWatchSrc);
                     setWatchPreviewSrc(originalWatchSrc);
+                    setSceneZoom(DEFAULT_SCENE_ZOOM);
                   }}
                   className="rounded-lg border border-line bg-canvas px-4 py-2.5 text-base text-ink transition hover:opacity-90"
                 >
@@ -2008,7 +2013,7 @@ function ErrorText({ message }: { message: string }) {
 function FeaturedStrapTeaser({ strap }: FeaturedStrapTeaserProps) {
   return (
     <div className="rounded-2xl border border-line bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-      <div className="flex h-28 items-center justify-center overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+      <div className="flex h-24 items-center justify-center overflow-hidden rounded-[1rem] border border-line bg-slate-50">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapASrc}
@@ -2028,7 +2033,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`flex w-full items-center gap-4 rounded-[1.6rem] border px-4 py-4 text-left transition ${
+      className={`flex w-full items-center gap-3 rounded-[1.45rem] border px-3.5 py-3.5 text-left transition ${
         active
           ? "border-emerald-200 bg-emerald-50/90 text-ink shadow-[0_10px_24px_rgba(16,185,129,0.12)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -2036,7 +2041,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
       aria-pressed={active}
     >
       <div
-        className={`flex h-[152px] w-[152px] shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] border ${
+        className={`flex h-[124px] w-[124px] shrink-0 items-center justify-center overflow-hidden rounded-[1.2rem] border ${
           active ? "border-emerald-200 bg-white" : "border-line bg-slate-50"
         }`}
       >
@@ -2048,7 +2053,7 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
           loading="lazy"
         />
       </div>
-      <div className="min-w-0 max-w-[9.5rem] flex-1">
+      <div className="min-w-0 max-w-[8.5rem] flex-1">
         <p className="line-clamp-2 text-[15px] font-semibold leading-tight sm:text-[16px]">{strap.label}</p>
         {showCategory ? (
           <p
