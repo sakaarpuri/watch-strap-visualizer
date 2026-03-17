@@ -152,6 +152,7 @@ const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
 });
 
 const CONTROL_COACHMARK_STORAGE_KEY = "watchstrapper-gap-size-coachmark-seen";
+const LUG_GUIDE_TIP_STORAGE_KEY = "watchstrapper-lug-guide-tip-seen";
 const BOUTIQUE_PRIORITY = [
   "sapphire",
   "emerald",
@@ -436,25 +437,25 @@ const UPLOAD_GUIDE_ITEMS: UploadGuideItem[] = [
     title: "Ideal",
     verdict: "Best results",
     tone: "ideal",
-    imageSrc: "/upload-guide/ideal-straight.png"
+    imageSrc: "/upload-guide/ideal-straight.webp"
   },
   {
     title: "Good",
     verdict: "Usually workable",
     tone: "good",
-    imageSrc: "/upload-guide/straight-noisy.png"
+    imageSrc: "/upload-guide/straight-noisy.webp"
   },
   {
     title: "Difficult",
     verdict: "Needs fixing",
     tone: "weak",
-    imageSrc: "/upload-guide/too-rotated.png"
+    imageSrc: "/upload-guide/too-rotated.webp"
   },
   {
     title: "Skip It",
     verdict: "Do not upload",
     tone: "avoid",
-    imageSrc: "/upload-guide/dont-even-try.png"
+    imageSrc: "/upload-guide/dont-even-try.webp"
   }
 ];
 
@@ -486,6 +487,8 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
             src={item.imageSrc}
             alt={`${item.title} upload example`}
             className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -538,6 +541,8 @@ export default function Home() {
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
   const [showControlCoachmark, setShowControlCoachmark] = useState(false);
   const [lugGuideOverrides, setLugGuideOverrides] = useState<PreviewLugGuideOverrides | null>(null);
+  const [showLugGuides, setShowLugGuides] = useState(true);
+  const [showLugGuideOnboarding, setShowLugGuideOnboarding] = useState(false);
   const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
   const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
   const [mockupReadyHighlight, setMockupReadyHighlight] = useState(false);
@@ -582,6 +587,15 @@ export default function Home() {
     });
     setFitState(lockViewRef.current ? "locked" : "adjusted");
     setShowFitBench(true);
+  };
+
+  const dismissLugGuideOnboarding = () => {
+    setShowLugGuideOnboarding(false);
+    try {
+      window.localStorage.setItem(LUG_GUIDE_TIP_STORAGE_KEY, "1");
+    } catch {
+      // Ignore storage failures and just hide it for the current session.
+    }
   };
 
   const strapsInCategory = useMemo(() => {
@@ -681,6 +695,8 @@ export default function Home() {
     previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
     setCropSourceUrl(uploadedUrl);
     setLugGuideOverrides(null);
+    setShowLugGuides(true);
+    setShowLugGuideOnboarding(false);
     setShowUploadGuide(false);
     setHighlightUploadGuide(true);
     if (!hasAutoOpenedUploadGuide) {
@@ -745,6 +761,24 @@ export default function Home() {
     }
   }, [canRender, showControlCoachmark]);
 
+  useEffect(() => {
+    if (!canShowWatchOnlyPreview || !hasUserUpload) return;
+    try {
+      if (window.localStorage.getItem(LUG_GUIDE_TIP_STORAGE_KEY) === "1") return;
+    } catch {
+      // Ignore storage failures; we can still show the tip for this session.
+    }
+    const timer = window.setTimeout(() => setShowLugGuideOnboarding(true), 220);
+    return () => window.clearTimeout(timer);
+  }, [canShowWatchOnlyPreview, hasUserUpload, watchSrc]);
+
+  useEffect(() => {
+    if (!canRender) return;
+    if (showLugGuideOnboarding) {
+      dismissLugGuideOnboarding();
+    }
+  }, [canRender, showLugGuideOnboarding]);
+
   const dismissControlCoachmark = () => {
     setShowControlCoachmark(false);
     try {
@@ -772,6 +806,7 @@ export default function Home() {
     setDialScale(DEFAULT_WATCH_PREVIEW_SCALE);
     previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
     setLugGuideOverrides(null);
+    setShowLugGuides(true);
     setHighlightPreviewWindow(true);
     window.setTimeout(() => {
       previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1585,7 +1620,7 @@ export default function Home() {
                 watchScale={dialScale}
                 sceneZoom={sceneZoom}
                 locked={lockView}
-                showLugGuides={!lockView && (showFitBench || fitConfidence < 0.72)}
+                showLugGuides={showLugGuides && !lockView && (showFitBench || fitConfidence < 0.72)}
                 lugGuideOverrides={lugGuideOverrides}
                 onLugGuidesChange={handleLugGuidesChange}
                 showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
@@ -1617,6 +1652,15 @@ export default function Home() {
                         className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
                       >
                         Hide
+                      </button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowLugGuides((prev) => !prev)}
+                        className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                      >
+                        {showLugGuides ? "Hide lug guides" : "Show lug guides"}
                       </button>
                     </div>
                     <div className="mt-2 grid gap-2">
@@ -1703,8 +1747,12 @@ export default function Home() {
               watchSrc={watchSrc}
               watchScale={dialScale}
               highlighted={highlightPreviewWindow}
+              showLugGuides={showLugGuides}
+              onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
               lugGuideOverrides={lugGuideOverrides}
               onLugGuidesChange={handleLugGuidesChange}
+              showGuideOnboarding={showLugGuideOnboarding}
+              onDismissGuideOnboarding={dismissLugGuideOnboarding}
             />
           ) : (
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
@@ -2016,14 +2064,22 @@ function WatchOnlyPreview({
   watchSrc,
   watchScale,
   highlighted,
+  showLugGuides,
+  onToggleLugGuides,
   lugGuideOverrides,
-  onLugGuidesChange
+  onLugGuidesChange,
+  showGuideOnboarding,
+  onDismissGuideOnboarding
 }: {
   watchSrc: string;
   watchScale: number;
   highlighted: boolean;
+  showLugGuides: boolean;
+  onToggleLugGuides: () => void;
   lugGuideOverrides: PreviewLugGuideOverrides | null;
   onLugGuidesChange: (overrides: PreviewLugGuideOverrides) => void;
+  showGuideOnboarding: boolean;
+  onDismissGuideOnboarding: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
@@ -2188,19 +2244,33 @@ function WatchOnlyPreview({
               onPointerCancel={onGuidePointerEnd}
               style={{ touchAction: "none" }}
             />
-            {effectiveLugGuides ? <WatchOnlyLugGuideOverlay guides={effectiveLugGuides} /> : null}
+            {showLugGuides && effectiveLugGuides ? <WatchOnlyLugGuideOverlay guides={effectiveLugGuides} /> : null}
+            {showLugGuides && showGuideOnboarding && effectiveLugGuides ? (
+              <WatchOnlyLugGuideCoachmark onDismiss={onDismissGuideOnboarding} />
+            ) : null}
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted">
-              Watch loaded. Drag the top and bottom lug guides if needed, then pick a strap.
+              {showLugGuides
+                ? "Watch loaded. Line these guides up with the lug openings, then pick a strap."
+                : "Watch loaded. Turn the lug guides back on any time if you want to fine-tune the fit first."}
             </p>
-            <button
-              type="button"
-              onClick={() => onLugGuidesChange({})}
-              className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-            >
-              Reset lug guides
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onToggleLugGuides}
+                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+              >
+                {showLugGuides ? "Hide lug guides" : "Show lug guides"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onLugGuidesChange({})}
+                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+              >
+                Reset lug guides
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2244,6 +2314,52 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
       />
       <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-slate-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
         Estimated lug guides. Strap fit will land here first.
+      </div>
+    </div>
+  );
+}
+
+function WatchOnlyLugGuideCoachmark({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[6] overflow-hidden rounded-xl">
+      <div className="absolute left-5 top-5 max-w-[18rem] rounded-2xl border border-cyan-200/80 bg-white/94 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.14)] backdrop-blur">
+        <div className="pointer-events-auto flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-ink">Set the lug openings</p>
+            <p className="mt-1 text-xs leading-5 text-muted">
+              Line these guides up with the top and bottom lug openings. Drag the row or the end
+              handles to match the width.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="neo-button rounded-xl px-2.5 py-1 text-xs font-semibold text-ink"
+          >
+            Got it
+          </button>
+        </div>
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <span>Top fit</span>
+            <span>Then pick a strap</span>
+          </div>
+          <div className="mt-2 space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full border border-cyan-300 bg-white" />
+              <span className="h-[2px] flex-1 rounded-full bg-cyan-300" />
+              <span className="h-3 w-3 rounded-full border border-cyan-300 bg-white" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg text-cyan-500">↕</span>
+              <span className="text-xs text-slate-600">Move the row to the lug opening</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg text-cyan-500">↔</span>
+              <span className="text-xs text-slate-600">Drag either end to set the width</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
