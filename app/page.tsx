@@ -31,6 +31,7 @@ const STRAP_SCALE_MAX = 260;
 const DIAL_SCALE_MIN = 0.7;
 const DIAL_SCALE_MAX = 1.8;
 const DEFAULT_WATCH_PREVIEW_SCALE = 0.88;
+const DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.28;
 const strapScaleToUi = (scale: number) => {
   const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
   return Math.cbrt(t) * 100;
@@ -627,9 +628,11 @@ export default function Home() {
     strapSourceMode === "uploaded" && uploadedStrapPartB ? uploadedStrapPartB.url : activeLibraryStrap?.strapBSrc;
   const activeStrapLabel =
     strapSourceMode === "uploaded" ? "Your Strap" : activeLibraryStrap?.label || "Selected strap";
-  const activeJoinShape = strapSourceMode === "uploaded" ? undefined : activeLibraryStrap?.joinShape;
+  const activeJoinShape = strapSourceMode === "uploaded" ? "flat" : activeLibraryStrap?.joinShape;
   const activeAutoFitWidthFactor =
-    strapSourceMode === "uploaded" ? 0.1 : activeLibraryStrap?.autoFitWidthFactor;
+    strapSourceMode === "uploaded"
+      ? DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR
+      : activeLibraryStrap?.autoFitWidthFactor ?? DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR;
   const activeAutoGapFactor =
     strapSourceMode === "uploaded" ? undefined : activeLibraryStrap?.autoGapFactor;
   const canRender = useMemo(

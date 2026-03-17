@@ -1,6 +1,12 @@
 import type { StrapStyle } from "@/lib/compose";
 
-export type StrapCategory = "All categories" | "Leather" | "Rubber" | "Fabric" | "Metal";
+export type StrapCategory =
+  | "All categories"
+  | "Leather"
+  | "Rubber"
+  | "Fabric"
+  | "Metal"
+  | "Women";
 
 export interface StrapShoppingMeta {
   material: "leather" | "rubber" | "fabric" | "metal";
@@ -32,9 +38,10 @@ export interface StrapShoppingMeta {
     | "green"
     | "gray"
     | "silver"
+    | "gold"
     | "multicolor"
     | "orange";
-  hardwareFinish: "silver" | "black";
+  hardwareFinish: "silver" | "black" | "gold";
   keywords: string[];
 }
 
@@ -59,6 +66,23 @@ const ORIG_TINT: StrapStyle = { name: "Original", color: "#000000", alpha: 0 };
 
 const inferShoppingMeta = (strap: RawStrapVariant): StrapShoppingMeta => {
   const haystack = `${strap.id} ${strap.label}`.toLowerCase();
+  const inferredMaterial: StrapShoppingMeta["material"] = haystack.includes("bracelet") ||
+    haystack.includes("mesh") ||
+    haystack.includes("milanese") ||
+    haystack.includes("metal")
+    ? "metal"
+    : haystack.includes("rubber") ||
+        haystack.includes("tropic") ||
+        haystack.includes("fkm") ||
+        haystack.includes("performance")
+      ? "rubber"
+      : haystack.includes("nato") ||
+          haystack.includes("canvas") ||
+          haystack.includes("sailcloth") ||
+          haystack.includes("fabric")
+        ? "fabric"
+        : "leather";
+
   const material: StrapShoppingMeta["material"] =
     strap.category === "Leather"
       ? "leather"
@@ -66,7 +90,9 @@ const inferShoppingMeta = (strap: RawStrapVariant): StrapShoppingMeta => {
         ? "rubber"
         : strap.category === "Fabric"
           ? "fabric"
-          : "metal";
+          : strap.category === "Metal"
+            ? "metal"
+            : inferredMaterial;
 
   let styleFamily: StrapShoppingMeta["styleFamily"] = "classic";
   if (material === "metal") {
@@ -122,6 +148,8 @@ const inferShoppingMeta = (strap: RawStrapVariant): StrapShoppingMeta => {
                   ? material === "metal"
                     ? "silver"
                     : "gray"
+                  : haystack.includes("gold")
+                    ? "gold"
                   : haystack.includes("orange")
                     ? "orange"
                     : haystack.includes("stripe") || haystack.includes("holi") || haystack.includes("oaxaca")
@@ -130,7 +158,11 @@ const inferShoppingMeta = (strap: RawStrapVariant): StrapShoppingMeta => {
                         ? "silver"
                         : "brown";
 
-  const hardwareFinish: StrapShoppingMeta["hardwareFinish"] = haystack.includes("pvd") ? "black" : "silver";
+  const hardwareFinish: StrapShoppingMeta["hardwareFinish"] = haystack.includes("pvd")
+    ? "black"
+    : haystack.includes("gold")
+      ? "gold"
+      : "silver";
   const keywords = [...new Set(haystack.split(/[^a-z0-9]+/).filter((token) => token.length > 2 && !["leather", "fabric", "rubber", "metal", "strap", "watch"].includes(token)))];
 
   return {
@@ -606,6 +638,114 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       tint: ORIG_TINT,
       autoFitWidthFactor: 0.3,
       joinShape: "curved"
+    },
+    {
+      id: "metal-gold-silver-bracelet",
+      label: "Gold / Silver Bracelet",
+      category: "Metal",
+      strapASrc: `${SEL}/gold-silver-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/gold-silver-bracelet-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.3,
+      joinShape: "curved"
+    },
+    {
+      id: "metal-gold-bracelet",
+      label: "Gold Bracelet",
+      category: "Metal",
+      strapASrc: `${SEL}/gold-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/gold-bracelet-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.3,
+      joinShape: "curved"
+    }
+  ],
+  Women: [
+    {
+      id: "women-leather-beige-smooth",
+      label: "Women's Beige Smooth Leather",
+      category: "Women",
+      strapASrc: `${SEL}/beige-smooth-leather-buckle.png`,
+      strapBSrc: `${SEL}/beige-smooth-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "women-leather-taupe-nubuck",
+      label: "Women's Taupe Nubuck Leather",
+      category: "Women",
+      strapASrc: `${SEL}/clean/taupe-nubuck-leather-buckle.png`,
+      strapBSrc: `${SEL}/clean/taupe-nubuck-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "women-leather-sand-suede",
+      label: "Women's Sand Suede Leather",
+      category: "Women",
+      strapASrc: `${SEL}/sand-suede-leather-buckle.png`,
+      strapBSrc: `${SEL}/sand-suede-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "women-leather-aubergine-suede",
+      label: "Women's Aubergine Suede",
+      category: "Women",
+      strapASrc: `${SEL}/aubergine-suede-buckle.png`,
+      strapBSrc: `${SEL}/aubergine-suede-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "women-leather-oxblood-pebbled",
+      label: "Women's Oxblood Pebbled Leather",
+      category: "Women",
+      strapASrc: `${SEL}/clean/oxblood-pebbled-leather-buckle.png`,
+      strapBSrc: `${SEL}/clean/oxblood-pebbled-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "women-leather-cognac-grain",
+      label: "Women's Cognac Grain Leather",
+      category: "Women",
+      strapASrc: `${SEL}/cognac-grain-leather-buckle.png`,
+      strapBSrc: `${SEL}/cognac-grain-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "women-fabric-navy-canvas",
+      label: "Women's Navy Canvas",
+      category: "Women",
+      strapASrc: `${SEL}/navy-canvas-buckle.png`,
+      strapBSrc: `${SEL}/navy-canvas-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.28
+    },
+    {
+      id: "women-fabric-talavera-blue-nato",
+      label: "Women's Talavera Blue NATO",
+      category: "Women",
+      strapASrc: `${SEL}/talavera-blue-nato-buckle.png`,
+      strapBSrc: `${SEL}/talavera-blue-nato-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.27
+    },
+    {
+      id: "women-metal-gold-silver-bracelet",
+      label: "Women's Gold / Silver Bracelet",
+      category: "Women",
+      strapASrc: `${SEL}/gold-silver-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/gold-silver-bracelet-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.3,
+      joinShape: "curved"
+    },
+    {
+      id: "women-metal-gold-bracelet",
+      label: "Women's Gold Bracelet",
+      category: "Women",
+      strapASrc: `${SEL}/gold-bracelet-buckle.png`,
+      strapBSrc: `${SEL}/gold-bracelet-tail.png`,
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.3,
+      joinShape: "curved"
     }
   ]
 };
@@ -614,7 +754,8 @@ export const STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, Str
   Leather: RAW_STRAP_LIBRARY.Leather.map(withShopping),
   Rubber: RAW_STRAP_LIBRARY.Rubber.map(withShopping),
   Fabric: RAW_STRAP_LIBRARY.Fabric.map(withShopping),
-  Metal: RAW_STRAP_LIBRARY.Metal.map(withShopping)
+  Metal: RAW_STRAP_LIBRARY.Metal.map(withShopping),
+  Women: RAW_STRAP_LIBRARY.Women.map(withShopping)
 };
 
 export const STRAP_CATEGORIES: StrapCategory[] = [
@@ -622,7 +763,8 @@ export const STRAP_CATEGORIES: StrapCategory[] = [
   "Leather",
   "Rubber",
   "Fabric",
-  "Metal"
+  "Metal",
+  "Women"
 ];
 
 export const getStrapsForCategory = (category: StrapCategory): StrapVariant[] => {
@@ -631,7 +773,8 @@ export const getStrapsForCategory = (category: StrapCategory): StrapVariant[] =>
       ...STRAP_LIBRARY.Leather,
       ...STRAP_LIBRARY.Rubber,
       ...STRAP_LIBRARY.Fabric,
-      ...STRAP_LIBRARY.Metal
+      ...STRAP_LIBRARY.Metal,
+      ...STRAP_LIBRARY.Women
     ];
   }
   return STRAP_LIBRARY[category];
