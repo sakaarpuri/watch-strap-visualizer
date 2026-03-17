@@ -548,6 +548,8 @@ export default function Home() {
   const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
   const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
   const [mockupReadyHighlight, setMockupReadyHighlight] = useState(false);
+  const [animateDrawerReveal, setAnimateDrawerReveal] = useState(false);
+  const [animateStrapSettle, setAnimateStrapSettle] = useState(false);
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
     tool: null,
     label: "",
@@ -563,6 +565,8 @@ export default function Home() {
   const lockViewRef = useRef(false);
   const previousDialScaleRef = useRef(dialScale);
   const mockupReadyTimeoutRef = useRef<number | null>(null);
+  const strapSettleTimeoutRef = useRef<number | null>(null);
+  const previousLibraryDrawerLockedRef = useRef(true);
 
   const clearMockupReadyHighlight = () => {
     setMockupReadyHighlight(false);
@@ -641,6 +645,20 @@ export default function Home() {
     [partA, partB, activeStrapASrc, activeStrapBSrc]
   );
   const canShowWatchOnlyPreview = hasUserUpload && !canRender;
+  const previewStageTitle = canRender
+    ? "3. Live Preview"
+    : cropSourceUrl
+      ? "1. Crop your watch"
+      : canShowWatchOnlyPreview
+        ? "1. Watch head view"
+        : "1. Upload your watch first";
+  const previewStageHint = canRender
+    ? "Your strap is on the bench. Fine-tune it or lock and export."
+    : cropSourceUrl
+      ? "Frame the watch in this same stage, then apply the crop."
+      : canShowWatchOnlyPreview
+        ? "Your watch is ready. Line up the lug guides if needed, then pick a strap."
+        : "Drop a watch photo here to start the full try-on flow in one place.";
 
   useEffect(() => {
     latestPartARef.current = partA;
@@ -732,6 +750,7 @@ export default function Home() {
     setStrapSourceMode("uploaded");
     setShowFitBench(true);
     setFitState("auto");
+    triggerStrapSettle();
   };
 
   useEffect(() => {
@@ -747,9 +766,23 @@ export default function Home() {
   }, [highlightPreviewWindow]);
 
   useEffect(() => {
+    if (previousLibraryDrawerLockedRef.current && !libraryDrawerLocked && strapSourceMode === "library") {
+      setAnimateDrawerReveal(true);
+      const timeout = window.setTimeout(() => setAnimateDrawerReveal(false), 900);
+      previousLibraryDrawerLockedRef.current = libraryDrawerLocked;
+      return () => window.clearTimeout(timeout);
+    }
+    previousLibraryDrawerLockedRef.current = libraryDrawerLocked;
+    return undefined;
+  }, [libraryDrawerLocked, strapSourceMode]);
+
+  useEffect(() => {
     return () => {
       if (mockupReadyTimeoutRef.current) {
         window.clearTimeout(mockupReadyTimeoutRef.current);
+      }
+      if (strapSettleTimeoutRef.current) {
+        window.clearTimeout(strapSettleTimeoutRef.current);
       }
     };
   }, []);
@@ -803,6 +836,20 @@ export default function Home() {
   const onSaveMockupImage = async (url: string) => {
     clearMockupReadyHighlight();
     await saveUrlAsPng(url, "watch-strap-catalogue.png");
+  };
+
+  const triggerStrapSettle = () => {
+    setAnimateStrapSettle(false);
+    window.requestAnimationFrame(() => {
+      setAnimateStrapSettle(true);
+      if (strapSettleTimeoutRef.current) {
+        window.clearTimeout(strapSettleTimeoutRef.current);
+      }
+      strapSettleTimeoutRef.current = window.setTimeout(() => {
+        setAnimateStrapSettle(false);
+        strapSettleTimeoutRef.current = null;
+      }, 520);
+    });
   };
 
   const applyWatchAsset = (file: File, sourceUrl: string) => {
@@ -902,6 +949,7 @@ export default function Home() {
 
   const onCycleStrap = (direction: 1 | -1) => {
     if (strapSourceMode !== "library" || !hasSelectedLibraryStrap) return;
+    triggerStrapSettle();
     setStrapIndex((prev) => {
       const total = strapsInCategory.length;
       return (prev + direction + total) % total;
@@ -1219,84 +1267,6 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mb-40 mt-24 sm:mb-48 sm:mt-28">
-        <div className="mx-auto max-w-[920px]">
-          <div className={`glass-card rounded-[2rem] border border-line px-6 py-3.5 shadow-[0_20px_50px_rgba(15,23,42,0.08)] sm:px-9 sm:py-4 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),420px] lg:items-center">
-              <div className="max-w-[23rem]">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-[2.35rem]">
-                  1. Upload your watch first
-                </h2>
-                <p className="mt-2 text-base leading-7 text-muted">
-                  Front-on, straight shots work best. Retailer screenshots are the easy mode.
-                </p>
-              </div>
-
-              <div className="w-full">
-                <ImageUploader
-                  id="watch"
-                  label=""
-                  helperText=""
-                  previewUrl={watchPreviewSrc}
-                  onFileSelect={onUploadDial}
-                  className="w-full"
-                />
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowUploadGuide((prev) => !prev)}
-                    className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
-                    aria-expanded={showUploadGuide}
-                    aria-controls="upload-guide-panel"
-                  >
-                    Photo Tips
-                    <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {showUploadGuide ? (
-              <div
-                id="upload-guide-panel"
-                className={`mt-4 overflow-hidden rounded-2xl border border-line bg-white/65 p-3 transition-all duration-300 ${
-                  highlightUploadGuide ? "upload-attention-ring" : ""
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => setShowUploadGuide(false)}
-                  className="mb-2 flex w-full items-center rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
-                  aria-expanded={showUploadGuide}
-                  aria-controls="upload-guide-panel"
-                >
-                  <p className="text-base font-semibold text-ink">Photo Tips</p>
-                </button>
-                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-                  {UPLOAD_GUIDE_ITEMS.map((item) => (
-                    <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
-                      <UploadGuideCard item={item} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      {cropSourceUrl && originalWatchFile ? (
-        <section className="mt-4 w-full max-w-[900px]">
-          <CropEditor
-            file={originalWatchFile}
-            sourceUrl={cropSourceUrl}
-            onApply={applyCroppedDial}
-            onClose={() => setCropSourceUrl(null)}
-          />
-        </section>
-      ) : null}
-
       {strapSplitSourceUrl && uploadedStrapSheetFile ? (
         <section className="mt-4 w-full max-w-[920px]">
           <StrapSplitEditor
@@ -1309,7 +1279,7 @@ export default function Home() {
       ) : null}
 
       <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[380px,1fr]">
-        <aside className="space-y-5">
+        <aside className={`space-y-5 transition ${hasUserUpload ? "opacity-100" : "opacity-85"}`}>
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -1321,7 +1291,7 @@ export default function Home() {
                     ? hasSelectedLibraryStrap
                       ? "Your watch is loaded. Now start auditioning straps."
                       : "Your watch is loaded. Pick a strap from the drawer to start the preview."
-                    : "Upload your watch above to unlock the full drawer."}
+                    : "Load your watch on the preview stage to unlock the full drawer."}
                 </p>
               </div>
               {hasUserUpload ? (
@@ -1362,9 +1332,9 @@ export default function Home() {
               libraryDrawerLocked ? (
                 <div className="mt-4 rounded-2xl border border-dashed border-line bg-gradient-to-br from-white/90 to-slate-50/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
                   <p className="text-sm uppercase tracking-[0.12em] text-muted">Drawer Preview</p>
-                  <p className="mt-2 text-lg font-semibold text-ink">The full strap drawer opens after your upload.</p>
+                  <p className="mt-2 text-lg font-semibold text-ink">The full strap drawer opens after your watch is ready.</p>
                   <p className="mt-2 text-sm leading-6 text-muted">
-                    We’ll keep the shortlist warmed up. Once your watch is loaded, you can browse by category and tune the fit properly.
+                    The preview stage handles upload, crop, and watch prep first. Then the drawer opens for strap try-on.
                   </p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     {featuredLibraryStraps.map((strap) => (
@@ -1429,6 +1399,7 @@ export default function Home() {
                             setShowFitBench(false);
                             setFitState("auto");
                             setHighlightPreviewWindow(true);
+                            triggerStrapSettle();
                             window.setTimeout(() => {
                               previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                             }, 80);
@@ -1436,6 +1407,8 @@ export default function Home() {
                           strap={strap}
                           active={active}
                           showCategory={category === "All categories"}
+                          animateIn={animateDrawerReveal}
+                          animationDelayMs={index * 45}
                         />
                       );
                     })}
@@ -1564,8 +1537,9 @@ export default function Home() {
 
         <section ref={previewSectionRef} className="min-w-0">
           <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
-            3. Live Preview
+            {previewStageTitle}
           </h2>
+          <p className="mb-3 text-sm text-muted">{previewStageHint}</p>
           {canRender && hasUserUpload ? (
             <div className="glass-card sticky top-4 z-10 mb-4 rounded-2xl p-4 shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -1615,8 +1589,15 @@ export default function Home() {
               </div>
             </div>
           ) : null}
-          {canRender ? (
-            <div className={highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""}>
+          {cropSourceUrl && originalWatchFile ? (
+            <CropEditor
+              file={originalWatchFile}
+              sourceUrl={cropSourceUrl}
+              onApply={applyCroppedDial}
+              onClose={() => setCropSourceUrl(null)}
+            />
+          ) : canRender ? (
+            <div className={`${highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""} ${animateStrapSettle ? "strap-settle-in" : ""}`}>
               <CanvasPreview
                 ref={canvasRef}
                 watchSrc={watchSrc}
@@ -1764,11 +1745,14 @@ export default function Home() {
               onDismissGuideOnboarding={dismissLugGuideOnboarding}
             />
           ) : (
-            <div className="rounded-2xl border border-line bg-canvas p-4 text-sm text-muted">
-              {hasUserUpload
-                ? "Watch loaded. Now choose a strap from the Strap Box to start the live preview."
-                : "Upload a watch photo, then choose a strap worth arguing about."}
-            </div>
+            <PreviewUploadStage
+              previewUrl={watchPreviewSrc}
+              showUploadGuide={showUploadGuide}
+              highlightUploadGuide={highlightUploadGuide}
+              onToggleUploadGuide={() => setShowUploadGuide((prev) => !prev)}
+              onCloseUploadGuide={() => setShowUploadGuide(false)}
+              onFileSelect={onUploadDial}
+            />
           )}
           <div className="glass-card mt-4 rounded-2xl p-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -2027,7 +2011,101 @@ function FeaturedStrapTeaser({ strap }: FeaturedStrapTeaserProps) {
   );
 }
 
-function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbProps) {
+function PreviewUploadStage({
+  previewUrl,
+  showUploadGuide,
+  highlightUploadGuide,
+  onToggleUploadGuide,
+  onCloseUploadGuide,
+  onFileSelect
+}: {
+  previewUrl: string;
+  showUploadGuide: boolean;
+  highlightUploadGuide: boolean;
+  onToggleUploadGuide: () => void;
+  onCloseUploadGuide: () => void;
+  onFileSelect: (file: File) => void;
+}) {
+  return (
+    <div className={highlightUploadGuide ? "upload-attention-ring rounded-[1.75rem]" : ""}>
+      <div
+        className="rounded-2xl border p-2.5 transition sm:p-3"
+        style={{
+          background:
+            "linear-gradient(150deg, color-mix(in srgb, var(--canvas-bg) 62%, white 38%), color-mix(in srgb, var(--canvas-bg) 84%, white 16%))",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,.8), 0 12px 30px rgba(15,23,42,.08)",
+          backdropFilter: "blur(8px)"
+        }}
+      >
+        <div className="rounded-xl border border-line bg-canvas p-4 sm:p-6">
+          <div className="mx-auto max-w-[34rem] text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
+            <h3 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-[2.35rem]">
+              1. Upload your watch first
+            </h3>
+            <p className="mt-2 text-base leading-7 text-muted">
+              Front-on, straight shots work best. Retailer screenshots are the easy mode.
+            </p>
+          </div>
+          <div className="mx-auto mt-6 max-w-[30rem]">
+            <ImageUploader
+              id="watch-stage"
+              label=""
+              helperText=""
+              previewUrl={previewUrl}
+              onFileSelect={onFileSelect}
+              className="w-full"
+            />
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                onClick={onToggleUploadGuide}
+                className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
+                aria-expanded={showUploadGuide}
+                aria-controls="preview-upload-guide-panel"
+              >
+                Photo Tips
+                <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
+              </button>
+            </div>
+            {showUploadGuide ? (
+              <div
+                id="preview-upload-guide-panel"
+                className="mt-4 overflow-hidden rounded-2xl border border-line bg-white/65 p-3 transition-all duration-300"
+              >
+                <button
+                  type="button"
+                  onClick={onCloseUploadGuide}
+                  className="mb-2 flex w-full items-center rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
+                  aria-expanded={showUploadGuide}
+                  aria-controls="preview-upload-guide-panel"
+                >
+                  <p className="text-base font-semibold text-ink">Photo Tips</p>
+                </button>
+                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+                  {UPLOAD_GUIDE_ITEMS.map((item) => (
+                    <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
+                      <UploadGuideCard item={item} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StrapDrawerButton({
+  strap,
+  active,
+  showCategory,
+  onClick,
+  animateIn = false,
+  animationDelayMs = 0
+}: StrapThumbProps & { animateIn?: boolean; animationDelayMs?: number }) {
   return (
     <button
       type="button"
@@ -2037,7 +2115,8 @@ function StrapDrawerButton({ strap, active, showCategory, onClick }: StrapThumbP
         active
           ? "border-emerald-200 bg-emerald-50/90 text-ink shadow-[0_10px_24px_rgba(16,185,129,0.12)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
-      }`}
+      } ${animateIn ? "drawer-reveal-item" : ""}`}
+      style={animateIn ? { animationDelay: `${animationDelayMs}ms` } : undefined}
       aria-pressed={active}
     >
       <div

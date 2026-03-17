@@ -324,6 +324,16 @@ body {
   animation: preview-guide-sheen 1.25s ease-in-out 2;
 }
 
+.drawer-reveal-item {
+  opacity: 0;
+  animation: drawer-reveal-up 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.strap-settle-in {
+  animation: strap-settle-in 480ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  transform-origin: center top;
+}
+
 @keyframes upload-guide-glow {
   0%,
   100% {
@@ -348,6 +358,32 @@ body {
       inset 0 1px 0 rgba(255, 255, 255, 0.72),
       0 0 0 1px rgba(52, 211, 153, 0.18),
       0 18px 36px rgba(52, 211, 153, 0.14);
+  }
+}
+
+@keyframes drawer-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes strap-settle-in {
+  0% {
+    opacity: 0.72;
+    transform: translateY(-10px) scale(0.992);
+  }
+  68% {
+    opacity: 1;
+    transform: translateY(2px) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
