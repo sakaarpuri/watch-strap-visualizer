@@ -327,8 +327,7 @@ body {
 }
 
 .drawer-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(56, 44, 32, 0.08);
+  box-shadow: 0 12px 24px rgba(56, 44, 32, 0.06);
 }
 
 .strap-settle-in {

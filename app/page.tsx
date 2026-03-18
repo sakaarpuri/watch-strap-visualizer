@@ -1642,6 +1642,7 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
+            <StudioReferenceStrip />
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
               <div className="space-y-2">
                 <ToolButton
@@ -1649,6 +1650,8 @@ export default function Home() {
                   subtitle="from messy backgrounds"
                   disabled={!hasUserUpload}
                   loading={aiTools.cleanup.loading}
+                  sampleImageSrc="/strap-selection-kie/cognac-grain-leather-buckle.png"
+                  note="Best on clean, front-on retailer or wrist shots with visible lugs."
                   onClick={() => void runCleanupFallback()}
                 />
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
@@ -1747,7 +1750,11 @@ export default function Home() {
                 )
               ) : (
                 <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
-                  <p className="text-sm text-slate-500">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <MaterialInset src="/catalogue-mockup-sample.png" label="Catalogue sample" fit="cover" />
+                    <MaterialInset src="/sample-watch.svg" label="Watch profile" fit="contain" />
+                  </div>
+                  <p className="mt-3 text-sm text-slate-500">
                     Shopping links stay tucked away until the fit is locked in.
                   </p>
                 </div>
@@ -1919,6 +1926,20 @@ function PreviewUploadStage({
       <div className="pointer-events-none absolute inset-0 opacity-60">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/mock-dial.svg" alt="" aria-hidden="true" className="absolute left-1/2 top-1/2 h-[62%] -translate-x-1/2 -translate-y-1/2 opacity-[0.07]" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/strap-selection-kie/cognac-grain-leather-buckle.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute left-8 top-10 hidden h-52 w-24 -rotate-[14deg] object-contain opacity-[0.06] lg:block"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/strap-selection-kie/black-grain-leather-tail.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute bottom-8 right-8 hidden h-56 w-24 rotate-[11deg] object-contain opacity-[0.05] lg:block"
+        />
       </div>
       <div className="relative rounded-[1.7rem] border border-line bg-[linear-gradient(180deg,rgba(255,253,249,0.95),rgba(248,241,233,0.84))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7">
         <div className="mx-auto max-w-[34rem]">
@@ -1968,6 +1989,41 @@ function PreviewUploadStage({
           ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function MaterialInset({
+  src,
+  label,
+  fit = "cover"
+}: {
+  src: string;
+  label: string;
+  fit?: "cover" | "contain";
+}) {
+  return (
+    <div className="rounded-[1.1rem] border border-line bg-white/82 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+      <div className="overflow-hidden rounded-[0.9rem] border border-line bg-slate-50">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={label}
+          className={`h-16 w-full ${fit === "cover" ? "object-cover" : "object-contain p-2"}`}
+          loading="lazy"
+        />
+      </div>
+      <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7c7165]">{label}</p>
+    </div>
+  );
+}
+
+function StudioReferenceStrip() {
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <MaterialInset src="/strap-selection-kie/cognac-grain-leather-buckle.png" label="Leather grain" fit="contain" />
+      <MaterialInset src="/strap-selection-kie/black-grain-leather-buckle.png" label="Hardware tone" fit="contain" />
+      <MaterialInset src="/catalogue-mockup-sample.png" label="Studio output" fit="cover" />
     </div>
   );
 }
