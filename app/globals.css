@@ -335,6 +335,10 @@ body {
   transform-origin: center top;
 }
 
+.watch-lug-handle-pulse {
+  animation: watch-lug-handle-pulse 560ms ease-out 3;
+}
+
 .strap-layer-enter-left,
 .strap-layer-enter-right,
 .strap-layer-exit-left,
@@ -408,6 +412,21 @@ body {
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes watch-lug-handle-pulse {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.88);
+  }
+  65% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
   }
 }
 

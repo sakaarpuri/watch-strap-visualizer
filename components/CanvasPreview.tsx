@@ -683,17 +683,19 @@ function GuideLine({
       : "border-fuchsia-300 bg-fuchsia-400/12 text-fuchsia-700";
   const lineWidth = Math.max(32, width);
   const lineLeft = centerX - lineWidth / 2;
+  const lineRight = lineLeft + lineWidth;
 
   return (
     <>
       <div
         className={`absolute rounded-full ${colorClasses}`}
         style={{
-          left: `${lineLeft - 1}px`,
-          top: `${y - 1}px`,
-          width: `${lineWidth + 2}px`,
+          left: `${lineLeft}px`,
+          top: `${y}px`,
+          width: `${lineWidth}px`,
           height: "2px",
-          borderWidth: 0
+          borderWidth: 0,
+          transform: "translateY(-50%)"
         }}
       />
       <div
@@ -708,19 +710,21 @@ function GuideLine({
       <div
         className={`absolute rounded-full border bg-white ${colorClasses}`}
         style={{
-          left: `${lineLeft - 7}px`,
-          top: `${y - 7}px`,
+          left: `${lineLeft}px`,
+          top: `${y}px`,
           width: "14px",
-          height: "14px"
+          height: "14px",
+          transform: "translate(-50%, -50%)"
         }}
       />
       <div
         className={`absolute rounded-full border bg-white ${colorClasses}`}
         style={{
-          left: `${lineLeft + lineWidth - 7}px`,
-          top: `${y - 7}px`,
+          left: `${lineRight}px`,
+          top: `${y}px`,
           width: "14px",
-          height: "14px"
+          height: "14px",
+          transform: "translate(-50%, -50%)"
         }}
       />
     </>

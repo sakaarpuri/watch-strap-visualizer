@@ -630,6 +630,7 @@ export default function Home() {
     () => Boolean(partA && partB && activeStrapASrc && activeStrapBSrc),
     [partA, partB, activeStrapASrc, activeStrapBSrc]
   );
+  const canShowLiveLugGuides = showLugGuides && !lockView && firstRenderedStrapRef.current;
   const canShowWatchOnlyPreview = hasUserUpload && !canRender;
   const previewStageTitle = canRender
     ? "3. Live Preview"
@@ -1593,7 +1594,7 @@ export default function Home() {
                   watchScale={dialScale}
                   sceneZoom={sceneZoom}
                   locked={lockView}
-                  showLugGuides={showLugGuides && !lockView}
+                  showLugGuides={canShowLiveLugGuides}
                   lugGuideOverrides={lugGuideOverrides}
                   onLugGuidesChange={handleLugGuidesChange}
                   showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
@@ -2128,6 +2129,7 @@ function WatchOnlyPreview({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
+  const [shouldBlinkGuides, setShouldBlinkGuides] = useState(false);
   const dragRef = useRef<{
     pointerId: number;
     guide: "top" | "bottom";
@@ -2266,6 +2268,12 @@ function WatchOnlyPreview({
     };
   }, [watchSrc, watchScale]);
 
+  useEffect(() => {
+    setShouldBlinkGuides(true);
+    const timeout = window.setTimeout(() => setShouldBlinkGuides(false), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [watchSrc]);
+
   return (
     <div className={highlighted ? "preview-attention-ring rounded-[1.75rem]" : ""}>
       <div
@@ -2289,7 +2297,9 @@ function WatchOnlyPreview({
               onPointerCancel={onGuidePointerEnd}
               style={{ touchAction: "none" }}
             />
-            {showLugGuides && effectiveLugGuides ? <WatchOnlyLugGuideOverlay guides={effectiveLugGuides} /> : null}
+            {showLugGuides && effectiveLugGuides ? (
+              <WatchOnlyLugGuideOverlay guides={effectiveLugGuides} blink={shouldBlinkGuides} />
+            ) : null}
           </div>
           {showLugGuides && showGuideOnboarding && effectiveLugGuides ? (
             <WatchOnlyLugGuideCoachmark onDismiss={onDismissGuideOnboarding} />
@@ -2323,7 +2333,13 @@ function WatchOnlyPreview({
   );
 }
 
-function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
+function WatchOnlyLugGuideOverlay({
+  guides,
+  blink
+}: {
+  guides: PreviewLugGuides;
+  blink: boolean;
+}) {
   const topLeft = ((guides.centerX - guides.topWidth / 2) / CANVAS_SIZE) * 100;
   const topWidth = (guides.topWidth / CANVAS_SIZE) * 100;
   const topY = (guides.topY / CANVAS_SIZE) * 100;
@@ -2331,15 +2347,17 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
   const bottomWidth = (guides.bottomWidth / CANVAS_SIZE) * 100;
   const bottomY = (guides.bottomY / CANVAS_SIZE) * 100;
   const lineStyle = (left: number, top: number, width: number) => ({
-    left: `calc(${left}% - 1px)`,
-    top: `calc(${top}% - 1px)`,
-    width: `calc(${width}% + 2px)`
+    left: `${left}%`,
+    top: `${top}%`,
+    width: `${width}%`,
+    transform: "translateY(-50%)"
   });
   const handleStyle = (left: number, top: number) => ({
-    left: `calc(${left}% - 7px)`,
-    top: `calc(${top}% - 7px)`,
+    left: `${left}%`,
+    top: `${top}%`,
     width: "14px",
-    height: "14px"
+    height: "14px",
+    transform: "translate(-50%, -50%)"
   });
 
   return (
@@ -2352,13 +2370,13 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
         className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
         style={handleStyle(topLeft, topY)}
       >
-        <span className="absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70 animate-ping" />
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
         className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
         style={handleStyle(topLeft + topWidth, topY)}
       >
-        <span className="absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70 animate-ping" />
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
         className="absolute h-[2px] rounded-full bg-[#d7c1a3]"
@@ -2368,13 +2386,13 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
         className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
         style={handleStyle(bottomLeft, bottomY)}
       >
-        <span className="absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70 animate-ping" />
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
         className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
         style={handleStyle(bottomLeft + bottomWidth, bottomY)}
       >
-        <span className="absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70 animate-ping" />
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
     </div>
   );
