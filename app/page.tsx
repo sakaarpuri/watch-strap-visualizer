@@ -1327,7 +1327,13 @@ export default function Home() {
         }}
       />
 
-      <section className="mt-10 grid gap-5 xl:mt-20 xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem] xl:items-start">
+      <section
+        className={`mt-10 grid gap-5 xl:mt-20 xl:items-start ${
+          hasUserUpload
+            ? "xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem]"
+            : "xl:grid-cols-[18.5rem_minmax(0,1fr)]"
+        }`}
+      >
         <aside className="order-2 space-y-3 xl:order-1 xl:pt-14">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
@@ -1507,7 +1513,10 @@ export default function Home() {
           </div>
         </aside>
 
-        <section ref={previewSectionRef} className="order-1 min-w-0 space-y-4 xl:order-2">
+        <section
+          ref={previewSectionRef}
+          className={`order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14"}`}
+        >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               {previewStageTitle ? (
@@ -1825,35 +1834,37 @@ export default function Home() {
           </div>
         </section>
 
-        <aside className="order-3 xl:order-3 xl:pt-14">
-          <FitBenchPanel
-            canRender={canRender}
-            showFitBench={showFitBench}
-            onToggleFitBench={() => setShowFitBench((prev) => !prev)}
-            fitConfidence={fitConfidence}
-            showLugGuides={showLugGuides}
-            onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
-            onResetFit={() => void autoAlignStraps()}
-            isAutoAligning={isAutoAligning}
-            strapGap={strapGap}
-            setGapHalf={setGapHalf}
-            lockView={lockView}
-            showControlCoachmark={showControlCoachmark}
-            strapSizeUi={strapSizeUi}
-            setStrapScale={setStrapScale}
-            dismissControlCoachmark={dismissControlCoachmark}
-            dialScale={dialScale}
-            setDialScaleValue={setDialScaleValue}
-            sceneZoom={sceneZoom}
-            setSceneZoomValue={setSceneZoomValue}
-            onToggleLockView={toggleLockView}
-            preserveSettings={preserveSettings}
-            setPreserveSettings={setPreserveSettings}
-            reCropCurrentWatch={reCropCurrentWatch}
-            onChangeWatch={() => changeWatchInputRef.current?.click()}
-            hasUserUpload={hasUserUpload}
-          />
-        </aside>
+        {hasUserUpload ? (
+          <aside className="order-3 xl:order-3 xl:pt-14">
+            <FitBenchPanel
+              canRender={canRender}
+              showFitBench={showFitBench}
+              onToggleFitBench={() => setShowFitBench((prev) => !prev)}
+              fitConfidence={fitConfidence}
+              showLugGuides={showLugGuides}
+              onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
+              onResetFit={() => void autoAlignStraps()}
+              isAutoAligning={isAutoAligning}
+              strapGap={strapGap}
+              setGapHalf={setGapHalf}
+              lockView={lockView}
+              showControlCoachmark={showControlCoachmark}
+              strapSizeUi={strapSizeUi}
+              setStrapScale={setStrapScale}
+              dismissControlCoachmark={dismissControlCoachmark}
+              dialScale={dialScale}
+              setDialScaleValue={setDialScaleValue}
+              sceneZoom={sceneZoom}
+              setSceneZoomValue={setSceneZoomValue}
+              onToggleLockView={toggleLockView}
+              preserveSettings={preserveSettings}
+              setPreserveSettings={setPreserveSettings}
+              reCropCurrentWatch={reCropCurrentWatch}
+              onChangeWatch={() => changeWatchInputRef.current?.click()}
+              hasUserUpload={hasUserUpload}
+            />
+          </aside>
+        ) : null}
       </section>
     </main>
   );
@@ -1956,7 +1967,7 @@ function PreviewUploadStage({
           className="absolute bottom-8 right-8 hidden h-56 w-24 rotate-[11deg] object-contain opacity-[0.05] lg:block"
         />
       </div>
-      <div className="relative rounded-[1.7rem] border border-line bg-[linear-gradient(180deg,rgba(255,220,182,0.96),rgba(247,233,214,0.88))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7">
+      <div className="relative rounded-[1.7rem] border border-line bg-[radial-gradient(circle_at_92%_88%,rgba(240,145,36,0.42),rgba(245,189,116,0.24)_18%,rgba(249,229,203,0.12)_38%,rgba(255,252,248,0.02)_62%),linear-gradient(180deg,rgba(255,252,248,0.97),rgba(247,233,214,0.88))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7">
         <div className="mx-auto max-w-[34rem]">
           <ImageUploader
             id="watch-stage"
