@@ -1298,7 +1298,7 @@ export default function Home() {
         <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
           Watchstrapper
         </p>
-        <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[2rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[3.15rem]">
+        <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[1.4rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[2.2rem]">
           See any strap on your watch before you buy.
         </h1>
       </header>
