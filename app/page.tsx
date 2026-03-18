@@ -1328,7 +1328,7 @@ export default function Home() {
       />
 
       <section className="mt-10 grid gap-5 xl:mt-20 xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem] xl:items-start">
-        <aside className="order-2 space-y-3 xl:order-1 xl:pt-14">
+        <aside className="order-2 space-y-3 xl:order-1">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -1832,7 +1832,7 @@ export default function Home() {
           </div>
         </section>
 
-        <aside className="order-3 xl:order-3 xl:pt-14">
+        <aside className="order-3 xl:order-3">
           <FitBenchPanel
             canRender={canRender}
             showFitBench={showFitBench}
