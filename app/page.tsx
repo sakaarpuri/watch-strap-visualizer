@@ -1964,7 +1964,12 @@ function PreviewUploadStage({
     <div className={`relative overflow-hidden rounded-[1.75rem] ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
       <div className="pointer-events-none absolute inset-0 opacity-60">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/mock-dial.svg" alt="" aria-hidden="true" className="absolute left-1/2 top-1/2 h-[62%] -translate-x-1/2 -translate-y-1/2 opacity-[0.07]" />
+        <img
+          src="/upload-watch-head-silhouette.svg"
+          alt=""
+          aria-hidden="true"
+          className="absolute left-1/2 top-1/2 h-[66%] -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"
+        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/strap-selection-kie/cognac-grain-leather-buckle.png"
