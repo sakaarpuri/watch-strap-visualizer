@@ -1278,8 +1278,8 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[380px,1fr]">
-        <aside className={`space-y-5 transition ${hasUserUpload ? "opacity-100" : "opacity-85"}`}>
+      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
+        <aside className={`space-y-5 transition lg:order-2 ${hasUserUpload ? "opacity-100" : "opacity-85"}`}>
           <div className="glass-card rounded-2xl p-4 sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -1535,7 +1535,7 @@ export default function Home() {
           </div>
         </aside>
 
-        <section ref={previewSectionRef} className="min-w-0">
+        <section ref={previewSectionRef} className="min-w-0 lg:order-1">
           <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
             {previewStageTitle}
           </h2>
@@ -2037,17 +2037,8 @@ function PreviewUploadStage({
           backdropFilter: "blur(8px)"
         }}
       >
-        <div className="rounded-xl border border-line bg-canvas p-4 sm:p-6">
-          <div className="mx-auto max-w-[34rem] text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Start Here</p>
-            <h3 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-[2.35rem]">
-              1. Upload your watch first
-            </h3>
-            <p className="mt-2 text-base leading-7 text-muted">
-              Front-on, straight shots work best. Retailer screenshots are the easy mode.
-            </p>
-          </div>
-          <div className="mx-auto mt-6 max-w-[30rem]">
+        <div className="rounded-xl border border-line bg-canvas p-5 sm:p-6">
+          <div className="mx-auto max-w-[30rem]">
             <ImageUploader
               id="watch-stage"
               label=""
@@ -2056,7 +2047,8 @@ function PreviewUploadStage({
               onFileSelect={onFileSelect}
               className="w-full"
             />
-            <div className="mt-3 flex justify-center">
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <p className="text-sm text-muted">Front-on, straight shots work best.</p>
               <button
                 type="button"
                 onClick={onToggleUploadGuide}
