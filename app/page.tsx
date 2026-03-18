@@ -178,6 +178,14 @@ const getStrapSortScore = (strap: StrapVariant) => {
   return priorityIndex === -1 ? BOUTIQUE_PRIORITY.length : priorityIndex;
 };
 
+const ALL_CATEGORY_PRIORITY: StrapCategory[] = [
+  "Fabric",
+  "Leather",
+  "Rubber",
+  "Metal",
+  "Women"
+];
+
 const fileFromSrc = async (src: string, filename: string) => {
   const response = await fetch(src);
   const blob = await response.blob();
@@ -604,6 +612,11 @@ export default function Home() {
   const strapsInCategory = useMemo(() => {
     const straps = [...getStrapsForCategory(category)];
     return straps.sort((a, b) => {
+      if (category === "All categories") {
+        const categoryDiff =
+          ALL_CATEGORY_PRIORITY.indexOf(a.category) - ALL_CATEGORY_PRIORITY.indexOf(b.category);
+        if (categoryDiff !== 0) return categoryDiff;
+      }
       const scoreDiff = getStrapSortScore(a) - getStrapSortScore(b);
       if (scoreDiff !== 0) return scoreDiff;
       return a.label.localeCompare(b.label);
