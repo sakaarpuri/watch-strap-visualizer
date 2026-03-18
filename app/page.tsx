@@ -1650,7 +1650,7 @@ export default function Home() {
                   subtitle="from messy backgrounds"
                   disabled={!hasUserUpload}
                   loading={aiTools.cleanup.loading}
-                  sampleImageSrc="/strap-selection-kie/cognac-grain-leather-buckle.png"
+                  sampleImageSrc="/bench-details/extract-watch.jpg"
                   note="Best on clean, front-on retailer or wrist shots with visible lugs."
                   onClick={() => void runCleanupFallback()}
                 />
@@ -1752,7 +1752,7 @@ export default function Home() {
                 <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <MaterialInset src="/catalogue-mockup-sample.png" label="Catalogue sample" fit="cover" />
-                    <MaterialInset src="/sample-watch.svg" label="Watch profile" fit="contain" />
+                    <MaterialInset src="/bench-details/extract-watch.jpg" label="Watch profile" fit="cover" />
                   </div>
                   <p className="mt-3 text-sm text-slate-500">
                     Shopping links stay tucked away until the fit is locked in.
@@ -2021,8 +2021,8 @@ function MaterialInset({
 function StudioReferenceStrip() {
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-3">
-      <MaterialInset src="/strap-selection-kie/cognac-grain-leather-buckle.png" label="Leather grain" fit="contain" />
-      <MaterialInset src="/strap-selection-kie/black-grain-leather-buckle.png" label="Hardware tone" fit="contain" />
+      <MaterialInset src="/bench-details/leather-grain.jpg" label="Leather grain" fit="cover" />
+      <MaterialInset src="/bench-details/hardware-tone.jpg" label="Hardware tone" fit="cover" />
       <MaterialInset src="/catalogue-mockup-sample.png" label="Studio output" fit="cover" />
     </div>
   );
