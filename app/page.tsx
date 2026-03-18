@@ -1403,13 +1403,6 @@ export default function Home() {
                   })}
                 </div>
 
-                <div className="mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-muted">On Deck</p>
-                  <p className="mt-2 text-lg font-semibold leading-tight text-ink">
-                    {hasSelectedLibraryStrap ? currentStrap.label : "Pick a strap to preview next"}
-                  </p>
-                </div>
-
                 <div className="mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
                     {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
