@@ -1956,7 +1956,7 @@ function PreviewUploadStage({
           className="absolute bottom-8 right-8 hidden h-56 w-24 rotate-[11deg] object-contain opacity-[0.05] lg:block"
         />
       </div>
-      <div className="relative rounded-[1.7rem] border border-line bg-[linear-gradient(180deg,rgba(255,247,238,0.97),rgba(244,224,198,0.9))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7">
+      <div className="relative rounded-[1.7rem] border border-line bg-[linear-gradient(180deg,rgba(255,220,182,0.96),rgba(247,233,214,0.88))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7">
         <div className="mx-auto max-w-[34rem]">
           <ImageUploader
             id="watch-stage"
