@@ -18,6 +18,8 @@ import {
   PartTransform,
   PreviewLugGuideOverrides,
   PreviewLugGuides,
+  renderStrapOverlay,
+  renderWatchOnlyComposition,
   StrapStyle,
   renderComposition
 } from "@/lib/compose";
@@ -101,11 +103,16 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     },
     ref
   ) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const watchCanvasRef = useRef<HTMLCanvasElement>(null);
+    const strapCanvasRef = useRef<HTMLCanvasElement>(null);
     const [error, setError] = useState<string>("");
     const [isTicking, setIsTicking] = useState(false);
     const [cursor, setCursor] = useState<CSSProperties["cursor"]>("grab");
     const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
+    const [strapTransition, setStrapTransition] = useState<{
+      direction: 1 | -1;
+      previousSrc: string;
+    } | null>(null);
     const lugDragRef = useRef<{
       pointerId: number;
       guide: "top" | "bottom";
@@ -138,20 +145,21 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       let active = true;
 
       const draw = async () => {
-        if (!canvasRef.current || !watchSrc || !strapASrc || !strapBSrc) return;
+        if (!watchCanvasRef.current || !strapCanvasRef.current || !watchSrc || !strapASrc || !strapBSrc) return;
         try {
-          await renderComposition(
-            canvasRef.current,
-            watchSrc,
-            strapASrc,
-            strapBSrc,
-            partA,
-            partB,
-            style,
-            joinShape,
-            watchScale,
-            sceneZoom
-          );
+          await Promise.all([
+            renderWatchOnlyComposition(watchCanvasRef.current, watchSrc, watchScale, sceneZoom),
+            renderStrapOverlay(
+              strapCanvasRef.current,
+              strapASrc,
+              strapBSrc,
+              partA,
+              partB,
+              style,
+              joinShape,
+              sceneZoom
+            )
+          ]);
           if (active) setError("");
         } catch {
           if (active) setError("Could not render preview. Please try different images.");
@@ -163,6 +171,12 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
         active = false;
       };
     }, [watchSrc, strapASrc, strapBSrc, partA, partB, style, joinShape, watchScale, sceneZoom]);
+
+    useEffect(() => {
+      if (!strapTransition) return undefined;
+      const timeout = window.setTimeout(() => setStrapTransition(null), 240);
+      return () => window.clearTimeout(timeout);
+    }, [strapTransition]);
 
     useEffect(() => {
       let active = true;
@@ -218,27 +232,50 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 
     useImperativeHandle(ref, () => ({
       downloadAsPng: () => {
-        if (!canvasRef.current) return;
-        const url = canvasRef.current.toDataURL("image/png");
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        anchor.download = "watch-strap-preview.png";
-        anchor.click();
+        const exportCanvas = document.createElement("canvas");
+        void renderComposition(
+          exportCanvas,
+          watchSrc,
+          strapASrc,
+          strapBSrc,
+          partA,
+          partB,
+          style,
+          joinShape,
+          watchScale,
+          sceneZoom
+        ).then(() => {
+          const url = exportCanvas.toDataURL("image/png");
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = "watch-strap-preview.png";
+          anchor.click();
+        });
       },
       getPngBlob: () =>
         new Promise((resolve) => {
-          if (!canvasRef.current) {
-            resolve(null);
-            return;
-          }
-          canvasRef.current.toBlob((blob) => resolve(blob), "image/png");
+          const exportCanvas = document.createElement("canvas");
+          void renderComposition(
+            exportCanvas,
+            watchSrc,
+            strapASrc,
+            strapBSrc,
+            partA,
+            partB,
+            style,
+            joinShape,
+            watchScale,
+            sceneZoom
+          ).then(() => {
+            exportCanvas.toBlob((blob) => resolve(blob), "image/png");
+          });
         })
     }));
 
     const getCanvasPoint = (
       event: PointerEvent<HTMLCanvasElement>
     ): { x: number; y: number } | null => {
-      const canvas = canvasRef.current;
+      const canvas = strapCanvasRef.current;
       if (!canvas) return null;
 
       const rect = canvas.getBoundingClientRect();
@@ -251,7 +288,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 
     const onPointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
       const canvasPoint = getCanvasPoint(event);
-      if (!canvasPoint || !canvasRef.current) return;
+      if (!canvasPoint || !strapCanvasRef.current) return;
       if (locked) return;
 
       if (showLugGuides && effectiveLugGuides && onLugGuidesChange) {
@@ -270,7 +307,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             initialBottomWidth: effectiveLugGuides.bottomWidth
           };
           setCursor(hitGuide.mode === "move" ? "move" : "ew-resize");
-          canvasRef.current.setPointerCapture(event.pointerId);
+          strapCanvasRef.current.setPointerCapture(event.pointerId);
           return;
         }
       }
@@ -324,7 +361,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
         startScaleA: partA.scale,
         startScaleB: partB.scale
       };
-      canvasRef.current.setPointerCapture(event.pointerId);
+      strapCanvasRef.current.setPointerCapture(event.pointerId);
     };
 
     const onPointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
@@ -412,13 +449,13 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const endDrag = (event: PointerEvent<HTMLCanvasElement>) => {
       if (lugDragRef.current?.pointerId === event.pointerId) {
         lugDragRef.current = null;
-        canvasRef.current?.releasePointerCapture(event.pointerId);
+        strapCanvasRef.current?.releasePointerCapture(event.pointerId);
         setCursor("grab");
         return;
       }
       if (dragStateRef.current?.pointerId !== event.pointerId) return;
       dragStateRef.current = null;
-      canvasRef.current?.releasePointerCapture(event.pointerId);
+      strapCanvasRef.current?.releasePointerCapture(event.pointerId);
       setCursor("grab");
     };
 
@@ -442,6 +479,10 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
                 onClick={() => {
                   setIsTicking(true);
                   window.setTimeout(() => setIsTicking(false), 90);
+                  const previousSrc = strapCanvasRef.current?.toDataURL("image/png");
+                  if (previousSrc) {
+                    setStrapTransition({ direction: -1, previousSrc });
+                  }
                   onCycleStrap(-1);
                 }}
                 disabled={locked}
@@ -451,17 +492,43 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
                 ←
               </button>
             ) : null}
-            <canvas
-              ref={canvasRef}
-              data-testid="preview-canvas"
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={endDrag}
-              onPointerCancel={endDrag}
-            className="aspect-square w-full rounded-xl border border-line bg-canvas"
-            style={{ touchAction: "none", cursor: locked ? "default" : cursor }}
-            aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
-          />
+            <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-line bg-canvas">
+              <canvas
+                ref={watchCanvasRef}
+                className="absolute inset-0 h-full w-full bg-canvas"
+                aria-hidden="true"
+              />
+              <canvas
+                ref={strapCanvasRef}
+                data-testid="preview-canvas"
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endDrag}
+                onPointerCancel={endDrag}
+                className={`absolute inset-0 h-full w-full bg-transparent ${
+                  strapTransition
+                    ? strapTransition.direction === 1
+                      ? "strap-layer-enter-right"
+                      : "strap-layer-enter-left"
+                    : ""
+                }`}
+                style={{ touchAction: "none", cursor: locked ? "default" : cursor }}
+                aria-label="Preview canvas. Drag strap body to move. Drag strap edges to resize."
+              />
+              {strapTransition ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={strapTransition.previousSrc}
+                  alt=""
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-0 h-full w-full ${
+                    strapTransition.direction === 1
+                      ? "strap-layer-exit-right"
+                      : "strap-layer-exit-left"
+                  }`}
+                />
+              ) : null}
+            </div>
             {showLugGuides && effectiveLugGuides ? (
               <LugGuideOverlay guides={effectiveLugGuides} sceneZoom={sceneZoom} />
             ) : null}
@@ -471,6 +538,10 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
                 onClick={() => {
                   setIsTicking(true);
                   window.setTimeout(() => setIsTicking(false), 90);
+                  const previousSrc = strapCanvasRef.current?.toDataURL("image/png");
+                  if (previousSrc) {
+                    setStrapTransition({ direction: 1, previousSrc });
+                  }
                   onCycleStrap(1);
                 }}
                 disabled={locked}
@@ -585,8 +656,8 @@ function LugGuideOverlay({
         tone="cyan"
       />
       {!confident ? (
-        <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-amber-200 bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
-          Auto-fit is using estimated lug guides. Fine-tune if needed.
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-amber-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          Auto-fit is reading estimated lug positions.
         </div>
       ) : null}
     </div>
@@ -614,12 +685,13 @@ function GuideLine({
   return (
     <>
       <div
-        className={`absolute -translate-x-1/2 rounded-full border ${colorClasses}`}
+        className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${colorClasses}`}
         style={{
           left: `${centerX}px`,
-          top: `${y - 1}px`,
+          top: `${y}px`,
           width: `${Math.max(32, width)}px`,
-          height: "2px"
+          height: "2px",
+          borderWidth: 0
         }}
       />
       <div

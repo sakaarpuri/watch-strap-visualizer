@@ -738,6 +738,37 @@ export const renderComposition = async (
   ctx.restore();
 };
 
+export const renderStrapOverlay = async (
+  canvas: HTMLCanvasElement,
+  strapASrc: string,
+  strapBSrc: string,
+  transformA: PartTransform,
+  transformB: PartTransform,
+  style: StrapStyle,
+  joinShape: JoinShape = "flat",
+  sceneZoom = 1
+) => {
+  const [partA, partB] = await Promise.all([
+    loadStrapImage(strapASrc),
+    loadStrapImage(strapBSrc)
+  ]);
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  canvas.width = CANVAS_SIZE;
+  canvas.height = CANVAS_SIZE;
+  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  ctx.save();
+  ctx.translate(CANVAS_SIZE / 2, CANVAS_SIZE / 2);
+  ctx.scale(sceneZoom, sceneZoom);
+  ctx.translate(-CANVAS_SIZE / 2, -CANVAS_SIZE / 2);
+  drawPart(ctx, partA, transformA, style, "bottom", joinShape);
+  drawPart(ctx, partB, transformB, style, "top", joinShape);
+  ctx.restore();
+};
+
 export const renderWatchOnlyComposition = async (
   canvas: HTMLCanvasElement,
   watchSrc: string,
