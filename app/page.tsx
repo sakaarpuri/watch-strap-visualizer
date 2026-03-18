@@ -1630,6 +1630,20 @@ export default function Home() {
           </div>
 
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                  Materials
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  Bench references for texture and hardware finish.
+                </p>
+              </div>
+            </div>
+            <MaterialsStrip />
+          </div>
+
+          <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
@@ -1642,7 +1656,6 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
-            <StudioReferenceStrip />
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
               <div className="space-y-2">
                 <ToolButton
@@ -2018,12 +2031,11 @@ function MaterialInset({
   );
 }
 
-function StudioReferenceStrip() {
+function MaterialsStrip() {
   return (
-    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+    <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <MaterialInset src="/bench-details/leather-grain.jpg" label="Leather grain" fit="cover" />
       <MaterialInset src="/bench-details/hardware-tone.jpg" label="Hardware tone" fit="cover" />
-      <MaterialInset src="/catalogue-mockup-sample.png" label="Studio output" fit="cover" />
     </div>
   );
 }
