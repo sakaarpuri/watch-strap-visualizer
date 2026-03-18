@@ -30,7 +30,7 @@ const STRAP_SCALE_MIN = 5;
 const STRAP_SCALE_MAX = 260;
 const DIAL_SCALE_MIN = 0.7;
 const DIAL_SCALE_MAX = 1.8;
-const DEFAULT_WATCH_PREVIEW_SCALE = 0.88;
+const DEFAULT_WATCH_PREVIEW_SCALE = 0.78;
 const DEFAULT_SCENE_ZOOM = 0.75;
 const DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.28;
 const strapScaleToUi = (scale: number) => {
@@ -650,14 +650,14 @@ export default function Home() {
       ? "1. Crop your watch"
       : canShowWatchOnlyPreview
         ? "1. Watch head view"
-        : "1. Upload your watch first";
+        : "";
   const previewStageHint = canRender
     ? "Your strap is on the bench. Lock the fit, save the view, or open the bench if you want to refine."
     : cropSourceUrl
       ? "Frame the watch in this same stage, then apply the crop."
       : canShowWatchOnlyPreview
         ? "Your watch is ready. Line up the lug guides if needed, then pick a strap."
-        : "Upload a watch photo when you are ready. The drawer is open for browsing from the start.";
+        : "";
 
   const triggerDrawerReveal = () => {
     setAnimateDrawerReveal(false);
@@ -1333,7 +1333,7 @@ export default function Home() {
         }}
       />
 
-      <section className="grid gap-5 xl:grid-cols-[17rem_minmax(0,1fr)] xl:items-start">
+      <section className="grid gap-5 xl:grid-cols-[17.75rem_minmax(0,1fr)] xl:items-start">
         <aside className="order-2 space-y-3 xl:order-1">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
@@ -1344,23 +1344,12 @@ export default function Home() {
                 <p className="mt-2 text-[1.55rem] font-serif leading-none text-[#2b241d]">
                   Browse the strap box
                 </p>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  {hasUserUpload
-                    ? hasSelectedLibraryStrap
-                      ? "Your watch is loaded. Now start auditioning straps."
-                      : "Your watch is loaded. Pick a strap from the drawer to start the preview."
-                    : "Browse first, then upload a watch when you are ready to preview the fit."}
-                </p>
               </div>
               {hasUserUpload ? (
                 <span className="atelier-accent-soft rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
                   Ready
                 </span>
-              ) : (
-                <span className="rounded-full border border-line bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-                  Waiting for your watch
-                </span>
-              )}
+              ) : null}
             </div>
             <div className="mt-4 inline-flex rounded-full border border-line bg-canvas p-1">
               {[
@@ -1534,12 +1523,16 @@ export default function Home() {
         <section ref={previewSectionRef} className="order-1 min-w-0 space-y-4 xl:order-2">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-[#7c7165]">
-                {previewStageTitle.replace(/^\d+\.\s*/, "")}
-              </p>
-              <p className="mt-2 max-w-[34rem] text-sm leading-6 text-muted">
-                {previewStageHint}
-              </p>
+              {previewStageTitle ? (
+                <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-[#7c7165]">
+                  {previewStageTitle.replace(/^\d+\.\s*/, "")}
+                </p>
+              ) : null}
+              {previewStageHint ? (
+                <p className={`${previewStageTitle ? "mt-2" : ""} max-w-[34rem] text-sm leading-6 text-muted`}>
+                  {previewStageHint}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
               {hasUserUpload ? (
@@ -2051,7 +2044,7 @@ function StrapDrawerButton({
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`drawer-card flex w-full items-center gap-3 rounded-[1.3rem] border px-3 py-3 text-left transition ${
+      className={`drawer-card flex w-full items-center gap-2.5 rounded-[1.3rem] border px-3 py-3 text-left transition ${
         active
           ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -2060,7 +2053,7 @@ function StrapDrawerButton({
       aria-pressed={active}
     >
       <div
-        className={`grid h-[116px] w-[128px] shrink-0 grid-cols-2 items-center gap-1 overflow-hidden rounded-[1.05rem] border px-1 ${
+        className={`grid h-[112px] w-[106px] shrink-0 grid-cols-2 items-center gap-0 overflow-hidden rounded-[1.05rem] border px-0 ${
           active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
         }`}
       >
@@ -2068,19 +2061,19 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full scale-[1.4] object-contain"
+          className="h-full w-full scale-[1.95] object-contain"
           loading="lazy"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full scale-[1.4] object-contain"
+          className="h-full w-full scale-[1.95] object-contain"
           loading="lazy"
         />
       </div>
-      <div className="min-w-0 max-w-[7.75rem] flex-1">
-        <p className="line-clamp-2 text-[15px] font-semibold leading-tight sm:text-[15px]">{strap.label}</p>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-4 text-[13px] font-semibold leading-tight sm:text-[13px]">{strap.label}</p>
         {showCategory ? (
           <p
             className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] ${
@@ -2606,13 +2599,13 @@ function FitBenchPanel({
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
             Fit Bench
           </p>
-          <p className="mt-2 max-w-[38rem] text-sm leading-6 text-[#5f5143]">
-            {canRender
-              ? fitConfidence >= 0.65
+          {canRender ? (
+            <p className="mt-2 max-w-[38rem] text-sm leading-6 text-[#5f5143]">
+              {fitConfidence >= 0.65
                 ? "Auto-fit has done the main placement. Open the bench if you want to refine the last details."
-                : "This pairing is close. Open the bench to refine size, gap, or framing."
-              : "The fit bench stays tucked away until a watch and strap are on the stage."}
-          </p>
+                : "This pairing is close. Open the bench to refine size, gap, or framing."}
+            </p>
+          ) : null}
         </div>
         <button
           type="button"
@@ -2624,8 +2617,8 @@ function FitBenchPanel({
       </div>
 
       {showFitBench && canRender ? (
-        <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(16rem,0.75fr)]">
-          <div className="grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(15rem,0.72fr)]">
+          <div className="grid gap-3 md:grid-cols-2">
             <div className="relative">
               <SliderControl
                 label="Strap Gap"
@@ -2679,7 +2672,7 @@ function FitBenchPanel({
             />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -2758,14 +2751,10 @@ function FitBenchPanel({
           </div>
         </div>
       ) : canRender ? (
-        <div className="mt-4 rounded-[1.35rem] border border-[#ddccb3] bg-white/60 p-4">
+        <div className="mt-3 rounded-[1.2rem] border border-[#ddccb3] bg-white/60 px-4 py-3">
           <p className="text-sm font-semibold text-ink">Fit bench is tucked away until you need it.</p>
         </div>
-      ) : (
-        <div className="mt-4 rounded-[1.35rem] border border-[#ddccb3] bg-white/55 p-4">
-          <p className="text-sm text-muted">Upload a watch and load a strap to unlock fit controls.</p>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -2811,10 +2800,10 @@ function SliderControl({
   };
 
   return (
-    <div className={`neo-control rounded-2xl p-4 transition ${highlighted ? "ring-2 ring-[#ead8c0]/90 shadow-[0_0_0_1px_rgba(215,193,163,0.32),0_14px_28px_rgba(155,106,47,0.08)]" : ""}`}>
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-lg font-semibold text-ink">{label}</span>
-        {displayValue ? <span className="text-sm text-muted">{displayValue}</span> : null}
+    <div className={`neo-control rounded-[1.15rem] p-3 transition ${highlighted ? "ring-2 ring-[#ead8c0]/90 shadow-[0_0_0_1px_rgba(215,193,163,0.32),0_10px_22px_rgba(155,106,47,0.08)]" : ""}`}>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-[15px] font-semibold text-ink">{label}</span>
+        {displayValue ? <span className="text-xs text-muted">{displayValue}</span> : null}
       </div>
       <input
         type="range"
@@ -2828,12 +2817,12 @@ function SliderControl({
         disabled={disabled}
         aria-label={label}
       />
-      <div className="range-ticks mt-3" aria-hidden="true">
+      <div className="range-ticks mt-2" aria-hidden="true">
         {Array.from({ length: 9 }).map((_, index) => (
           <span key={index} />
         ))}
       </div>
-      {hint ? <p className="mt-3 text-xs font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
+      {hint ? <p className="mt-2 text-[11px] font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -2850,25 +2839,25 @@ function ToggleControl({
   onToggle: () => void;
 }) {
   return (
-    <div className="neo-control rounded-2xl p-4">
+    <div className="neo-control rounded-[1.15rem] p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-lg font-semibold text-ink">{label}</p>
-          <p className="text-sm text-muted">{description}</p>
+          <p className="text-[15px] font-semibold text-ink">{label}</p>
+          <p className="text-xs text-muted">{description}</p>
         </div>
         <button
           type="button"
           onClick={onToggle}
           aria-pressed={enabled}
-          className={`relative h-12 w-20 shrink-0 overflow-hidden rounded-full border transition ${
+          className={`relative h-9 w-16 shrink-0 overflow-hidden rounded-full border transition ${
             enabled
               ? "border-[#d7c1a3] bg-gradient-to-r from-[#f7e7cf] to-[#edd0aa]"
               : "border-line bg-canvas shadow-[inset_2px_2px_8px_rgba(56,44,32,0.08),inset_-4px_-4px_12px_rgba(255,255,255,0.48)]"
           }`}
         >
           <span
-            className={`absolute left-1 top-1 h-9 w-9 rounded-full bg-white shadow-[0_10px_18px_rgba(15,23,42,0.18)] transition-transform ${
-              enabled ? "translate-x-9" : "translate-x-0"
+            className={`absolute left-1 top-1 h-7 w-7 rounded-full bg-white shadow-[0_8px_14px_rgba(15,23,42,0.18)] transition-transform ${
+              enabled ? "translate-x-7" : "translate-x-0"
             }`}
           />
         </button>
