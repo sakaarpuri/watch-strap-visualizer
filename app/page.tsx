@@ -1764,8 +1764,16 @@ export default function Home() {
               ) : (
                 <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <MaterialInset src="/catalogue-mockup-sample.png" label="Catalogue sample" fit="cover" />
-                    <MaterialInset src="/bench-details/extract-watch.jpg" label="Watch profile" fit="cover" />
+                    <MaterialInset
+                      src="/strap-selection-kie/cognac-grain-leather-buckle.png"
+                      label="Leather strap sample"
+                      fit="contain"
+                    />
+                    <MaterialInset
+                      src="/strap-selection-kie/black-rubber-buckle.png"
+                      label="Rubber strap sample"
+                      fit="contain"
+                    />
                   </div>
                   <p className="mt-3 text-sm text-slate-500">
                     Shopping links stay tucked away until the fit is locked in.
@@ -2053,7 +2061,7 @@ function StrapDrawerButton({
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`drawer-card flex w-full items-center gap-2 rounded-[1.25rem] border px-2.5 py-2.5 text-left transition ${
+      className={`drawer-card flex w-full items-center gap-2 rounded-[1.25rem] border px-2 py-2 text-left transition ${
         active
           ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -2062,7 +2070,7 @@ function StrapDrawerButton({
       aria-pressed={active}
     >
       <div
-        className={`grid h-[118px] w-[132px] shrink-0 grid-cols-2 items-center gap-px overflow-hidden rounded-[1rem] border px-0 ${
+        className={`grid h-[124px] w-[148px] shrink-0 grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
           active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
         }`}
       >
@@ -2070,14 +2078,14 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full translate-x-[4px] scale-[2.2] object-contain"
+          className="h-full w-full translate-x-[8px] scale-[2.5] object-contain"
           loading="lazy"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full -translate-x-[4px] scale-[2.2] object-contain"
+          className="h-full w-full -translate-x-[8px] scale-[2.5] object-contain"
           loading="lazy"
         />
       </div>
