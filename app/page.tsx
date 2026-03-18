@@ -1515,7 +1515,7 @@ export default function Home() {
 
         <section
           ref={previewSectionRef}
-          className={`order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14"}`}
+          className={`order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
         >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
