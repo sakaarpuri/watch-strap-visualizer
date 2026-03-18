@@ -138,10 +138,6 @@ interface StrapThumbProps {
   onClick: () => void;
 }
 
-interface FeaturedStrapTeaserProps {
-  strap: StrapVariant;
-}
-
 interface UploadedSplitPart {
   file: File;
   url: string;
@@ -612,16 +608,6 @@ export default function Home() {
       return a.label.localeCompare(b.label);
     });
   }, [category]);
-  const featuredLibraryStraps = useMemo(() => {
-    const straps = [...getStrapsForCategory("All categories")];
-    return straps
-      .sort((a, b) => {
-        const scoreDiff = getStrapSortScore(a) - getStrapSortScore(b);
-        if (scoreDiff !== 0) return scoreDiff;
-        return a.label.localeCompare(b.label);
-      })
-      .slice(0, 3);
-  }, []);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
@@ -1330,8 +1316,8 @@ export default function Home() {
         }}
       />
 
-      <section className="mt-2 grid gap-5 xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem] xl:items-start">
-        <aside className="order-2 space-y-3 xl:order-1">
+      <section className="mt-10 grid gap-5 xl:mt-20 xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem] xl:items-start">
+        <aside className="order-2 space-y-3 xl:order-1 xl:pt-14">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -1624,7 +1610,6 @@ export default function Home() {
             ) : (
               <PreviewUploadStage
                 previewUrl={watchPreviewSrc}
-                featuredStraps={featuredLibraryStraps}
                 showUploadGuide={showUploadGuide}
                 highlightUploadGuide={highlightUploadGuide}
                 onToggleUploadGuide={() => setShowUploadGuide((prev) => !prev)}
@@ -1808,7 +1793,7 @@ export default function Home() {
           </div>
         </section>
 
-        <aside className="order-3 xl:order-3">
+        <aside className="order-3 xl:order-3 xl:pt-14">
           <FitBenchPanel
             canRender={canRender}
             showFitBench={showFitBench}
@@ -1904,33 +1889,8 @@ function ErrorText({ message }: { message: string }) {
   return <p className="text-xs text-rose-600">{message}</p>;
 }
 
-function FeaturedStrapTeaser({ strap }: FeaturedStrapTeaserProps) {
-  return (
-    <div className="rounded-2xl border border-line bg-white/88 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-      <div className="grid h-24 grid-cols-2 items-center gap-2 overflow-hidden rounded-[1rem] border border-line bg-slate-50 px-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={strap.strapASrc}
-          alt={`${strap.label} buckle side`}
-          className="h-full w-full scale-[1.45] object-contain"
-          loading="lazy"
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={strap.strapBSrc}
-          alt={`${strap.label} tail side`}
-          className="h-full w-full scale-[1.45] object-contain"
-          loading="lazy"
-        />
-      </div>
-      <p className="mt-2 line-clamp-2 text-sm font-semibold leading-tight text-ink">{strap.label}</p>
-    </div>
-  );
-}
-
 function PreviewUploadStage({
   previewUrl,
-  featuredStraps,
   showUploadGuide,
   highlightUploadGuide,
   onToggleUploadGuide,
@@ -1938,7 +1898,6 @@ function PreviewUploadStage({
   onFileSelect
 }: {
   previewUrl: string;
-  featuredStraps: StrapVariant[];
   showUploadGuide: boolean;
   highlightUploadGuide: boolean;
   onToggleUploadGuide: () => void;
@@ -1950,21 +1909,6 @@ function PreviewUploadStage({
       <div className="pointer-events-none absolute inset-0 opacity-60">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/mock-dial.svg" alt="" aria-hidden="true" className="absolute left-1/2 top-1/2 h-[62%] -translate-x-1/2 -translate-y-1/2 opacity-[0.07]" />
-        {featuredStraps.slice(0, 2).map((strap, index) => (
-          <div
-            key={strap.id}
-            className="absolute hidden lg:block"
-            style={{
-              top: index === 0 ? "12%" : "58%",
-              [index === 0 ? "left" : "right"]: "1.75rem",
-              transform: `rotate(${index === 0 ? -16 : 14}deg)`,
-              opacity: 0.12
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={strap.strapASrc} alt="" aria-hidden="true" className="h-44 w-24 object-contain" />
-          </div>
-        ))}
       </div>
       <div className="relative rounded-[1.7rem] border border-line bg-[linear-gradient(180deg,rgba(255,253,249,0.95),rgba(248,241,233,0.84))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7">
         <div className="mx-auto max-w-[34rem]">
@@ -1988,11 +1932,6 @@ function PreviewUploadStage({
               Photo Tips
               <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
             </button>
-          </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            {featuredStraps.map((strap) => (
-              <FeaturedStrapTeaser key={strap.id} strap={strap} />
-            ))}
           </div>
           {showUploadGuide ? (
             <div
