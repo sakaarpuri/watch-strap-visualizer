@@ -404,6 +404,30 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/mustard-suede-buckle.png`,
       strapBSrc: `${SEL}/mustard-suede-tail.png`,
       tint: ORIG_TINT
+    },
+    {
+      id: "leather-indian-paisley",
+      label: "Indian Paisley Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/indian-paisley-leather-buckle.png`,
+      strapBSrc: `${SEL}/indian-paisley-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-indian-mughal",
+      label: "Indian Mughal Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/indian-mughal-leather-buckle.png`,
+      strapBSrc: `${SEL}/indian-mughal-leather-tail.png`,
+      tint: ORIG_TINT
+    },
+    {
+      id: "leather-indian-block-print",
+      label: "Indian Block Print Leather",
+      category: "Leather",
+      strapASrc: `${SEL}/indian-block-print-leather-buckle.png`,
+      strapBSrc: `${SEL}/indian-block-print-leather-tail.png`,
+      tint: ORIG_TINT
     }
   ],
   Rubber: [
