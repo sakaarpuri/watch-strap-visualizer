@@ -146,33 +146,50 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
       return;
     }
 
-    const delta = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY;
     if (drag.corner === "nw") {
-      const nextSize = clamp(drag.cropSize - delta, MIN_CROP_SIZE, drag.cropSize + Math.min(drag.cropX, drag.cropY));
-      const sizeDelta = drag.cropSize - nextSize;
+      const right = drag.cropX + drag.cropSize;
+      const bottom = drag.cropY + drag.cropSize;
+      const nextSize = clamp(
+        Math.min(right - (drag.cropX + deltaX), bottom - (drag.cropY + deltaY)),
+        MIN_CROP_SIZE,
+        Math.min(right, bottom)
+      );
       setCropSize(nextSize);
-      setCropX(clamp(drag.cropX + sizeDelta, 0, VIEWPORT_SIZE - nextSize));
-      setCropY(clamp(drag.cropY + sizeDelta, 0, VIEWPORT_SIZE - nextSize));
+      setCropX(clamp(right - nextSize, 0, VIEWPORT_SIZE - nextSize));
+      setCropY(clamp(bottom - nextSize, 0, VIEWPORT_SIZE - nextSize));
       return;
     }
     if (drag.corner === "ne") {
-      const maxSize = Math.min(VIEWPORT_SIZE - drag.cropX, drag.cropY + drag.cropSize);
-      const nextSize = clamp(drag.cropSize + delta, MIN_CROP_SIZE, maxSize);
-      const sizeDelta = nextSize - drag.cropSize;
+      const left = drag.cropX;
+      const bottom = drag.cropY + drag.cropSize;
+      const nextSize = clamp(
+        Math.min((drag.cropX + drag.cropSize + deltaX) - left, bottom - (drag.cropY + deltaY)),
+        MIN_CROP_SIZE,
+        Math.min(VIEWPORT_SIZE - left, bottom)
+      );
       setCropSize(nextSize);
-      setCropY(clamp(drag.cropY - sizeDelta, 0, VIEWPORT_SIZE - nextSize));
+      setCropX(left);
+      setCropY(clamp(bottom - nextSize, 0, VIEWPORT_SIZE - nextSize));
       return;
     }
     if (drag.corner === "sw") {
-      const maxSize = Math.min(drag.cropX + drag.cropSize, VIEWPORT_SIZE - drag.cropY);
-      const nextSize = clamp(drag.cropSize - delta, MIN_CROP_SIZE, maxSize);
-      const sizeDelta = drag.cropSize - nextSize;
+      const right = drag.cropX + drag.cropSize;
+      const top = drag.cropY;
+      const nextSize = clamp(
+        Math.min(right - (drag.cropX + deltaX), drag.cropY + drag.cropSize + deltaY - top),
+        MIN_CROP_SIZE,
+        Math.min(right, VIEWPORT_SIZE - top)
+      );
       setCropSize(nextSize);
-      setCropX(clamp(drag.cropX + sizeDelta, 0, VIEWPORT_SIZE - nextSize));
+      setCropX(clamp(right - nextSize, 0, VIEWPORT_SIZE - nextSize));
+      setCropY(top);
       return;
     }
-    const maxSize = Math.min(VIEWPORT_SIZE - drag.cropX, VIEWPORT_SIZE - drag.cropY);
-    const nextSize = clamp(drag.cropSize + delta, MIN_CROP_SIZE, maxSize);
+    const nextSize = clamp(
+      Math.min(drag.cropSize + deltaX, drag.cropSize + deltaY),
+      MIN_CROP_SIZE,
+      Math.min(VIEWPORT_SIZE - drag.cropX, VIEWPORT_SIZE - drag.cropY)
+    );
     setCropSize(nextSize);
   };
 
@@ -294,7 +311,6 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
               }
             />
 
-            <div className="pointer-events-none absolute inset-0 rounded-[28px] border border-white/60 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.08)]" />
             <div
               className="pointer-events-none absolute left-0 top-0 bg-slate-900/28"
               style={{ width: "100%", height: `${cropY}px` }}

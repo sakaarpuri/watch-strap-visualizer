@@ -687,17 +687,22 @@ function GuideLine({
 
   return (
     <>
-      <div
-        className={`absolute rounded-full ${colorClasses}`}
-        style={{
-          left: `${lineLeft}px`,
-          top: `${y}px`,
-          width: `${lineWidth}px`,
-          height: "2px",
-          borderWidth: 0,
-          transform: "translateY(-50%)"
-        }}
-      />
+      <svg
+        className="absolute inset-0 h-full w-full overflow-visible"
+        viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <line
+          x1={lineLeft}
+          y1={y}
+          x2={lineRight}
+          y2={y}
+          stroke={tone === "cyan" ? "#67e8f9" : "#f0abfc"}
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
       <div
         className={`absolute rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorClasses}`}
         style={{

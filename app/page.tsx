@@ -1989,6 +1989,7 @@ function PreviewUploadStage({
             previewUrl={previewUrl}
             onFileSelect={onFileSelect}
             className="w-full"
+            bare
           />
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted">Front-on, straight shots work best.</p>
@@ -2358,17 +2359,11 @@ function WatchOnlyLugGuideOverlay({
   blink: boolean;
 }) {
   const topLeft = ((guides.centerX - guides.topWidth / 2) / CANVAS_SIZE) * 100;
-  const topWidth = (guides.topWidth / CANVAS_SIZE) * 100;
+  const topRight = ((guides.centerX + guides.topWidth / 2) / CANVAS_SIZE) * 100;
   const topY = (guides.topY / CANVAS_SIZE) * 100;
   const bottomLeft = ((guides.centerX - guides.bottomWidth / 2) / CANVAS_SIZE) * 100;
-  const bottomWidth = (guides.bottomWidth / CANVAS_SIZE) * 100;
+  const bottomRight = ((guides.centerX + guides.bottomWidth / 2) / CANVAS_SIZE) * 100;
   const bottomY = (guides.bottomY / CANVAS_SIZE) * 100;
-  const lineStyle = (left: number, top: number, width: number) => ({
-    left: `${left}%`,
-    top: `${top}%`,
-    width: `${width}%`,
-    transform: "translateY(-50%)"
-  });
   const handleStyle = (left: number, top: number) => ({
     left: `${left}%`,
     top: `${top}%`,
@@ -2379,35 +2374,47 @@ function WatchOnlyLugGuideOverlay({
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
+      <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`} preserveAspectRatio="none" aria-hidden="true">
+        <line
+          x1={guides.centerX - guides.topWidth / 2}
+          y1={guides.topY}
+          x2={guides.centerX + guides.topWidth / 2}
+          y2={guides.topY}
+          stroke="#d7c1a3"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <line
+          x1={guides.centerX - guides.bottomWidth / 2}
+          y1={guides.bottomY}
+          x2={guides.centerX + guides.bottomWidth / 2}
+          y2={guides.bottomY}
+          stroke="#d7c1a3"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
       <div
-        className="absolute h-[2px] rounded-full bg-[#d7c1a3]"
-        style={lineStyle(topLeft, topY, topWidth)}
-      />
-      <div
-        className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
+        className="absolute overflow-visible rounded-full border border-[#d7c1a3] bg-white"
         style={handleStyle(topLeft, topY)}
       >
         {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
-        className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
-        style={handleStyle(topLeft + topWidth, topY)}
+        className="absolute overflow-visible rounded-full border border-[#d7c1a3] bg-white"
+        style={handleStyle(topRight, topY)}
       >
         {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
-        className="absolute h-[2px] rounded-full bg-[#d7c1a3]"
-        style={lineStyle(bottomLeft, bottomY, bottomWidth)}
-      />
-      <div
-        className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
+        className="absolute overflow-visible rounded-full border border-[#d7c1a3] bg-white"
         style={handleStyle(bottomLeft, bottomY)}
       >
         {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
-        className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
-        style={handleStyle(bottomLeft + bottomWidth, bottomY)}
+        className="absolute overflow-visible rounded-full border border-[#d7c1a3] bg-white"
+        style={handleStyle(bottomRight, bottomY)}
       >
         {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>

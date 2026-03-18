@@ -12,6 +12,7 @@ interface ImageUploaderProps {
   showOrientationHints?: boolean;
   className?: string;
   accentActive?: boolean;
+  bare?: boolean;
 }
 
 export default function ImageUploader({
@@ -23,7 +24,8 @@ export default function ImageUploader({
   compact = false,
   showOrientationHints = false,
   className = "",
-  accentActive = false
+  accentActive = false,
+  bare = false
 }: ImageUploaderProps) {
   const inputId = useId();
   const [fileName, setFileName] = useState<string>("No file selected");
@@ -59,7 +61,7 @@ export default function ImageUploader({
 
   return (
     <div
-      className={`glass-card rounded-2xl border border-line ${accentActive ? "upload-attention-ring" : ""} ${compact ? "p-4 sm:p-4" : "p-5 sm:p-5"} ${className}`}
+      className={`rounded-2xl ${bare ? "" : `glass-card border border-line ${compact ? "p-4 sm:p-4" : "p-5 sm:p-5"}`} ${accentActive ? "upload-attention-ring" : ""} ${className}`}
     >
       {label ? (
         <p id={id} className="text-2xl font-semibold leading-tight text-ink sm:text-xl">
