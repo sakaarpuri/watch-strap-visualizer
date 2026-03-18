@@ -1,0 +1,17 @@
+{
+  "prompt": "Luxury macro product photo of brushed stainless steel watch buckle hardware with part of a dark leather strap attachment visible, refined brushed metal surface, crisp polished edges, premium watchmaking mood, neutral off-white studio background, shallow depth of field, highly realistic metal reflections, detail-focused framing, no full strap product layout, no visible branding, no engraved text, only hardware and craftsmanship detail.",
+  "negative_prompt": "cartoon, cgi, illustration, full watch, full strap, cluttered background, blurry, distorted metal, cheap chrome look, text, logo, letters, watermark, engraving",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "jpg",
+    "aspect_ratio": "16:9"
+  },
+  "settings": {
+    "resolution": "1280x720",
+    "style": "photorealistic luxury product macro",
+    "lighting": "soft studio light with controlled specular highlights",
+    "camera_angle": "macro three-quarter close crop",
+    "depth_of_field": "shallow depth of field",
+    "quality": "high detail realistic brushed steel"
+  }
+}

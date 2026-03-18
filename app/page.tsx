@@ -30,7 +30,7 @@ const STRAP_SCALE_MIN = 5;
 const STRAP_SCALE_MAX = 260;
 const DIAL_SCALE_MIN = 0.7;
 const DIAL_SCALE_MAX = 1.8;
-const DEFAULT_WATCH_PREVIEW_SCALE = 0.88;
+const DEFAULT_WATCH_PREVIEW_SCALE = 0.64;
 const DEFAULT_SCENE_ZOOM = 0.75;
 const DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.28;
 const strapScaleToUi = (scale: number) => {
@@ -136,10 +136,6 @@ interface StrapThumbProps {
   active: boolean;
   showCategory: boolean;
   onClick: () => void;
-}
-
-interface FeaturedStrapTeaserProps {
-  strap: StrapVariant;
 }
 
 interface UploadedSplitPart {
@@ -530,7 +526,7 @@ export default function Home() {
   const [lockView, setLockView] = useState(false);
   const [fitState, setFitState] = useState<FitState>("auto");
   const [fitConfidence, setFitConfidence] = useState(0);
-  const [showFitBench, setShowFitBench] = useState(true);
+  const [showFitBench, setShowFitBench] = useState(false);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [aiTools, setAiTools] = useState<Record<AiToolKey, AiToolState>>(defaultToolState);
   const [generatedResults, setGeneratedResults] = useState<GeneratedResultState>({
@@ -558,6 +554,7 @@ export default function Home() {
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
   const previewSectionRef = useRef<HTMLElement | null>(null);
+  const changeWatchInputRef = useRef<HTMLInputElement>(null);
   const strapUploadInputRef = useRef<HTMLInputElement>(null);
   const latestPartARef = useRef<PartTransform | null>(null);
   const latestPartBRef = useRef<PartTransform | null>(null);
@@ -566,7 +563,8 @@ export default function Home() {
   const previousDialScaleRef = useRef(dialScale);
   const mockupReadyTimeoutRef = useRef<number | null>(null);
   const strapSettleTimeoutRef = useRef<number | null>(null);
-  const previousLibraryDrawerLockedRef = useRef(true);
+  const drawerRevealTimeoutRef = useRef<number | null>(null);
+  const firstRenderedStrapRef = useRef(false);
 
   const clearMockupReadyHighlight = () => {
     setMockupReadyHighlight(false);
@@ -592,7 +590,6 @@ export default function Home() {
       return merged;
     });
     setFitState(lockViewRef.current ? "locked" : "adjusted");
-    setShowFitBench(true);
   };
 
   const dismissLugGuideOnboarding = () => {
@@ -612,20 +609,9 @@ export default function Home() {
       return a.label.localeCompare(b.label);
     });
   }, [category]);
-  const featuredLibraryStraps = useMemo(() => {
-    const straps = [...getStrapsForCategory("All categories")];
-    return straps
-      .sort((a, b) => {
-        const scoreDiff = getStrapSortScore(a) - getStrapSortScore(b);
-        if (scoreDiff !== 0) return scoreDiff;
-        return a.label.localeCompare(b.label);
-      })
-      .slice(0, 3);
-  }, []);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
-  const libraryDrawerLocked = strapSourceMode === "library" && !hasUserUpload;
   const activeLibraryStrap = hasSelectedLibraryStrap ? currentStrap : null;
   const activeStrapASrc =
     strapSourceMode === "uploaded" && uploadedStrapPartA ? uploadedStrapPartA.url : activeLibraryStrap?.strapASrc;
@@ -644,6 +630,7 @@ export default function Home() {
     () => Boolean(partA && partB && activeStrapASrc && activeStrapBSrc),
     [partA, partB, activeStrapASrc, activeStrapBSrc]
   );
+  const canShowLiveLugGuides = showLugGuides && !lockView && firstRenderedStrapRef.current;
   const canShowWatchOnlyPreview = hasUserUpload && !canRender;
   const previewStageTitle = canRender
     ? "3. Live Preview"
@@ -651,14 +638,28 @@ export default function Home() {
       ? "1. Crop your watch"
       : canShowWatchOnlyPreview
         ? "1. Watch head view"
-        : "1. Upload your watch first";
+        : "";
   const previewStageHint = canRender
-    ? "Your strap is on the bench. Fine-tune it or lock and export."
+    ? "Your strap is on the bench. Lock the fit, save the view, or open the bench if you want to refine."
     : cropSourceUrl
       ? "Frame the watch in this same stage, then apply the crop."
       : canShowWatchOnlyPreview
         ? "Your watch is ready. Line up the lug guides if needed, then pick a strap."
-        : "Drop a watch photo here to start the full try-on flow in one place.";
+        : "";
+
+  const triggerDrawerReveal = () => {
+    setAnimateDrawerReveal(false);
+    window.requestAnimationFrame(() => {
+      setAnimateDrawerReveal(true);
+      if (drawerRevealTimeoutRef.current) {
+        window.clearTimeout(drawerRevealTimeoutRef.current);
+      }
+      drawerRevealTimeoutRef.current = window.setTimeout(() => {
+        setAnimateDrawerReveal(false);
+        drawerRevealTimeoutRef.current = null;
+      }, 700);
+    });
+  };
 
   useEffect(() => {
     latestPartARef.current = partA;
@@ -717,6 +718,11 @@ export default function Home() {
     setSceneZoom(DEFAULT_SCENE_ZOOM);
     previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
     setCropSourceUrl(uploadedUrl);
+    setPartA(null);
+    setPartB(null);
+    setLockView(false);
+    setFitState("auto");
+    setShowFitBench(false);
     setLugGuideOverrides(null);
     setShowLugGuides(true);
     setShowLugGuideOnboarding(false);
@@ -748,7 +754,7 @@ export default function Home() {
     });
     setStrapSplitSourceUrl(null);
     setStrapSourceMode("uploaded");
-    setShowFitBench(true);
+    setShowFitBench(false);
     setFitState("auto");
     triggerStrapSettle();
   };
@@ -766,15 +772,21 @@ export default function Home() {
   }, [highlightPreviewWindow]);
 
   useEffect(() => {
-    if (previousLibraryDrawerLockedRef.current && !libraryDrawerLocked && strapSourceMode === "library") {
-      setAnimateDrawerReveal(true);
-      const timeout = window.setTimeout(() => setAnimateDrawerReveal(false), 900);
-      previousLibraryDrawerLockedRef.current = libraryDrawerLocked;
-      return () => window.clearTimeout(timeout);
-    }
-    previousLibraryDrawerLockedRef.current = libraryDrawerLocked;
+    triggerDrawerReveal();
     return undefined;
-  }, [libraryDrawerLocked, strapSourceMode]);
+  }, []);
+
+  useEffect(() => {
+    if (strapSourceMode !== "library") return;
+    triggerDrawerReveal();
+    return undefined;
+  }, [category, strapSourceMode]);
+
+  useEffect(() => {
+    if (!hasUserUpload || strapSourceMode !== "library") return;
+    triggerDrawerReveal();
+    return undefined;
+  }, [hasUserUpload, strapSourceMode]);
 
   useEffect(() => {
     return () => {
@@ -783,6 +795,9 @@ export default function Home() {
       }
       if (strapSettleTimeoutRef.current) {
         window.clearTimeout(strapSettleTimeoutRef.current);
+      }
+      if (drawerRevealTimeoutRef.current) {
+        window.clearTimeout(drawerRevealTimeoutRef.current);
       }
     };
   }, []);
@@ -811,8 +826,14 @@ export default function Home() {
   }, [canShowWatchOnlyPreview, hasUserUpload, watchSrc]);
 
   useEffect(() => {
-    if (!canRender) return;
-    setShowLugGuides(false);
+    if (!canRender) {
+      firstRenderedStrapRef.current = false;
+      return;
+    }
+    if (!firstRenderedStrapRef.current) {
+      setShowLugGuides(false);
+      firstRenderedStrapRef.current = true;
+    }
     if (showLugGuideOnboarding) {
       dismissLugGuideOnboarding();
     }
@@ -856,9 +877,14 @@ export default function Home() {
     setUploadedWatchFile(file);
     setWatchPreviewSrc(sourceUrl);
     setWatchSrc(sourceUrl);
+    setPartA(null);
+    setPartB(null);
     setDialScale(DEFAULT_WATCH_PREVIEW_SCALE);
     setSceneZoom(DEFAULT_SCENE_ZOOM);
     previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
+    setLockView(false);
+    setFitState("auto");
+    setShowFitBench(false);
     setLugGuideOverrides(null);
     setShowLugGuides(true);
     setHighlightPreviewWindow(true);
@@ -870,6 +896,22 @@ export default function Home() {
   const applyCroppedDial = (file: File, previewUrl: string) => {
     applyWatchAsset(file, previewUrl);
     setCropSourceUrl(null);
+  };
+
+  const reCropCurrentWatch = () => {
+    if (!originalWatchFile || !originalWatchSrc) return;
+    setUploadedWatchFile(originalWatchFile);
+    setCropSourceUrl(originalWatchSrc);
+    setLockView(false);
+    setShowFitBench(false);
+  };
+
+  const toggleLockView = () => {
+    setLockView((prev) => {
+      const next = !prev;
+      setFitState(next ? "locked" : showFitBench ? "adjusted" : "auto");
+      return next;
+    });
   };
 
   const autoAlignStraps = async () => {
@@ -917,7 +959,6 @@ export default function Home() {
       setPartB(nextPartB);
       setFitConfidence(aligned.confidence);
       setFitState(lockViewRef.current ? "locked" : shouldPreserve ? "adjusted" : "auto");
-      setShowFitBench(true);
     } finally {
       setIsAutoAligning(false);
     }
@@ -1252,23 +1293,18 @@ export default function Home() {
   const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-    <main className="mx-auto max-w-[84rem] px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 md:px-6 md:pb-10 md:pt-5 xl:px-8">
-      <header className="mb-4 sm:mb-5">
-        <div className="text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/watchstrapper-logo.png"
-            alt="Watchstrapper"
-            className="mx-auto mb-2 h-auto w-[18rem] object-contain sm:mb-3 sm:w-[22rem] lg:w-[20rem]"
-          />
-          <h1 className="text-2xl font-semibold leading-none tracking-tight text-ink sm:text-4xl">
-            See any strap on your watch before you buy.
-          </h1>
-        </div>
+      <main className="mx-auto max-w-[92rem] px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
+      <header className="mb-10 text-center sm:mb-12">
+        <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
+          Watchstrapper
+        </p>
+        <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[2rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[3.15rem]">
+          See any strap on your watch before you buy.
+        </h1>
       </header>
 
       {strapSplitSourceUrl && uploadedStrapSheetFile ? (
-        <section className="mt-4 w-full max-w-[920px]">
+        <section className="mx-auto mb-6 w-full max-w-[920px]">
           <StrapSplitEditor
             file={uploadedStrapSheetFile}
             sourceUrl={strapSplitSourceUrl}
@@ -1278,33 +1314,38 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
-        <aside className={`space-y-5 transition lg:order-2 ${hasUserUpload ? "opacity-100" : "opacity-85"}`}>
-          <div className="glass-card rounded-2xl p-4 sm:p-6">
+      <input
+        ref={changeWatchInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          const nextFile = event.target.files?.[0];
+          if (!nextFile) return;
+          onUploadDial(nextFile);
+          event.currentTarget.value = "";
+        }}
+      />
+
+      <section className="mt-10 grid gap-5 xl:mt-20 xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem] xl:items-start">
+        <aside className="order-2 space-y-3 xl:order-1">
+          <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-lg font-medium text-ink">
-                  2. Browse The Strap Box
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
+                  Strap Drawer
                 </p>
-                <p className="mt-1 text-sm text-muted">
-                  {hasUserUpload
-                    ? hasSelectedLibraryStrap
-                      ? "Your watch is loaded. Now start auditioning straps."
-                      : "Your watch is loaded. Pick a strap from the drawer to start the preview."
-                    : "Load your watch on the preview stage to unlock the full drawer."}
+                <p className="mt-2 text-[1.55rem] font-serif leading-none text-[#2b241d]">
+                  Browse the strap box
                 </p>
               </div>
               {hasUserUpload ? (
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                <span className="atelier-accent-soft rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
                   Ready
                 </span>
-              ) : (
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
-                  Waiting for your watch
-                </span>
-              )}
+              ) : null}
             </div>
-            <div className="mt-3 inline-flex rounded-full border border-line bg-canvas p-1">
+            <div className="mt-4 inline-flex rounded-full border border-line bg-canvas p-1">
               {[
                 { mode: "library" as const, label: "Library" },
                 { mode: "uploaded" as const, label: "Your Strap" }
@@ -1317,7 +1358,7 @@ export default function Home() {
                     onClick={() => setStrapSourceMode(option.mode)}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       active
-                        ? "bg-emerald-900 text-white shadow-[0_10px_20px_rgba(6,78,59,0.24)]"
+                        ? "atelier-pill-active"
                         : "text-ink hover:bg-white"
                     }`}
                     aria-pressed={active}
@@ -1329,22 +1370,8 @@ export default function Home() {
             </div>
 
             {strapSourceMode === "library" ? (
-              libraryDrawerLocked ? (
-                <div className="mt-4 rounded-2xl border border-dashed border-line bg-gradient-to-br from-white/90 to-slate-50/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
-                  <p className="text-sm uppercase tracking-[0.12em] text-muted">Drawer Preview</p>
-                  <p className="mt-2 text-lg font-semibold text-ink">The full strap drawer opens after your watch is ready.</p>
-                  <p className="mt-2 text-sm leading-6 text-muted">
-                    The preview stage handles upload, crop, and watch prep first. Then the drawer opens for strap try-on.
-                  </p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    {featuredLibraryStraps.map((strap) => (
-                      <FeaturedStrapTeaser key={strap.id} strap={strap} />
-                    ))}
-                  </div>
-                </div>
-              ) : (
               <>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-1.5">
                   {STRAP_CATEGORIES.map((option) => {
                     const active = option === category;
                     const count = getStrapsForCategory(option).length;
@@ -1360,10 +1387,10 @@ export default function Home() {
                           setFitState("auto");
                         }}
                         data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
-                        className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                        className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
                           active
-                            ? "border-emerald-900 bg-emerald-900 text-white shadow-[0_10px_20px_rgba(6,78,59,0.24)]"
-                            : "border-line bg-canvas text-ink hover:border-emerald-200 hover:bg-white"
+                            ? "atelier-pill-active"
+                            : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
                         }`}
                         aria-pressed={active}
                       >
@@ -1376,18 +1403,18 @@ export default function Home() {
                   })}
                 </div>
 
-                <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                  <p className="text-sm uppercase tracking-[0.12em] text-muted">On Deck</p>
-                  <p className="mt-2 text-xl font-semibold text-ink">
-                    {hasSelectedLibraryStrap ? currentStrap.label : "Choose a strap from the drawer"}
+                <div className="mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-muted">On Deck</p>
+                  <p className="mt-2 text-lg font-semibold leading-tight text-ink">
+                    {hasSelectedLibraryStrap ? currentStrap.label : "Pick a strap to preview next"}
                   </p>
                 </div>
 
-                <div className="mt-4 rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                <div className="mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
                     {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
                   </p>
-                  <div className="mt-3 max-h-[30rem] space-y-3 overflow-y-auto pr-1">
+                  <div className="mt-3 max-h-[42rem] space-y-2 overflow-y-auto pr-1">
                     {strapsInCategory.map((strap, index) => {
                       const active = hasSelectedLibraryStrap && index === strapIndex;
                       return (
@@ -1398,11 +1425,13 @@ export default function Home() {
                             setHasSelectedLibraryStrap(true);
                             setShowFitBench(false);
                             setFitState("auto");
-                            setHighlightPreviewWindow(true);
-                            triggerStrapSettle();
-                            window.setTimeout(() => {
-                              previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                            }, 80);
+                            if (hasUserUpload) {
+                              setHighlightPreviewWindow(true);
+                              triggerStrapSettle();
+                              window.setTimeout(() => {
+                                previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }, 80);
+                            }
                           }}
                           strap={strap}
                           active={active}
@@ -1415,10 +1444,9 @@ export default function Home() {
                   </div>
                 </div>
               </>
-              )
             ) : (
               <div className="mt-4 space-y-4">
-                <div className="rounded-xl border border-line bg-canvas/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm uppercase tracking-[0.12em] text-muted">Your Strap Sheet</p>
                   <p className="mt-2 text-sm text-muted">
                     Upload one straight pair image: buckle side on top, tail side below.
@@ -1455,7 +1483,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-line bg-canvas/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                     Current Upload
                   </p>
@@ -1483,281 +1511,143 @@ export default function Home() {
               </div>
             )}
 
-            <div className="neo-toggle mt-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-ink">Keep Tweaks</p>
-                <p className="text-xs text-muted">Carry the fit tune to the next candidate.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreserveSettings((prev) => !prev)}
-                aria-pressed={preserveSettings}
-                className={`relative h-8 w-14 shrink-0 overflow-hidden rounded-full border transition ${
-                  preserveSettings
-                    ? "border-emerald-500/40 bg-emerald-400/30"
-                    : "border-line bg-canvas"
-                }`}
-              >
-                <span
-                  className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                    preserveSettings ? "translate-x-6" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => void autoAlignStraps()}
-                className="rounded-lg border border-line bg-canvas px-4 py-2.5 text-base text-ink transition hover:opacity-90"
-              >
-                {isAutoAligning ? "Resetting fit..." : "Reset Strap Fit"}
-              </button>
-              {hasUserUpload && originalWatchSrc && watchSrc !== originalWatchSrc ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (originalWatchFile && originalWatchSrc) {
-                      setUploadedWatchFile(originalWatchFile);
-                      setCropSourceUrl(originalWatchSrc);
-                    }
-                    setWatchSrc(originalWatchSrc);
-                    setWatchPreviewSrc(originalWatchSrc);
-                    setSceneZoom(DEFAULT_SCENE_ZOOM);
-                  }}
-                  className="rounded-lg border border-line bg-canvas px-4 py-2.5 text-base text-ink transition hover:opacity-90"
-                >
-                  Back To Original Photo
-                </button>
-              ) : null}
-            </div>
           </div>
         </aside>
 
-        <section ref={previewSectionRef} className="min-w-0 lg:order-1">
-          <h2 className="mb-3 text-base font-medium uppercase tracking-[0.15em] text-muted">
-            {previewStageTitle}
-          </h2>
-          <p className="mb-3 text-sm text-muted">{previewStageHint}</p>
-          {canRender && hasUserUpload ? (
-            <div className="glass-card sticky top-4 z-10 mb-4 rounded-2xl p-4 shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Lock & Export</p>
-                  <p className="mt-1 text-sm text-muted">
-                    {lockView
-                      ? "Fit locked. Save the pairing or send it down to the catalogue image tool."
-                      : fitConfidence >= 0.65
-                        ? "Auto-fit landed cleanly. Export it now or open Adjust fit for a finer pass."
-                        : "Auto-fit made its best guess. If the strap needs a nudge, open Adjust fit."}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowFitBench((prev) => !prev)}
-                    className="rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-white"
-                  >
-                    {showFitBench ? "Hide Fit Tools" : "Adjust Fit"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLockView((prev) => {
-                        const next = !prev;
-                        setFitState(next ? "locked" : showFitBench ? "adjusted" : "auto");
-                        return next;
-                      })
-                    }
-                    className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
-                      lockView
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                        : "border-line bg-canvas text-ink hover:bg-white"
-                    }`}
-                  >
-                    {lockView ? "Unlock Fit" : "Lock Fit"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void onSavePreviewImage()}
-                    className="rounded-xl border border-amber-800 bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-                  >
-                    Save Image
-                  </button>
-                </div>
-              </div>
+        <section ref={previewSectionRef} className="order-1 min-w-0 space-y-4 xl:order-2">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              {previewStageTitle ? (
+                <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-[#7c7165]">
+                  {previewStageTitle.replace(/^\d+\.\s*/, "")}
+                </p>
+              ) : null}
+              {previewStageHint ? (
+                <p className={`${previewStageTitle ? "mt-2" : ""} max-w-[34rem] text-sm leading-6 text-muted`}>
+                  {previewStageHint}
+                </p>
+              ) : null}
             </div>
-          ) : null}
-          {cropSourceUrl && originalWatchFile ? (
-            <CropEditor
-              file={originalWatchFile}
-              sourceUrl={cropSourceUrl}
-              onApply={applyCroppedDial}
-              onClose={() => setCropSourceUrl(null)}
-            />
-          ) : canRender ? (
-            <div className={`${highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""} ${animateStrapSettle ? "strap-settle-in" : ""}`}>
-              <CanvasPreview
-                ref={canvasRef}
+            <div className="flex flex-wrap gap-2">
+              {hasUserUpload ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={reCropCurrentWatch}
+                    className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                  >
+                    Re-crop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => changeWatchInputRef.current?.click()}
+                    className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                  >
+                    Change Watch
+                  </button>
+                </>
+              ) : null}
+              {canRender ? (
+                <>
+                <button
+                  type="button"
+                  onClick={toggleLockView}
+                  className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${
+                    lockView
+                      ? "atelier-accent-soft"
+                      : "border-line bg-white/78 text-ink hover:bg-white"
+                  }`}
+                >
+                  {lockView ? "Unlock Fit" : "Lock Fit"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onSavePreviewImage()}
+                  className="atelier-accent-solid rounded-2xl border px-5 py-2.5 text-sm font-semibold transition hover:opacity-95"
+                >
+                  Save Image
+                </button>
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4">
+            {cropSourceUrl && originalWatchFile ? (
+              <CropEditor
+                file={originalWatchFile}
+                sourceUrl={cropSourceUrl}
+                onApply={applyCroppedDial}
+                onClose={() => setCropSourceUrl(null)}
+              />
+            ) : canRender ? (
+              <div className={`${highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""} ${animateStrapSettle ? "strap-settle-in" : ""}`}>
+                <CanvasPreview
+                  ref={canvasRef}
+                  watchSrc={watchSrc}
+                  strapASrc={activeStrapASrc as string}
+                  strapBSrc={activeStrapBSrc as string}
+                  partA={partA as PartTransform}
+                  partB={partB as PartTransform}
+                  style={currentStrap.tint}
+                  joinShape={activeJoinShape}
+                  watchScale={dialScale}
+                  sceneZoom={sceneZoom}
+                  locked={lockView}
+                  showLugGuides={canShowLiveLugGuides}
+                  lugGuideOverrides={lugGuideOverrides}
+                  onLugGuidesChange={handleLugGuidesChange}
+                  showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
+                  onDragPartsChange={(nextA, nextB) => {
+                    setPartA(nextA);
+                    setPartB(nextB);
+                    setFitState("adjusted");
+                  }}
+                  onCycleStrap={onCycleStrap}
+                />
+              </div>
+            ) : canShowWatchOnlyPreview ? (
+              <WatchOnlyPreview
                 watchSrc={watchSrc}
-                strapASrc={activeStrapASrc as string}
-                strapBSrc={activeStrapBSrc as string}
-                partA={partA as PartTransform}
-                partB={partB as PartTransform}
-                style={currentStrap.tint}
-                joinShape={activeJoinShape}
                 watchScale={dialScale}
-                sceneZoom={sceneZoom}
-                locked={lockView}
-                showLugGuides={showLugGuides && !lockView && (showFitBench || fitConfidence < 0.72)}
+                highlighted={highlightPreviewWindow}
+                showLugGuides={showLugGuides}
+                onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
                 lugGuideOverrides={lugGuideOverrides}
                 onLugGuidesChange={handleLugGuidesChange}
-                showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
-                onDragPartsChange={(nextA, nextB) => {
-                  setPartA(nextA);
-                  setPartB(nextB);
-                  setFitState("adjusted");
-                  setShowFitBench(true);
-                }}
-                onCycleStrap={onCycleStrap}
-                controls={showFitBench ? (
-                  <div className="glass-card rounded-xl p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                          Fit Bench
-                        </p>
-                        <p className="mt-1 text-xs text-muted">
-                          {fitState === "locked"
-                            ? "Locked and ready to export."
-                            : fitState === "adjusted"
-                              ? "Your refined fit stays with this strap."
-                              : "Auto-fit started you close to the lugs."}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowFitBench(false)}
-                        className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-                      >
-                        Hide
-                      </button>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowLugGuides((prev) => !prev)}
-                        className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-                      >
-                        {showLugGuides ? "Hide lug guides" : "Show lug guides"}
-                      </button>
-                    </div>
-                    <div className="mt-2 grid gap-2">
-                      <div className="relative">
-                        <SliderControl
-                          label="Strap Gap"
-                          min={250}
-                          max={900}
-                          step={10}
-                          value={strapGap}
-                          onChange={setGapHalf}
-                          disabled={lockView}
-                          highlighted={showControlCoachmark}
-                          hint="Closer ↔ Wider"
-                        />
-                        {showControlCoachmark ? (
-                          <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
-                            <div className="flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-                              <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
-                              Size first. Then trim the gap.
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                      <SliderControl
-                        label="Strap Size"
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={strapSizeUi}
-                        onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
-                        disabled={lockView}
-                        highlighted={showControlCoachmark}
-                        hint="Slimmer ↔ Fuller"
-                      />
-                      {showControlCoachmark ? (
-                        <div className="rounded-2xl border border-sky-200/80 bg-sky-50/80 px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-xs leading-5 text-slate-700">
-                              Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={dismissControlCoachmark}
-                              className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-                            >
-                              Got it
-                            </button>
-                          </div>
-                        </div>
-                      ) : null}
-                      <SliderControl
-                        label="Dial Size"
-                        min={DIAL_SCALE_MIN}
-                        max={DIAL_SCALE_MAX}
-                        step={0.02}
-                        value={dialScale}
-                        onChange={setDialScaleValue}
-                        disabled={lockView}
-                        hint="Smaller ↔ Larger"
-                      />
-                      <SliderControl
-                        label="View Zoom"
-                        min={0.2}
-                        max={1.4}
-                        step={0.02}
-                        value={sceneZoom}
-                        onChange={setSceneZoomValue}
-                        hint="Whole watch ↔ Detail"
-                      />
-                      <ToggleControl
-                        label="Lock Fit"
-                        description="Freeze the fit and just inspect the view"
-                        enabled={lockView}
-                        onToggle={() => setLockView((prev) => !prev)}
-                      />
-                    </div>
-                  </div>
-                ) : undefined}
+                showGuideOnboarding={showLugGuideOnboarding}
+                onDismissGuideOnboarding={dismissLugGuideOnboarding}
               />
+            ) : (
+              <PreviewUploadStage
+                previewUrl={watchPreviewSrc}
+                showUploadGuide={showUploadGuide}
+                highlightUploadGuide={highlightUploadGuide}
+                onToggleUploadGuide={() => setShowUploadGuide((prev) => !prev)}
+                onCloseUploadGuide={() => setShowUploadGuide(false)}
+                onFileSelect={onUploadDial}
+              />
+            )}
+          </div>
+
+          <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                  Materials
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  Bench references for texture and hardware finish.
+                </p>
+              </div>
             </div>
-          ) : canShowWatchOnlyPreview ? (
-            <WatchOnlyPreview
-              watchSrc={watchSrc}
-              watchScale={dialScale}
-              highlighted={highlightPreviewWindow}
-              showLugGuides={showLugGuides}
-              onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
-              lugGuideOverrides={lugGuideOverrides}
-              onLugGuidesChange={handleLugGuidesChange}
-              showGuideOnboarding={showLugGuideOnboarding}
-              onDismissGuideOnboarding={dismissLugGuideOnboarding}
-            />
-          ) : (
-            <PreviewUploadStage
-              previewUrl={watchPreviewSrc}
-              showUploadGuide={showUploadGuide}
-              highlightUploadGuide={highlightUploadGuide}
-              onToggleUploadGuide={() => setShowUploadGuide((prev) => !prev)}
-              onCloseUploadGuide={() => setShowUploadGuide(false)}
-              onFileSelect={onUploadDial}
-            />
-          )}
-          <div className="glass-card mt-4 rounded-2xl p-4">
+            <MaterialsStrip />
+          </div>
+
+          <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
                   4. Bench Tools
                 </p>
               </div>
@@ -1767,13 +1657,15 @@ export default function Home() {
                 </div>
               ) : null}
             </div>
-            <div className="mt-4 space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-4 md:space-y-0">
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
               <div className="space-y-2">
                 <ToolButton
                   title="Extract Watch"
                   subtitle="from messy backgrounds"
                   disabled={!hasUserUpload}
                   loading={aiTools.cleanup.loading}
+                  sampleImageSrc="/bench-details/extract-watch.jpg"
+                  note="Best on clean, front-on retailer or wrist shots with visible lugs."
                   onClick={() => void runCleanupFallback()}
                 />
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
@@ -1807,7 +1699,7 @@ export default function Home() {
           </div>
           {strapSourceMode === "library" ? (
             <div
-              className={`glass-card mt-4 rounded-2xl p-4 transition ${
+              className={`glass-card atelier-card-soft rounded-[1.9rem] p-4 transition ${
                 lockView
                   ? ""
                   : "opacity-80"
@@ -1828,7 +1720,7 @@ export default function Home() {
                     </p>
                   )}
                 </div>
-                <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+                <span className="rounded-full border border-line bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
                   Coming soon
                 </span>
               </div>
@@ -1872,7 +1764,19 @@ export default function Home() {
                 )
               ) : (
                 <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
-                  <p className="text-sm text-slate-500">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <MaterialInset
+                      src="/strap-selection-kie/cognac-grain-leather-buckle.png"
+                      label="Leather strap sample"
+                      fit="contain"
+                    />
+                    <MaterialInset
+                      src="/strap-selection-kie/black-rubber-buckle.png"
+                      label="Rubber strap sample"
+                      fit="contain"
+                    />
+                  </div>
+                  <p className="mt-3 text-sm text-slate-500">
                     Shopping links stay tucked away until the fit is locked in.
                   </p>
                 </div>
@@ -1880,7 +1784,7 @@ export default function Home() {
             </div>
           ) : null}
           {inlineMockupUrl ? (
-            <div className="glass-card mt-4 rounded-2xl p-4">
+            <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Mockup Deck
@@ -1918,7 +1822,7 @@ export default function Home() {
           <p className="mt-3 text-sm text-muted">
             Visual inspiration only. Final fit depends on lug width &amp; strap model.
           </p>
-          <div className="mt-6 flex justify-center md:justify-end">
+          <div className="mt-5 flex justify-center md:justify-end">
             <Link
               href="/contact"
               className="neo-button rounded-2xl border border-line px-5 py-3 text-sm font-semibold text-ink"
@@ -1927,6 +1831,36 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        <aside className="order-3 xl:order-3">
+          <FitBenchPanel
+            canRender={canRender}
+            showFitBench={showFitBench}
+            onToggleFitBench={() => setShowFitBench((prev) => !prev)}
+            fitConfidence={fitConfidence}
+            showLugGuides={showLugGuides}
+            onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
+            onResetFit={() => void autoAlignStraps()}
+            isAutoAligning={isAutoAligning}
+            strapGap={strapGap}
+            setGapHalf={setGapHalf}
+            lockView={lockView}
+            showControlCoachmark={showControlCoachmark}
+            strapSizeUi={strapSizeUi}
+            setStrapScale={setStrapScale}
+            dismissControlCoachmark={dismissControlCoachmark}
+            dialScale={dialScale}
+            setDialScaleValue={setDialScaleValue}
+            sceneZoom={sceneZoom}
+            setSceneZoomValue={setSceneZoomValue}
+            onToggleLockView={toggleLockView}
+            preserveSettings={preserveSettings}
+            setPreserveSettings={setPreserveSettings}
+            reCropCurrentWatch={reCropCurrentWatch}
+            onChangeWatch={() => changeWatchInputRef.current?.click()}
+            hasUserUpload={hasUserUpload}
+          />
+        </aside>
       </section>
     </main>
   );
@@ -1994,23 +1928,6 @@ function ErrorText({ message }: { message: string }) {
   return <p className="text-xs text-rose-600">{message}</p>;
 }
 
-function FeaturedStrapTeaser({ strap }: FeaturedStrapTeaserProps) {
-  return (
-    <div className="rounded-2xl border border-line bg-white/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-      <div className="flex h-24 items-center justify-center overflow-hidden rounded-[1rem] border border-line bg-slate-50">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={strap.strapASrc}
-          alt={`${strap.label} teaser`}
-          className="h-full w-full scale-[1.55] object-contain"
-          loading="lazy"
-        />
-      </div>
-      <p className="mt-2 line-clamp-2 text-sm font-semibold leading-tight text-ink">{strap.label}</p>
-    </div>
-  );
-}
-
 function PreviewUploadStage({
   previewUrl,
   showUploadGuide,
@@ -2027,65 +1944,107 @@ function PreviewUploadStage({
   onFileSelect: (file: File) => void;
 }) {
   return (
-    <div className={highlightUploadGuide ? "upload-attention-ring rounded-[1.75rem]" : ""}>
-      <div
-        className="rounded-2xl border p-2.5 transition sm:p-3"
-        style={{
-          background:
-            "linear-gradient(150deg, color-mix(in srgb, var(--canvas-bg) 62%, white 38%), color-mix(in srgb, var(--canvas-bg) 84%, white 16%))",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,.8), 0 12px 30px rgba(15,23,42,.08)",
-          backdropFilter: "blur(8px)"
-        }}
-      >
-        <div className="rounded-xl border border-line bg-canvas p-5 sm:p-6">
-          <div className="mx-auto max-w-[30rem]">
-            <ImageUploader
-              id="watch-stage"
-              label=""
-              helperText=""
-              previewUrl={previewUrl}
-              onFileSelect={onFileSelect}
-              className="w-full"
-            />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-sm text-muted">Front-on, straight shots work best.</p>
+    <div className={`relative overflow-hidden rounded-[1.75rem] ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/mock-dial.svg" alt="" aria-hidden="true" className="absolute left-1/2 top-1/2 h-[62%] -translate-x-1/2 -translate-y-1/2 opacity-[0.07]" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/strap-selection-kie/cognac-grain-leather-buckle.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute left-8 top-10 hidden h-52 w-24 -rotate-[14deg] object-contain opacity-[0.06] lg:block"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/strap-selection-kie/black-grain-leather-tail.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute bottom-8 right-8 hidden h-56 w-24 rotate-[11deg] object-contain opacity-[0.05] lg:block"
+        />
+      </div>
+      <div className="relative rounded-[1.7rem] border border-line bg-[linear-gradient(180deg,rgba(255,253,249,0.95),rgba(248,241,233,0.84))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7">
+        <div className="mx-auto max-w-[34rem]">
+          <ImageUploader
+            id="watch-stage"
+            label=""
+            helperText=""
+            previewUrl={previewUrl}
+            onFileSelect={onFileSelect}
+            className="w-full"
+          />
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted">Front-on, straight shots work best.</p>
+            <button
+              type="button"
+              onClick={onToggleUploadGuide}
+              className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
+              aria-expanded={showUploadGuide}
+              aria-controls="preview-upload-guide-panel"
+            >
+              Photo Tips
+              <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
+            </button>
+          </div>
+          {showUploadGuide ? (
+            <div
+              id="preview-upload-guide-panel"
+              className="mt-4 overflow-hidden rounded-2xl border border-line bg-white/70 p-3 transition-all duration-300"
+            >
               <button
                 type="button"
-                onClick={onToggleUploadGuide}
-                className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
+                onClick={onCloseUploadGuide}
+                className="mb-2 flex w-full items-center rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
                 aria-expanded={showUploadGuide}
                 aria-controls="preview-upload-guide-panel"
               >
-                Photo Tips
-                <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
+                <p className="text-base font-semibold text-ink">Photo Tips</p>
               </button>
-            </div>
-            {showUploadGuide ? (
-              <div
-                id="preview-upload-guide-panel"
-                className="mt-4 overflow-hidden rounded-2xl border border-line bg-white/65 p-3 transition-all duration-300"
-              >
-                <button
-                  type="button"
-                  onClick={onCloseUploadGuide}
-                  className="mb-2 flex w-full items-center rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
-                  aria-expanded={showUploadGuide}
-                  aria-controls="preview-upload-guide-panel"
-                >
-                  <p className="text-base font-semibold text-ink">Photo Tips</p>
-                </button>
-                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-                  {UPLOAD_GUIDE_ITEMS.map((item) => (
-                    <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
-                      <UploadGuideCard item={item} />
-                    </div>
-                  ))}
-                </div>
+              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+                {UPLOAD_GUIDE_ITEMS.map((item) => (
+                  <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
+                    <UploadGuideCard item={item} />
+                  </div>
+                ))}
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function MaterialInset({
+  src,
+  label,
+  fit = "cover"
+}: {
+  src: string;
+  label: string;
+  fit?: "cover" | "contain";
+}) {
+  return (
+    <div className="rounded-[1.1rem] border border-line bg-white/82 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+      <div className="overflow-hidden rounded-[0.9rem] border border-line bg-slate-50">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={label}
+          className={`h-16 w-full ${fit === "cover" ? "object-cover" : "object-contain p-2"}`}
+          loading="lazy"
+        />
+      </div>
+      <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7c7165]">{label}</p>
+    </div>
+  );
+}
+
+function MaterialsStrip() {
+  return (
+    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <MaterialInset src="/bench-details/leather-grain.jpg" label="Leather grain" fit="cover" />
+      <MaterialInset src="/bench-details/hardware-tone.jpg" label="Hardware tone" fit="cover" />
     </div>
   );
 }
@@ -2103,33 +2062,40 @@ function StrapDrawerButton({
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`flex w-full items-center gap-3 rounded-[1.45rem] border px-3.5 py-3.5 text-left transition ${
+      className={`drawer-card flex w-full items-center gap-2 rounded-[1.25rem] border px-2 py-2 text-left transition ${
         active
-          ? "border-emerald-200 bg-emerald-50/90 text-ink shadow-[0_10px_24px_rgba(16,185,129,0.12)]"
+          ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
       } ${animateIn ? "drawer-reveal-item" : ""}`}
       style={animateIn ? { animationDelay: `${animationDelayMs}ms` } : undefined}
       aria-pressed={active}
     >
       <div
-        className={`flex h-[124px] w-[124px] shrink-0 items-center justify-center overflow-hidden rounded-[1.2rem] border ${
-          active ? "border-emerald-200 bg-white" : "border-line bg-slate-50"
+        className={`grid h-[124px] w-[148px] shrink-0 grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
+          active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapASrc}
-          alt={`${strap.label} thumbnail`}
-          className="h-full w-full scale-[1.75] object-contain"
+          alt={`${strap.label} buckle side`}
+          className="h-full w-full translate-x-[8px] scale-[2.5] object-contain"
+          loading="lazy"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={strap.strapBSrc}
+          alt={`${strap.label} tail side`}
+          className="h-full w-full -translate-x-[8px] scale-[2.5] object-contain"
           loading="lazy"
         />
       </div>
-      <div className="min-w-0 max-w-[8.5rem] flex-1">
-        <p className="line-clamp-2 text-[15px] font-semibold leading-tight sm:text-[16px]">{strap.label}</p>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-3 text-[13px] font-semibold leading-tight sm:text-[13px]">{strap.label}</p>
         {showCategory ? (
           <p
             className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] ${
-              active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200/70 text-slate-700"
+              active ? "bg-[#f6ead7] text-[#9b6a2f]" : "bg-slate-200/70 text-slate-700"
             }`}
           >
             {strap.category}
@@ -2163,6 +2129,7 @@ function WatchOnlyPreview({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
+  const [shouldBlinkGuides, setShouldBlinkGuides] = useState(false);
   const dragRef = useRef<{
     pointerId: number;
     guide: "top" | "bottom";
@@ -2301,6 +2268,12 @@ function WatchOnlyPreview({
     };
   }, [watchSrc, watchScale]);
 
+  useEffect(() => {
+    setShouldBlinkGuides(true);
+    const timeout = window.setTimeout(() => setShouldBlinkGuides(false), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [watchSrc]);
+
   return (
     <div className={highlighted ? "preview-attention-ring rounded-[1.75rem]" : ""}>
       <div
@@ -2324,11 +2297,13 @@ function WatchOnlyPreview({
               onPointerCancel={onGuidePointerEnd}
               style={{ touchAction: "none" }}
             />
-            {showLugGuides && effectiveLugGuides ? <WatchOnlyLugGuideOverlay guides={effectiveLugGuides} /> : null}
-            {showLugGuides && showGuideOnboarding && effectiveLugGuides ? (
-              <WatchOnlyLugGuideCoachmark onDismiss={onDismissGuideOnboarding} />
+            {showLugGuides && effectiveLugGuides ? (
+              <WatchOnlyLugGuideOverlay guides={effectiveLugGuides} blink={shouldBlinkGuides} />
             ) : null}
           </div>
+          {showLugGuides && showGuideOnboarding && effectiveLugGuides ? (
+            <WatchOnlyLugGuideCoachmark onDismiss={onDismissGuideOnboarding} />
+          ) : null}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted">
               {showLugGuides
@@ -2358,50 +2333,66 @@ function WatchOnlyPreview({
   );
 }
 
-function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
+function WatchOnlyLugGuideOverlay({
+  guides,
+  blink
+}: {
+  guides: PreviewLugGuides;
+  blink: boolean;
+}) {
   const topLeft = ((guides.centerX - guides.topWidth / 2) / CANVAS_SIZE) * 100;
   const topWidth = (guides.topWidth / CANVAS_SIZE) * 100;
   const topY = (guides.topY / CANVAS_SIZE) * 100;
   const bottomLeft = ((guides.centerX - guides.bottomWidth / 2) / CANVAS_SIZE) * 100;
   const bottomWidth = (guides.bottomWidth / CANVAS_SIZE) * 100;
   const bottomY = (guides.bottomY / CANVAS_SIZE) * 100;
+  const lineStyle = (left: number, top: number, width: number) => ({
+    left: `${left}%`,
+    top: `${top}%`,
+    width: `${width}%`,
+    transform: "translateY(-50%)"
+  });
+  const handleStyle = (left: number, top: number) => ({
+    left: `${left}%`,
+    top: `${top}%`,
+    width: "14px",
+    height: "14px",
+    transform: "translate(-50%, -50%)"
+  });
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
       <div
-        className="absolute h-[2px] rounded-full border border-cyan-300 bg-cyan-400/12"
-        style={{ left: `${topLeft}%`, top: `${topY}%`, width: `${topWidth}%` }}
+        className="absolute h-[2px] rounded-full bg-[#d7c1a3]"
+        style={lineStyle(topLeft, topY, topWidth)}
       />
       <div
-        className="absolute rounded-full border border-cyan-300 bg-white relative"
-        style={{ left: `calc(${topLeft}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
+        className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
+        style={handleStyle(topLeft, topY)}
       >
-        <span className="absolute inset-[-5px] rounded-full border border-cyan-300/70 animate-ping" />
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
-        className="absolute rounded-full border border-cyan-300 bg-white relative"
-        style={{ left: `calc(${topLeft + topWidth}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
+        className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
+        style={handleStyle(topLeft + topWidth, topY)}
       >
-        <span className="absolute inset-[-5px] rounded-full border border-cyan-300/70 animate-ping" />
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
-        className="absolute h-[2px] rounded-full border border-cyan-300 bg-cyan-400/12"
-        style={{ left: `${bottomLeft}%`, top: `${bottomY}%`, width: `${bottomWidth}%` }}
+        className="absolute h-[2px] rounded-full bg-[#d7c1a3]"
+        style={lineStyle(bottomLeft, bottomY, bottomWidth)}
       />
       <div
-        className="absolute rounded-full border border-cyan-300 bg-white relative"
-        style={{ left: `calc(${bottomLeft}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
+        className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
+        style={handleStyle(bottomLeft, bottomY)}
       >
-        <span className="absolute inset-[-5px] rounded-full border border-cyan-300/70 animate-ping" />
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
       <div
-        className="absolute rounded-full border border-cyan-300 bg-white relative"
-        style={{ left: `calc(${bottomLeft + bottomWidth}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
+        className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
+        style={handleStyle(bottomLeft + bottomWidth, bottomY)}
       >
-        <span className="absolute inset-[-5px] rounded-full border border-cyan-300/70 animate-ping" />
-      </div>
-      <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full border border-slate-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
-        Estimated lug guides. Strap fit will land here first.
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
       </div>
     </div>
   );
@@ -2409,43 +2400,41 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
 
 function WatchOnlyLugGuideCoachmark({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-[6] overflow-hidden rounded-xl">
-      <div className="absolute left-5 top-5 max-w-[18rem] rounded-2xl border border-cyan-200/80 bg-white/94 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.14)] backdrop-blur">
-        <div className="pointer-events-auto flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-ink">Set the lug openings</p>
-            <p className="mt-1 text-xs leading-5 text-muted">
-              Line these guides up with the top and bottom lug openings. Drag the row or the end
-              handles to match the width.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="neo-button rounded-xl px-2.5 py-1 text-xs font-semibold text-ink"
-          >
-            Got it
-          </button>
+    <div className="mt-3 rounded-2xl border border-[#ead8c0] bg-white/94 p-4 shadow-[0_18px_40px_rgba(56,44,32,0.10)] backdrop-blur">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-ink">Set the lug openings</p>
+          <p className="mt-1 text-xs leading-5 text-muted">
+            Line these guides up with the top and bottom lug openings. Drag the row or the end
+            handles to match the width.
+          </p>
         </div>
-        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            <span>Top fit</span>
-            <span>Then pick a strap</span>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="neo-button rounded-xl px-2.5 py-1 text-xs font-semibold text-ink"
+        >
+          Got it
+        </button>
+      </div>
+      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          <span>Top fit</span>
+          <span>Then pick a strap</span>
+        </div>
+        <div className="mt-2 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full border border-[#d7c1a3] bg-white" />
+            <span className="h-[2px] flex-1 rounded-full bg-[#d7c1a3]" />
+            <span className="h-3 w-3 rounded-full border border-[#d7c1a3] bg-white" />
           </div>
-          <div className="mt-2 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full border border-cyan-300 bg-white" />
-              <span className="h-[2px] flex-1 rounded-full bg-cyan-300" />
-              <span className="h-3 w-3 rounded-full border border-cyan-300 bg-white" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg text-cyan-500">↕</span>
-              <span className="text-xs text-slate-600">Move the row to the lug opening</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg text-cyan-500">↔</span>
-              <span className="text-xs text-slate-600">Drag either end to set the width</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="text-lg text-[#9b6a2f]">↕</span>
+            <span className="text-xs text-slate-600">Move the row to the lug opening</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-lg text-[#9b6a2f]">↔</span>
+            <span className="text-xs text-slate-600">Drag either end to set the width</span>
           </div>
         </div>
       </div>
@@ -2551,7 +2540,7 @@ function ToolButton({
     <div
       className={`neo-control rounded-2xl p-4 transition ${
         highlighted
-          ? "animate-pulse border-amber-300/90 bg-amber-50/70 shadow-[0_0_0_1px_rgba(245,158,11,0.22),0_16px_30px_rgba(245,158,11,0.14)]"
+          ? "animate-pulse border-[#d7c1a3]/90 bg-[#fbf3e8] shadow-[0_0_0_1px_rgba(215,193,163,0.35),0_16px_30px_rgba(155,106,47,0.10)]"
           : ""
       }`}
     >
@@ -2582,7 +2571,7 @@ function ToolButton({
                 loading
                   ? "ai-pulse border-slate-300/80 bg-slate-100"
                   : highlighted
-                    ? "border-amber-800 bg-amber-700 text-white shadow-[0_12px_24px_rgba(180,83,9,0.28)] hover:opacity-95"
+                    ? "atelier-accent-solid"
                     : "text-ink hover:opacity-90"
               }`}
             >
@@ -2592,6 +2581,229 @@ function ToolButton({
           {note ? <p className="mt-2 max-w-[28rem] text-sm leading-5 text-muted">{note}</p> : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function FitBenchPanel({
+  canRender,
+  showFitBench,
+  onToggleFitBench,
+  fitConfidence,
+  showLugGuides,
+  onToggleLugGuides,
+  onResetFit,
+  isAutoAligning,
+  strapGap,
+  setGapHalf,
+  lockView,
+  showControlCoachmark,
+  strapSizeUi,
+  setStrapScale,
+  dismissControlCoachmark,
+  dialScale,
+  setDialScaleValue,
+  sceneZoom,
+  setSceneZoomValue,
+  onToggleLockView,
+  preserveSettings,
+  setPreserveSettings,
+  reCropCurrentWatch,
+  onChangeWatch,
+  hasUserUpload
+}: {
+  canRender: boolean;
+  showFitBench: boolean;
+  onToggleFitBench: () => void;
+  fitConfidence: number;
+  showLugGuides: boolean;
+  onToggleLugGuides: () => void;
+  onResetFit: () => void;
+  isAutoAligning: boolean;
+  strapGap: number;
+  setGapHalf: (value: number) => void;
+  lockView: boolean;
+  showControlCoachmark: boolean;
+  strapSizeUi: number;
+  setStrapScale: (value: number) => void;
+  dismissControlCoachmark: () => void;
+  dialScale: number;
+  setDialScaleValue: (value: number) => void;
+  sceneZoom: number;
+  setSceneZoomValue: (value: number) => void;
+  onToggleLockView: () => void;
+  preserveSettings: boolean;
+  setPreserveSettings: (value: boolean | ((prev: boolean) => boolean)) => void;
+  reCropCurrentWatch: () => void;
+  onChangeWatch: () => void;
+  hasUserUpload: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-[1.75rem] p-4 ${
+        showFitBench && canRender
+          ? "atelier-bench-panel"
+          : "glass-card atelier-card-soft border border-line"
+      }`}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
+            Fit Bench
+          </p>
+          {showFitBench && canRender ? (
+            <p className="mt-1.5 max-w-[18rem] text-xs leading-5 text-[#5f5143]">
+              {fitConfidence >= 0.65
+                ? "Auto-fit has done most of the placement."
+                : "Close fit. Refine size, gap, or framing here."}
+            </p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={onToggleFitBench}
+          disabled={!canRender}
+          className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink disabled:opacity-45"
+        >
+          {showFitBench ? "Hide" : "Open"}
+        </button>
+      </div>
+
+      {showFitBench && canRender ? (
+        <div className="mt-4 space-y-2.5">
+          <div className="grid gap-2.5">
+            <div className="relative">
+              <SliderControl
+                label="Strap Gap"
+                min={250}
+                max={900}
+                step={10}
+                value={strapGap}
+                onChange={setGapHalf}
+                disabled={lockView}
+                highlighted={showControlCoachmark}
+                hint="Closer ↔ Wider"
+              />
+              {showControlCoachmark ? (
+                <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
+                  <div className="flex items-center gap-2 rounded-full border border-[#d7c1a3] bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#c08a44]" />
+                    Size first. Then trim the gap.
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <SliderControl
+              label="Strap Size"
+              min={0}
+              max={100}
+              step={1}
+              value={strapSizeUi}
+              onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
+              disabled={lockView}
+              highlighted={showControlCoachmark}
+              hint="Slimmer ↔ Fuller"
+            />
+            <SliderControl
+              label="Dial Size"
+              min={DIAL_SCALE_MIN}
+              max={DIAL_SCALE_MAX}
+              step={0.02}
+              value={dialScale}
+              onChange={setDialScaleValue}
+              disabled={lockView}
+              hint="Smaller ↔ Larger"
+            />
+            <SliderControl
+              label="View Zoom"
+              min={0.2}
+              max={1.4}
+              step={0.02}
+              value={sceneZoom}
+              onChange={setSceneZoomValue}
+              hint="Whole watch ↔ Detail"
+            />
+          </div>
+
+          <div className="space-y-2.5 pt-1">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onToggleLugGuides}
+                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+              >
+                {showLugGuides ? "Hide lug guides" : "Show lug guides"}
+              </button>
+              <button
+                type="button"
+                onClick={onResetFit}
+                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+              >
+                {isAutoAligning ? "Resetting..." : "Reset fit"}
+              </button>
+            </div>
+            {showControlCoachmark ? (
+              <div className="rounded-2xl border border-[#ead8c0]/80 bg-[#fdf7ef] px-3 py-2 shadow-[0_8px_20px_rgba(155,106,47,0.08)]">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-xs leading-5 text-slate-700">
+                    Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissControlCoachmark}
+                    className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                  >
+                    Got it
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <ToggleControl
+              label="Lock Fit"
+              description="Freeze the fit and inspect the pairing"
+              enabled={lockView}
+              onToggle={onToggleLockView}
+            />
+            <div className="neo-toggle flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-ink">Keep Tweaks</p>
+                <p className="text-xs text-muted">Carry the fit tune to the next candidate.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreserveSettings((prev) => !prev)}
+                aria-pressed={preserveSettings}
+                className={`relative h-8 w-14 shrink-0 overflow-hidden rounded-full border transition ${
+                  preserveSettings ? "border-[#d7c1a3] bg-[#f6ead7]" : "border-line bg-canvas"
+                }`}
+              >
+                <span
+                  className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                    preserveSettings ? "translate-x-6" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={reCropCurrentWatch}
+                disabled={!hasUserUpload}
+                className="neo-button rounded-xl px-3 py-2 text-xs font-semibold text-ink disabled:opacity-50"
+              >
+                Re-crop current watch
+              </button>
+              <button
+                type="button"
+                onClick={onChangeWatch}
+                className="neo-button rounded-xl px-3 py-2 text-xs font-semibold text-ink"
+              >
+                Change Watch
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2637,10 +2849,10 @@ function SliderControl({
   };
 
   return (
-    <div className={`neo-control rounded-2xl p-4 transition ${highlighted ? "ring-2 ring-sky-200/80 shadow-[0_0_0_1px_rgba(125,211,252,0.35),0_14px_28px_rgba(56,189,248,0.1)]" : ""}`}>
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-lg font-semibold text-ink">{label}</span>
-        {displayValue ? <span className="text-sm text-muted">{displayValue}</span> : null}
+    <div className={`neo-control rounded-[1.15rem] p-3 transition ${highlighted ? "ring-2 ring-[#ead8c0]/90 shadow-[0_0_0_1px_rgba(215,193,163,0.32),0_10px_22px_rgba(155,106,47,0.08)]" : ""}`}>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-[15px] font-semibold text-ink">{label}</span>
+        {displayValue ? <span className="text-xs text-muted">{displayValue}</span> : null}
       </div>
       <input
         type="range"
@@ -2654,12 +2866,12 @@ function SliderControl({
         disabled={disabled}
         aria-label={label}
       />
-      <div className="range-ticks mt-3" aria-hidden="true">
+      <div className="range-ticks mt-2" aria-hidden="true">
         {Array.from({ length: 9 }).map((_, index) => (
           <span key={index} />
         ))}
       </div>
-      {hint ? <p className="mt-3 text-xs font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
+      {hint ? <p className="mt-2 text-[11px] font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -2676,25 +2888,25 @@ function ToggleControl({
   onToggle: () => void;
 }) {
   return (
-    <div className="neo-control rounded-2xl p-4">
+    <div className="neo-control rounded-[1.15rem] p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-lg font-semibold text-ink">{label}</p>
-          <p className="text-sm text-muted">{description}</p>
+          <p className="text-[15px] font-semibold text-ink">{label}</p>
+          <p className="text-xs text-muted">{description}</p>
         </div>
         <button
           type="button"
           onClick={onToggle}
           aria-pressed={enabled}
-          className={`relative h-12 w-20 shrink-0 overflow-hidden rounded-full border transition ${
+          className={`relative h-9 w-16 shrink-0 overflow-hidden rounded-full border transition ${
             enabled
-              ? "border-cyan-400/60 bg-gradient-to-r from-cyan-300/60 to-blue-300/60"
-              : "border-line bg-canvas shadow-[inset_6px_6px_12px_rgba(15,23,42,0.12),inset_-6px_-6px_12px_rgba(255,255,255,0.45)]"
+              ? "border-[#d7c1a3] bg-gradient-to-r from-[#f7e7cf] to-[#edd0aa]"
+              : "border-line bg-canvas shadow-[inset_2px_2px_8px_rgba(56,44,32,0.08),inset_-4px_-4px_12px_rgba(255,255,255,0.48)]"
           }`}
         >
           <span
-            className={`absolute left-1 top-1 h-9 w-9 rounded-full bg-white shadow-[0_10px_18px_rgba(15,23,42,0.18)] transition-transform ${
-              enabled ? "translate-x-9" : "translate-x-0"
+            className={`absolute left-1 top-1 h-7 w-7 rounded-full bg-white shadow-[0_8px_14px_rgba(15,23,42,0.18)] transition-transform ${
+              enabled ? "translate-x-7" : "translate-x-0"
             }`}
           />
         </button>

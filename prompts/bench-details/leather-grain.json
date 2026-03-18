@@ -1,0 +1,17 @@
+{
+  "prompt": "Luxury product macro photograph of warm cognac leather watch strap material, extreme close-up showing rich leather grain, subtle stitching near one edge, soft editorial studio lighting, creamy off-white background falloff, highly realistic material texture, premium horology brand mood, shallow depth of field, no full strap product framing, only material detail and craftsmanship emphasis.",
+  "negative_prompt": "cartoon, cgi, illustration, synthetic plastic texture, full product shot, blurry, distorted stitching, oversaturated, text, watermark",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "jpg",
+    "aspect_ratio": "16:9"
+  },
+  "settings": {
+    "resolution": "1280x720",
+    "style": "photorealistic luxury product macro",
+    "lighting": "soft diffused studio light with gentle highlights",
+    "camera_angle": "macro straight-on close crop",
+    "depth_of_field": "shallow depth of field",
+    "quality": "high detail realistic leather texture"
+  }
+}

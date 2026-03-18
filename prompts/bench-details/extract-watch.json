@@ -1,0 +1,17 @@
+{
+  "prompt": "Clean premium product image of a silver dive watch head isolated on a soft warm off-white studio background, front-on composition, precise cut edges, subtle grounding shadow, realistic polished steel and deep blue dial, styled like a clean before/after extraction demo asset for an e-commerce watch tool, minimal composition, highly realistic.",
+  "negative_prompt": "cartoon, cgi, illustration, wrist shot, messy background, text, watermark, duplicate watch, distorted watch case, blurry",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "jpg",
+    "aspect_ratio": "4:3"
+  },
+  "settings": {
+    "resolution": "1024x768",
+    "style": "photorealistic luxury product photography",
+    "lighting": "soft neutral studio light",
+    "camera_angle": "front-on",
+    "depth_of_field": "moderate depth of field",
+    "quality": "high detail realistic steel and dial"
+  }
+}

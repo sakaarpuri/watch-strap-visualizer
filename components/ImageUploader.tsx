@@ -104,8 +104,8 @@ export default function ImageUploader({
         onDrop={handleDrop}
         className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-4 text-center transition ${
           isDragOver
-            ? "border-emerald-400 bg-emerald-50/60"
-            : "border-slate-300 bg-canvas hover:border-emerald-300 hover:bg-white/70"
+            ? "border-[#d7c1a3] bg-[#fbf3e8]"
+            : "border-slate-300 bg-canvas hover:border-[#d7c1a3] hover:bg-white/85"
         } ${compact ? "min-h-[8rem]" : "min-h-[12rem]"}`}
       >
         {previewUrl ? (
@@ -142,7 +142,7 @@ function OrientationChip({
   good?: boolean;
 }) {
   return (
-    <div className={`rounded-lg border px-2 py-1.5 text-center ${good ? "border-emerald-300 bg-emerald-50/70" : "border-line bg-white/80"}`}>
+    <div className={`rounded-lg border px-2 py-1.5 text-center ${good ? "border-[#d7c1a3] bg-[#fbf3e8]" : "border-line bg-white/80"}`}>
       <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-line bg-canvas">
         <span
           className="inline-block h-5 w-1.5 rounded-sm bg-slate-700"
@@ -150,7 +150,7 @@ function OrientationChip({
           aria-hidden="true"
         />
       </div>
-      <p className={`mt-1 text-[11px] ${good ? "text-emerald-700" : "text-muted"}`}>{label}</p>
+      <p className={`mt-1 text-[11px] ${good ? "text-[#9b6a2f]" : "text-muted"}`}>{label}</p>
     </div>
   );
 }
