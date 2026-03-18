@@ -564,6 +564,7 @@ export default function Home() {
   const mockupReadyTimeoutRef = useRef<number | null>(null);
   const strapSettleTimeoutRef = useRef<number | null>(null);
   const drawerRevealTimeoutRef = useRef<number | null>(null);
+  const firstRenderedStrapRef = useRef(false);
 
   const clearMockupReadyHighlight = () => {
     setMockupReadyHighlight(false);
@@ -824,8 +825,17 @@ export default function Home() {
   }, [canShowWatchOnlyPreview, hasUserUpload, watchSrc]);
 
   useEffect(() => {
-    if (!canRender || !showLugGuideOnboarding) return;
-    dismissLugGuideOnboarding();
+    if (!canRender) {
+      firstRenderedStrapRef.current = false;
+      return;
+    }
+    if (!firstRenderedStrapRef.current) {
+      setShowLugGuides(false);
+      firstRenderedStrapRef.current = true;
+    }
+    if (showLugGuideOnboarding) {
+      dismissLugGuideOnboarding();
+    }
   }, [canRender, showLugGuideOnboarding]);
 
   const dismissControlCoachmark = () => {
@@ -2244,38 +2254,49 @@ function WatchOnlyLugGuideOverlay({ guides }: { guides: PreviewLugGuides }) {
   const bottomLeft = ((guides.centerX - guides.bottomWidth / 2) / CANVAS_SIZE) * 100;
   const bottomWidth = (guides.bottomWidth / CANVAS_SIZE) * 100;
   const bottomY = (guides.bottomY / CANVAS_SIZE) * 100;
+  const lineStyle = (left: number, top: number, width: number) => ({
+    left: `calc(${left}% - 1px)`,
+    top: `calc(${top}% - 1px)`,
+    width: `calc(${width}% + 2px)`
+  });
+  const handleStyle = (left: number, top: number) => ({
+    left: `calc(${left}% - 7px)`,
+    top: `calc(${top}% - 7px)`,
+    width: "14px",
+    height: "14px"
+  });
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
       <div
-        className="absolute h-[2px] -translate-y-1/2 rounded-full bg-[#d7c1a3]"
-        style={{ left: `${topLeft}%`, top: `${topY}%`, width: `${topWidth}%` }}
+        className="absolute h-[2px] rounded-full bg-[#d7c1a3]"
+        style={lineStyle(topLeft, topY, topWidth)}
       />
       <div
         className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
-        style={{ left: `calc(${topLeft}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
+        style={handleStyle(topLeft, topY)}
       >
         <span className="absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70 animate-ping" />
       </div>
       <div
         className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
-        style={{ left: `calc(${topLeft + topWidth}% - 7px)`, top: `calc(${topY}% - 7px)`, width: "14px", height: "14px" }}
+        style={handleStyle(topLeft + topWidth, topY)}
       >
         <span className="absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70 animate-ping" />
       </div>
       <div
-        className="absolute h-[2px] -translate-y-1/2 rounded-full bg-[#d7c1a3]"
-        style={{ left: `${bottomLeft}%`, top: `${bottomY}%`, width: `${bottomWidth}%` }}
+        className="absolute h-[2px] rounded-full bg-[#d7c1a3]"
+        style={lineStyle(bottomLeft, bottomY, bottomWidth)}
       />
       <div
         className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
-        style={{ left: `calc(${bottomLeft}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
+        style={handleStyle(bottomLeft, bottomY)}
       >
         <span className="absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70 animate-ping" />
       </div>
       <div
         className="absolute rounded-full border border-[#d7c1a3] bg-white relative"
-        style={{ left: `calc(${bottomLeft + bottomWidth}% - 7px)`, top: `calc(${bottomY}% - 7px)`, width: "14px", height: "14px" }}
+        style={handleStyle(bottomLeft + bottomWidth, bottomY)}
       >
         <span className="absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70 animate-ping" />
       </div>
@@ -2524,7 +2545,13 @@ function FitBenchPanel({
   hasUserUpload: boolean;
 }) {
   return (
-    <div className="atelier-bench-panel rounded-[1.75rem] p-4 sm:p-4.5">
+    <div
+      className={`rounded-[1.75rem] p-4 ${
+        showFitBench && canRender
+          ? "atelier-bench-panel"
+          : "glass-card atelier-card-soft border border-line"
+      }`}
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">

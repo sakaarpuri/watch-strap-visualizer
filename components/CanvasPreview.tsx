@@ -681,24 +681,26 @@ function GuideLine({
     tone === "cyan"
       ? "border-cyan-300 bg-cyan-400/12 text-cyan-700"
       : "border-fuchsia-300 bg-fuchsia-400/12 text-fuchsia-700";
+  const lineWidth = Math.max(32, width);
+  const lineLeft = centerX - lineWidth / 2;
 
   return (
     <>
       <div
-        className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${colorClasses}`}
+        className={`absolute rounded-full ${colorClasses}`}
         style={{
-          left: `${centerX}px`,
-          top: `${y}px`,
-          width: `${Math.max(32, width)}px`,
+          left: `${lineLeft - 1}px`,
+          top: `${y - 1}px`,
+          width: `${lineWidth + 2}px`,
           height: "2px",
           borderWidth: 0
         }}
       />
       <div
-        className={`absolute -translate-x-1/2 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorClasses}`}
+        className={`absolute rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorClasses}`}
         style={{
-          left: `${centerX}px`,
-          top: `${y - 24}px`
+          left: `${centerX + lineWidth / 2 + 10}px`,
+          top: `${y - 11}px`
         }}
       >
         {label}
@@ -706,7 +708,7 @@ function GuideLine({
       <div
         className={`absolute rounded-full border bg-white ${colorClasses}`}
         style={{
-          left: `${centerX - width / 2 - 7}px`,
+          left: `${lineLeft - 7}px`,
           top: `${y - 7}px`,
           width: "14px",
           height: "14px"
@@ -715,7 +717,7 @@ function GuideLine({
       <div
         className={`absolute rounded-full border bg-white ${colorClasses}`}
         style={{
-          left: `${centerX + width / 2 - 7}px`,
+          left: `${lineLeft + lineWidth - 7}px`,
           top: `${y - 7}px`,
           width: "14px",
           height: "14px"

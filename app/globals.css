@@ -269,12 +269,10 @@ body {
   inset: -4px;
   border-radius: inherit;
   padding: 3px;
-  background: conic-gradient(
-    from 180deg,
-    rgba(125, 211, 252, 0.55),
-    rgba(251, 191, 36, 0.42),
-    rgba(52, 211, 153, 0.46),
-    rgba(125, 211, 252, 0.55)
+  background: linear-gradient(
+    180deg,
+    rgba(226, 208, 181, 0.82),
+    rgba(240, 226, 204, 0.66)
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -286,7 +284,7 @@ body {
   mask-composite: exclude;
   filter: blur(0.5px);
   pointer-events: none;
-  opacity: 0.72;
+  opacity: 0.7;
   animation: upload-guide-sheen 1.6s ease-in-out 6;
 }
 
