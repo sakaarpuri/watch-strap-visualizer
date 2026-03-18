@@ -1280,7 +1280,7 @@ export default function Home() {
 
       <section className="mt-6 grid gap-4 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
         <aside className={`space-y-5 transition lg:order-2 ${hasUserUpload ? "opacity-100" : "opacity-85"}`}>
-          <div className="glass-card rounded-2xl p-4 sm:p-6">
+          <div className="glass-card atelier-card-soft rounded-2xl p-4 sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-lg font-medium text-ink">
@@ -1295,11 +1295,11 @@ export default function Home() {
                 </p>
               </div>
               {hasUserUpload ? (
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                <span className="atelier-accent-soft rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]">
                   Ready
                 </span>
               ) : (
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
+                <span className="rounded-full border border-line bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
                   Waiting for your watch
                 </span>
               )}
@@ -1317,7 +1317,7 @@ export default function Home() {
                     onClick={() => setStrapSourceMode(option.mode)}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       active
-                        ? "bg-emerald-900 text-white shadow-[0_10px_20px_rgba(6,78,59,0.24)]"
+                        ? "atelier-pill-active"
                         : "text-ink hover:bg-white"
                     }`}
                     aria-pressed={active}
@@ -1362,8 +1362,8 @@ export default function Home() {
                         data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
                         className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                           active
-                            ? "border-emerald-900 bg-emerald-900 text-white shadow-[0_10px_20px_rgba(6,78,59,0.24)]"
-                            : "border-line bg-canvas text-ink hover:border-emerald-200 hover:bg-white"
+                            ? "atelier-pill-active"
+                            : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
                         }`}
                         aria-pressed={active}
                       >
@@ -1494,7 +1494,7 @@ export default function Home() {
                 aria-pressed={preserveSettings}
                 className={`relative h-8 w-14 shrink-0 overflow-hidden rounded-full border transition ${
                   preserveSettings
-                    ? "border-emerald-500/40 bg-emerald-400/30"
+                    ? "border-[#d7c1a3] bg-[#f6ead7]"
                     : "border-line bg-canvas"
                 }`}
               >
@@ -1541,7 +1541,7 @@ export default function Home() {
           </h2>
           <p className="mb-3 text-sm text-muted">{previewStageHint}</p>
           {canRender && hasUserUpload ? (
-            <div className="glass-card sticky top-4 z-10 mb-4 rounded-2xl p-4 shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
+            <div className="glass-card atelier-card-soft sticky top-4 z-10 mb-4 rounded-2xl p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Lock & Export</p>
@@ -1572,7 +1572,7 @@ export default function Home() {
                     }
                     className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
                       lockView
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                        ? "atelier-accent-soft"
                         : "border-line bg-canvas text-ink hover:bg-white"
                     }`}
                   >
@@ -1581,7 +1581,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => void onSavePreviewImage()}
-                    className="rounded-xl border border-amber-800 bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                    className="atelier-accent-solid rounded-xl border px-5 py-2.5 text-sm font-semibold transition hover:opacity-95"
                   >
                     Save Image
                   </button>
@@ -1668,8 +1668,8 @@ export default function Home() {
                         />
                         {showControlCoachmark ? (
                           <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
-                            <div className="flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-                              <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+                            <div className="flex items-center gap-2 rounded-full border border-[#d7c1a3] bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                              <span className="h-2 w-2 animate-pulse rounded-full bg-[#c08a44]" />
                               Size first. Then trim the gap.
                             </div>
                           </div>
@@ -1687,7 +1687,7 @@ export default function Home() {
                         hint="Slimmer ↔ Fuller"
                       />
                       {showControlCoachmark ? (
-                        <div className="rounded-2xl border border-sky-200/80 bg-sky-50/80 px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
+                        <div className="rounded-2xl border border-[#ead8c0]/80 bg-[#fdf7ef] px-3 py-2 shadow-[0_8px_20px_rgba(56,189,248,0.08)]">
                           <div className="flex items-start justify-between gap-3">
                             <p className="text-xs leading-5 text-slate-700">
                               Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
@@ -1754,7 +1754,7 @@ export default function Home() {
               onFileSelect={onUploadDial}
             />
           )}
-          <div className="glass-card mt-4 rounded-2xl p-4">
+          <div className="glass-card atelier-card-soft mt-4 rounded-2xl p-4">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
@@ -1807,7 +1807,7 @@ export default function Home() {
           </div>
           {strapSourceMode === "library" ? (
             <div
-              className={`glass-card mt-4 rounded-2xl p-4 transition ${
+              className={`glass-card atelier-card-soft mt-4 rounded-2xl p-4 transition ${
                 lockView
                   ? ""
                   : "opacity-80"
@@ -1828,7 +1828,7 @@ export default function Home() {
                     </p>
                   )}
                 </div>
-                <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+                <span className="rounded-full border border-line bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
                   Coming soon
                 </span>
               </div>
@@ -1880,7 +1880,7 @@ export default function Home() {
             </div>
           ) : null}
           {inlineMockupUrl ? (
-            <div className="glass-card mt-4 rounded-2xl p-4">
+            <div className="glass-card atelier-card-soft mt-4 rounded-2xl p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
                   Mockup Deck
@@ -2105,7 +2105,7 @@ function StrapDrawerButton({
       data-testid={`strap-${strap.id}`}
       className={`flex w-full items-center gap-3 rounded-[1.45rem] border px-3.5 py-3.5 text-left transition ${
         active
-          ? "border-emerald-200 bg-emerald-50/90 text-ink shadow-[0_10px_24px_rgba(16,185,129,0.12)]"
+          ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
       } ${animateIn ? "drawer-reveal-item" : ""}`}
       style={animateIn ? { animationDelay: `${animationDelayMs}ms` } : undefined}
@@ -2113,7 +2113,7 @@ function StrapDrawerButton({
     >
       <div
         className={`flex h-[124px] w-[124px] shrink-0 items-center justify-center overflow-hidden rounded-[1.2rem] border ${
-          active ? "border-emerald-200 bg-white" : "border-line bg-slate-50"
+          active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2129,7 +2129,7 @@ function StrapDrawerButton({
         {showCategory ? (
           <p
             className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] ${
-              active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200/70 text-slate-700"
+              active ? "bg-[#f6ead7] text-[#9b6a2f]" : "bg-slate-200/70 text-slate-700"
             }`}
           >
             {strap.category}
@@ -2551,7 +2551,7 @@ function ToolButton({
     <div
       className={`neo-control rounded-2xl p-4 transition ${
         highlighted
-          ? "animate-pulse border-amber-300/90 bg-amber-50/70 shadow-[0_0_0_1px_rgba(245,158,11,0.22),0_16px_30px_rgba(245,158,11,0.14)]"
+          ? "animate-pulse border-[#d7c1a3]/90 bg-[#fbf3e8] shadow-[0_0_0_1px_rgba(215,193,163,0.35),0_16px_30px_rgba(155,106,47,0.10)]"
           : ""
       }`}
     >
@@ -2582,7 +2582,7 @@ function ToolButton({
                 loading
                   ? "ai-pulse border-slate-300/80 bg-slate-100"
                   : highlighted
-                    ? "border-amber-800 bg-amber-700 text-white shadow-[0_12px_24px_rgba(180,83,9,0.28)] hover:opacity-95"
+                    ? "atelier-accent-solid"
                     : "text-ink hover:opacity-90"
               }`}
             >
@@ -2637,7 +2637,7 @@ function SliderControl({
   };
 
   return (
-    <div className={`neo-control rounded-2xl p-4 transition ${highlighted ? "ring-2 ring-sky-200/80 shadow-[0_0_0_1px_rgba(125,211,252,0.35),0_14px_28px_rgba(56,189,248,0.1)]" : ""}`}>
+    <div className={`neo-control rounded-2xl p-4 transition ${highlighted ? "ring-2 ring-[#ead8c0]/90 shadow-[0_0_0_1px_rgba(215,193,163,0.32),0_14px_28px_rgba(155,106,47,0.08)]" : ""}`}>
       <div className="mb-2 flex items-center justify-between">
         <span className="text-lg font-semibold text-ink">{label}</span>
         {displayValue ? <span className="text-sm text-muted">{displayValue}</span> : null}

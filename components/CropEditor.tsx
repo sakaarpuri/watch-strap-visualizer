@@ -313,7 +313,7 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
             />
 
             <div
-              className="absolute rounded-[24px] border-2 border-cyan-300 shadow-[0_0_0_1px_rgba(255,255,255,0.75),0_0_0_999px_rgba(255,255,255,0.02)]"
+              className="absolute rounded-[24px] border-2 border-[#30486c] shadow-[0_0_0_1px_rgba(255,255,255,0.75),0_0_0_999px_rgba(255,255,255,0.02)]"
               style={{ left: `${cropX}px`, top: `${cropY}px`, width: `${cropSize}px`, height: `${cropSize}px` }}
               onPointerDown={beginCropDrag}
             >
@@ -323,7 +323,7 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
                   type="button"
                   aria-label={`Resize crop ${corner}`}
                   onPointerDown={beginResizeDrag(corner)}
-                  className="absolute h-5 w-5 rounded-full border-2 border-cyan-300 bg-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]"
+                  className="absolute h-5 w-5 rounded-full border-2 border-[#30486c] bg-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]"
                   style={{
                     left: corner.includes("w") ? "-10px" : undefined,
                     right: corner.includes("e") ? "-10px" : undefined,

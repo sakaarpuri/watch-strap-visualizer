@@ -281,7 +281,7 @@ export default function StrapSplitEditor({
               {overlay ? (
                 <>
                   <div
-                    className="pointer-events-none absolute left-2 right-2 top-2 rounded-xl border border-emerald-300/80 bg-emerald-300/10"
+                    className="pointer-events-none absolute left-2 right-2 top-2 rounded-xl border border-[#d7c1a3]/80 bg-[#fbf3e8]"
                     style={{ height: `calc(${overlay.topHeight}% - 0.75rem)` }}
                   />
                   <div
