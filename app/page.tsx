@@ -30,7 +30,7 @@ const STRAP_SCALE_MIN = 5;
 const STRAP_SCALE_MAX = 260;
 const DIAL_SCALE_MIN = 0.7;
 const DIAL_SCALE_MAX = 1.8;
-const DEFAULT_WATCH_PREVIEW_SCALE = 0.78;
+const DEFAULT_WATCH_PREVIEW_SCALE = 0.64;
 const DEFAULT_SCENE_ZOOM = 0.75;
 const DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.28;
 const strapScaleToUi = (scale: number) => {
@@ -838,11 +838,8 @@ export default function Home() {
   }, [canShowWatchOnlyPreview, hasUserUpload, watchSrc]);
 
   useEffect(() => {
-    if (!canRender) return;
-    setShowLugGuides(false);
-    if (showLugGuideOnboarding) {
-      dismissLugGuideOnboarding();
-    }
+    if (!canRender || !showLugGuideOnboarding) return;
+    dismissLugGuideOnboarding();
   }, [canRender, showLugGuideOnboarding]);
 
   const dismissControlCoachmark = () => {
@@ -1299,12 +1296,12 @@ export default function Home() {
   const strapSizeUi = strapScaleToUi(strapScale);
 
   return (
-      <main className="mx-auto max-w-[90rem] px-4 pb-8 pt-4 sm:px-6 sm:pb-10 sm:pt-6 lg:px-8">
-      <header className="mb-6 text-center sm:mb-8">
+      <main className="mx-auto max-w-[92rem] px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
+      <header className="mb-10 text-center sm:mb-12">
         <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
           Watchstrapper
         </p>
-        <h1 className="mt-3 font-serif text-[2.7rem] leading-[0.92] tracking-tight text-ink sm:text-[4.35rem]">
+        <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[2rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[3.15rem]">
           See any strap on your watch before you buy.
         </h1>
       </header>
@@ -1333,7 +1330,7 @@ export default function Home() {
         }}
       />
 
-      <section className="grid gap-5 xl:grid-cols-[17.75rem_minmax(0,1fr)] xl:items-start">
+      <section className="mt-2 grid gap-5 xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem] xl:items-start">
         <aside className="order-2 space-y-3 xl:order-1">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
@@ -1557,13 +1554,6 @@ export default function Home() {
                 <>
                 <button
                   type="button"
-                  onClick={() => setShowFitBench((prev) => !prev)}
-                  className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
-                >
-                  {showFitBench ? "Hide Fit Bench" : "Open Fit Bench"}
-                </button>
-                <button
-                  type="button"
                   onClick={toggleLockView}
                   className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${
                     lockView
@@ -1607,7 +1597,7 @@ export default function Home() {
                   watchScale={dialScale}
                   sceneZoom={sceneZoom}
                   locked={lockView}
-                  showLugGuides={showLugGuides && !lockView && fitConfidence < 0.72}
+                  showLugGuides={showLugGuides && !lockView}
                   lugGuideOverrides={lugGuideOverrides}
                   onLugGuidesChange={handleLugGuidesChange}
                   showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
@@ -1643,34 +1633,6 @@ export default function Home() {
               />
             )}
           </div>
-
-          <FitBenchPanel
-            canRender={canRender}
-            showFitBench={showFitBench}
-            onToggleFitBench={() => setShowFitBench((prev) => !prev)}
-            fitConfidence={fitConfidence}
-            showLugGuides={showLugGuides}
-            onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
-            onResetFit={() => void autoAlignStraps()}
-            isAutoAligning={isAutoAligning}
-            strapGap={strapGap}
-            setGapHalf={setGapHalf}
-            lockView={lockView}
-            showControlCoachmark={showControlCoachmark}
-            strapSizeUi={strapSizeUi}
-            setStrapScale={setStrapScale}
-            dismissControlCoachmark={dismissControlCoachmark}
-            dialScale={dialScale}
-            setDialScaleValue={setDialScaleValue}
-            sceneZoom={sceneZoom}
-            setSceneZoomValue={setSceneZoomValue}
-            onToggleLockView={toggleLockView}
-            preserveSettings={preserveSettings}
-            setPreserveSettings={setPreserveSettings}
-            reCropCurrentWatch={reCropCurrentWatch}
-            onChangeWatch={() => changeWatchInputRef.current?.click()}
-            hasUserUpload={hasUserUpload}
-          />
 
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -1845,6 +1807,36 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        <aside className="order-3 xl:order-3">
+          <FitBenchPanel
+            canRender={canRender}
+            showFitBench={showFitBench}
+            onToggleFitBench={() => setShowFitBench((prev) => !prev)}
+            fitConfidence={fitConfidence}
+            showLugGuides={showLugGuides}
+            onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
+            onResetFit={() => void autoAlignStraps()}
+            isAutoAligning={isAutoAligning}
+            strapGap={strapGap}
+            setGapHalf={setGapHalf}
+            lockView={lockView}
+            showControlCoachmark={showControlCoachmark}
+            strapSizeUi={strapSizeUi}
+            setStrapScale={setStrapScale}
+            dismissControlCoachmark={dismissControlCoachmark}
+            dialScale={dialScale}
+            setDialScaleValue={setDialScaleValue}
+            sceneZoom={sceneZoom}
+            setSceneZoomValue={setSceneZoomValue}
+            onToggleLockView={toggleLockView}
+            preserveSettings={preserveSettings}
+            setPreserveSettings={setPreserveSettings}
+            reCropCurrentWatch={reCropCurrentWatch}
+            onChangeWatch={() => changeWatchInputRef.current?.click()}
+            hasUserUpload={hasUserUpload}
+          />
+        </aside>
       </section>
     </main>
   );
@@ -2044,7 +2036,7 @@ function StrapDrawerButton({
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`drawer-card flex w-full items-center gap-2.5 rounded-[1.3rem] border px-3 py-3 text-left transition ${
+      className={`drawer-card flex w-full items-center gap-2 rounded-[1.25rem] border px-2.5 py-2.5 text-left transition ${
         active
           ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -2053,7 +2045,7 @@ function StrapDrawerButton({
       aria-pressed={active}
     >
       <div
-        className={`grid h-[112px] w-[106px] shrink-0 grid-cols-2 items-center gap-0 overflow-hidden rounded-[1.05rem] border px-0 ${
+        className={`grid h-[118px] w-[132px] shrink-0 grid-cols-2 items-center gap-px overflow-hidden rounded-[1rem] border px-0 ${
           active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
         }`}
       >
@@ -2061,19 +2053,19 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full scale-[1.95] object-contain"
+          className="h-full w-full translate-x-[4px] scale-[2.2] object-contain"
           loading="lazy"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full scale-[1.95] object-contain"
+          className="h-full w-full -translate-x-[4px] scale-[2.2] object-contain"
           loading="lazy"
         />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-4 text-[13px] font-semibold leading-tight sm:text-[13px]">{strap.label}</p>
+        <p className="line-clamp-3 text-[13px] font-semibold leading-tight sm:text-[13px]">{strap.label}</p>
         {showCategory ? (
           <p
             className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] ${
@@ -2593,32 +2585,33 @@ function FitBenchPanel({
   hasUserUpload: boolean;
 }) {
   return (
-    <div className="atelier-bench-panel rounded-[1.9rem] p-4 sm:p-5">
+    <div className="atelier-bench-panel rounded-[1.75rem] p-4 sm:p-4.5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
             Fit Bench
           </p>
-          {canRender ? (
-            <p className="mt-2 max-w-[38rem] text-sm leading-6 text-[#5f5143]">
+          {showFitBench && canRender ? (
+            <p className="mt-1.5 max-w-[18rem] text-xs leading-5 text-[#5f5143]">
               {fitConfidence >= 0.65
-                ? "Auto-fit has done the main placement. Open the bench if you want to refine the last details."
-                : "This pairing is close. Open the bench to refine size, gap, or framing."}
+                ? "Auto-fit has done most of the placement."
+                : "Close fit. Refine size, gap, or framing here."}
             </p>
           ) : null}
         </div>
         <button
           type="button"
           onClick={onToggleFitBench}
-          className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+          disabled={!canRender}
+          className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink disabled:opacity-45"
         >
           {showFitBench ? "Hide" : "Open"}
         </button>
       </div>
 
       {showFitBench && canRender ? (
-        <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(15rem,0.72fr)]">
-          <div className="grid gap-3 md:grid-cols-2">
+        <div className="mt-4 space-y-2.5">
+          <div className="grid gap-2.5">
             <div className="relative">
               <SliderControl
                 label="Strap Gap"
@@ -2672,7 +2665,7 @@ function FitBenchPanel({
             />
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 pt-1">
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -2736,23 +2729,19 @@ function FitBenchPanel({
                 type="button"
                 onClick={reCropCurrentWatch}
                 disabled={!hasUserUpload}
-                className="neo-button rounded-xl px-3 py-2 text-sm font-semibold text-ink disabled:opacity-50"
+                className="neo-button rounded-xl px-3 py-2 text-xs font-semibold text-ink disabled:opacity-50"
               >
                 Re-crop current watch
               </button>
               <button
                 type="button"
                 onClick={onChangeWatch}
-                className="neo-button rounded-xl px-3 py-2 text-sm font-semibold text-ink"
+                className="neo-button rounded-xl px-3 py-2 text-xs font-semibold text-ink"
               >
                 Change Watch
               </button>
             </div>
           </div>
-        </div>
-      ) : canRender ? (
-        <div className="mt-3 rounded-[1.2rem] border border-[#ddccb3] bg-white/60 px-4 py-3">
-          <p className="text-sm font-semibold text-ink">Fit bench is tucked away until you need it.</p>
         </div>
       ) : null}
     </div>
