@@ -1663,11 +1663,6 @@ export default function HomePageClient() {
                   Browse the strap box
                 </p>
               </div>
-              {hasUserUpload ? (
-                <span className="atelier-accent-soft rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
-                  Ready
-                </span>
-              ) : null}
             </div>
             <div className="mt-4 inline-flex flex-wrap rounded-full border border-line bg-canvas p-1">
               {[
