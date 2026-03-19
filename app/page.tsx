@@ -79,13 +79,13 @@ export default function HomePage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7f6c57]">How it works</p>
             <p className="mt-3 text-sm leading-6">
-              Start by uploading a straight-on watch image. Then browse leather, fabric, rubber, or metal straps, adjust fit if needed, and save the look you want to keep.
+              Upload your watch, try straps side by side, then fine-tune the fit only if you need to. When the pairing feels right, save it and move on with confidence.
             </p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7f6c57]">Why it matters</p>
             <p className="mt-3 text-sm leading-6">
-              Strap color, finish, texture, and width can change the character of a watch completely. This tool is designed to make that decision visual instead of guesswork.
+              A strap can make the same watch feel sharper, softer, sportier, or more refined. Seeing that shift on your own watch is faster, clearer, and far more useful than guessing from product photos alone.
             </p>
           </div>
         </div>
