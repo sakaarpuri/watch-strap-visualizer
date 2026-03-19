@@ -2171,7 +2171,9 @@ export default function HomePageClient() {
               />
             )}
           </div>
+        </section>
 
+        <section className="order-3 min-w-0 space-y-4 xl:col-start-2 xl:order-4">
           {strapDrawerView === "library" ? (
             <div className="glass-card atelier-card-soft rounded-[1.6rem] p-4 sm:p-5">
               <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -2427,11 +2429,10 @@ export default function HomePageClient() {
               Enquiries / Feedback
             </Link>
           </div>
-
         </section>
 
         {canOpenTools ? (
-          <aside className="order-3 min-w-0 xl:pt-14">
+          <aside className="order-4 min-w-0 xl:order-3 xl:pt-14">
             <div className="flex flex-col gap-2">
               <button
                 type="button"
