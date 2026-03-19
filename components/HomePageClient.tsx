@@ -2171,9 +2171,267 @@ export default function HomePageClient() {
               />
             )}
           </div>
+
+          <div className="hidden xl:block xl:space-y-4">
+            {strapDrawerView === "library" ? (
+              <div className="glass-card atelier-card-soft rounded-[1.6rem] p-4 sm:p-5">
+                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                      Style Mood
+                    </p>
+                    <p className="mt-1 text-sm text-muted">
+                      Narrow the drawer by fashion style, not just material.
+                    </p>
+                  </div>
+                  <p className="text-xs uppercase tracking-[0.14em] text-[#7c7165]">
+                    {styleFilter === "All styles" ? "All visible straps" : `${styleFilter} focus`}
+                  </p>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setStyleFilter("All styles")}
+                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                      styleFilter === "All styles"
+                        ? "atelier-pill-active"
+                        : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                    }`}
+                    aria-pressed={styleFilter === "All styles"}
+                  >
+                    All styles
+                  </button>
+                  {STRAP_STYLE_TAGS.map((tag) => {
+                    const count = strapsInCategory.filter((strap) => strap.styleTags.includes(tag)).length;
+                    if (!count) return null;
+                    const active = styleFilter === tag;
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setStyleFilter(tag)}
+                        className={`rounded-full border px-3 py-1.5 text-sm font-medium capitalize transition ${
+                          active
+                            ? "atelier-pill-active"
+                            : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                        }`}
+                        aria-pressed={active}
+                      >
+                        {tag}
+                        <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                    Materials
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    Bench references for texture and hardware finish.
+                  </p>
+                </div>
+              </div>
+              <MaterialsStrip />
+            </div>
+
+            <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
+              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                    4. Bench Tools
+                  </p>
+                </div>
+                {activeAiStatus.tool ? (
+                  <div className="md:max-w-[18rem]">
+                    <CompactAiStatus label={activeAiStatus.label} stage={activeAiStatus.stage} />
+                  </div>
+                ) : null}
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <ToolButton
+                    title="Extract Watch"
+                    subtitle="from messy backgrounds"
+                    disabled={!hasUserUpload}
+                    loading={aiTools.cleanup.loading}
+                    sampleImageSrc="/bench-details/extract-watch.jpg"
+                    note="Best on clean, front-on retailer or wrist shots with visible lugs."
+                    onClick={() => void runCleanupFallback()}
+                  />
+                  {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
+                </div>
+
+                <div className="space-y-3">
+                  <ToolButton
+                    title="Create Catalogue Image"
+                    disabled={!canRender || !lockView}
+                    loading={aiTools.final.loading}
+                    sampleImageSrc="/catalogue-mockup-sample.png"
+                    highlighted={mockupReadyHighlight}
+                    note="Lock the view with your favourite strap, then create a catalogue-style shot."
+                    onClick={() => void runFinalRender()}
+                  />
+                  {generatedResults.final ? (
+                    <ResultActions
+                      url={generatedResults.final}
+                      label="View mockup"
+                      onOpenInPage={() => {
+                        clearMockupReadyHighlight();
+                        setInlineMockupUrl(generatedResults.final);
+                      }}
+                      onSave={() => void onSaveMockupImage(generatedResults.final as string)}
+                    />
+                  ) : null}
+                  {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
+                </div>
+
+              </div>
+            </div>
+            {strapSourceMode === "library" ? (
+              <div
+                className={`glass-card atelier-card-soft rounded-[1.9rem] p-4 transition ${
+                  lockView
+                    ? ""
+                    : "opacity-80"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Similar Straps Available For Buying Elsewhere
+                    </p>
+                    {lockView ? (
+                      <p className="mt-1 text-sm text-muted">
+                        We may earn affiliate commission from one of the listed purchase links.
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted">
+                        Lock the view to see matching buying options for the strap on the bench.
+                      </p>
+                    )}
+                  </div>
+                  <span className="rounded-full border border-line bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                    Coming soon
+                  </span>
+                </div>
+                {lockView ? (
+                  similarProductsLoading ? (
+                    <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+                  ) : similarProducts.length ? (
+                    <div className="mt-4 space-y-3">
+                      {similarProducts.map((product) => (
+                        <a
+                          key={product.id}
+                          href={product.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-3 rounded-2xl border border-line bg-white/85 p-3 transition hover:-translate-y-0.5 hover:bg-white"
+                        >
+                          <div className="w-20 shrink-0 overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={product.imageSrc}
+                              alt={product.title}
+                              className="h-20 w-full object-contain p-2"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
+                            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
+                              {product.store}
+                            </p>
+                          </div>
+                          <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
+                            View Product
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted">
+                      No close store match yet for this locked strap.
+                    </p>
+                  )
+                ) : (
+                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <MaterialInset
+                        src="/strap-selection-kie/cognac-grain-leather-buckle.png"
+                        label="Leather strap sample"
+                        fit="contain"
+                      />
+                      <MaterialInset
+                        src="/strap-selection-kie/black-rubber-buckle.png"
+                        label="Rubber strap sample"
+                        fit="contain"
+                      />
+                    </div>
+                    <p className="mt-3 text-sm text-slate-500">
+                      Shopping links stay tucked away until the fit is locked in.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : null}
+            {inlineMockupUrl ? (
+              <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Mockup Deck
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void onSaveMockupImage(inlineMockupUrl)}
+                      className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
+                    >
+                      Save image
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearMockupReadyHighlight();
+                        setInlineMockupUrl(null);
+                      }}
+                      className="neo-button rounded-xl px-3 py-2 text-sm font-medium text-ink"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <div className="mx-auto w-full max-w-[85%]">
+                  <img
+                    src={inlineMockupUrl}
+                    alt="Generated product mockup"
+                    className="w-full rounded-xl border border-line bg-white object-contain"
+                  />
+                </div>
+              </div>
+            ) : null}
+            <p className="mt-3 text-sm text-muted">
+              Visual inspiration only. Final fit depends on lug width &amp; strap model.
+            </p>
+            <div className="mt-5 flex justify-center md:justify-end">
+              <Link
+                href="/contact"
+                className="neo-button rounded-2xl border border-line px-5 py-3 text-sm font-semibold text-ink"
+              >
+                Enquiries / Feedback
+              </Link>
+            </div>
+          </div>
         </section>
 
-        <section className="order-3 min-w-0 space-y-4 xl:col-start-2 xl:order-4">
+        <section className="order-3 min-w-0 space-y-4 xl:hidden">
           {strapDrawerView === "library" ? (
             <div className="glass-card atelier-card-soft rounded-[1.6rem] p-4 sm:p-5">
               <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -2985,7 +3243,7 @@ function StrapDrawerButton({
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`drawer-card relative flex w-full items-center gap-2 rounded-[1.25rem] border px-2 py-2 text-left transition ${
+      className={`drawer-card relative flex w-full flex-col items-start gap-2 rounded-[1.25rem] border px-2 py-2 text-left transition ${
         active
           ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -3012,7 +3270,7 @@ function StrapDrawerButton({
         </button>
       ) : null}
       <div
-        className={`drawer-card-media grid h-[124px] w-[148px] shrink-0 grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
+        className={`drawer-card-media grid h-[124px] w-full grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
           active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
         }`}
       >
@@ -3031,8 +3289,8 @@ function StrapDrawerButton({
           loading="lazy"
         />
       </div>
-      <div className="drawer-card-copy min-w-0 flex-1 self-stretch py-1 pr-8">
-        <p className="line-clamp-2 min-h-[2.35rem] text-[13px] font-semibold leading-tight sm:text-[13px]">
+      <div className="drawer-card-copy min-w-0 w-full py-1 pr-8">
+        <p className="min-h-[2.6rem] text-[13px] font-semibold leading-tight sm:text-[13px]">
           {strap.label}
         </p>
       </div>
