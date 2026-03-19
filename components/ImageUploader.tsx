@@ -104,7 +104,7 @@ export default function ImageUploader({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-4 text-center transition ${
+        className={`relative mt-4 flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed px-4 py-4 text-center transition ${
           isDragOver
             ? "border-[#d7c1a3] bg-[#fbf3e8]"
             : "border-slate-300 bg-canvas hover:border-[#d7c1a3] hover:bg-white/85"
@@ -123,10 +123,19 @@ export default function ImageUploader({
           </>
         ) : (
           <>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/upload-watch-head-silhouette.svg"
+                alt=""
+                aria-hidden="true"
+                className="h-[74%] w-auto max-w-[62%] object-contain opacity-[0.11]"
+              />
+            </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 bg-white/80 text-xl text-muted">
               +
             </div>
-            <p className="mt-3 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
+            <p className="relative mt-3 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
           </>
         )}
       </label>

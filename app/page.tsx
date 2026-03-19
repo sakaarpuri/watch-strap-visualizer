@@ -1596,7 +1596,7 @@ export default function Home() {
                 setShowFitBench((prev) => !prev);
               }}
               disabled={!canOpenTools}
-              className={`hidden xl:inline-flex absolute right-[-0.95rem] top-8 z-10 items-center rounded-r-2xl rounded-l-[1rem] border px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
+              className={`hidden xl:inline-flex absolute right-0 top-8 z-10 translate-x-[88%] items-center rounded-r-2xl rounded-l-none border px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
                 canOpenTools
                   ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22] hover:bg-[#f0dcc0]"
                   : "border-line bg-white/90 text-slate-400"
