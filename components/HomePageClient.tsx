@@ -2722,7 +2722,7 @@ function PreviewUploadStage({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_92%_88%,rgba(245,141,24,0.82)_0%,rgba(248,160,42,0.46)_18%,rgba(250,193,112,0.22)_34%,rgba(251,226,191,0.1)_52%,rgba(255,252,248,0)_76%),radial-gradient(circle_at_78%_100%,rgba(248,165,54,0.16)_0%,rgba(255,252,248,0)_58%),linear-gradient(145deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_58%,rgba(249,238,223,0.82)_82%,rgba(245,203,151,0.14)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_92%_88%,rgba(245,141,24,0.84)_0%,rgba(248,160,42,0.5)_18%,rgba(250,193,112,0.24)_34%,rgba(251,226,191,0.1)_52%,rgba(255,252,248,0)_76%),radial-gradient(90%_48%_at_68%_100%,rgba(247,157,44,0.3)_0%,rgba(249,185,91,0.2)_26%,rgba(251,219,169,0.1)_48%,rgba(255,252,248,0)_78%),linear-gradient(145deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_58%,rgba(249,238,223,0.84)_82%,rgba(245,203,151,0.16)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
     >
       <div className="relative mx-auto max-w-[34rem]">
         <ImageUploader
