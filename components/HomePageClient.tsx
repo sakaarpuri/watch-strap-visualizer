@@ -3290,7 +3290,7 @@ function StrapDrawerButton({
         />
       </div>
       <div className="drawer-card-copy min-w-0 w-full py-1 pr-8">
-        <p className="min-h-[2.6rem] text-[13px] font-semibold leading-tight sm:text-[13px]">
+        <p className="min-h-[2.6rem] text-[13px] text-center font-semibold leading-tight sm:text-[13px]">
           {strap.label}
         </p>
       </div>
