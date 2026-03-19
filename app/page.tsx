@@ -3439,8 +3439,8 @@ function FitBenchPanel({
       </div>
 
       {showFitBench && canRender ? (
-        <div className="mt-4 space-y-2.5">
-          <div className="grid gap-2.5">
+        <div className="mt-4 space-y-2">
+          <div className="grid gap-2">
             <div className="relative">
               <SliderControl
                 label="Strap Gap"
@@ -3454,8 +3454,8 @@ function FitBenchPanel({
                 hint="Closer ↔ Wider"
               />
               {showControlCoachmark ? (
-                <div className="pointer-events-none absolute inset-x-6 -bottom-3 flex items-center justify-center">
-                  <div className="flex items-center gap-2 rounded-full border border-[#d7c1a3] bg-white/95 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+                <div className="pointer-events-none absolute inset-x-5 -bottom-2 flex items-center justify-center">
+                  <div className="flex items-center gap-2 rounded-full border border-[#d7c1a3] bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-[#c08a44]" />
                     Size first. Then trim the gap.
                   </div>
@@ -3494,33 +3494,33 @@ function FitBenchPanel({
             />
           </div>
 
-          <div className="space-y-2.5 pt-1">
+          <div className="space-y-2 pt-0.5">
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={onToggleLugGuides}
-                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                className="neo-button rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
               >
                 {showLugGuides ? "Hide lug guides" : "Show lug guides"}
               </button>
               <button
                 type="button"
                 onClick={onResetFit}
-                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                className="neo-button rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
               >
                 {isAutoAligning ? "Resetting..." : "Reset fit"}
               </button>
             </div>
             {showControlCoachmark ? (
-              <div className="rounded-2xl border border-[#ead8c0]/80 bg-[#fdf7ef] px-3 py-2 shadow-[0_8px_20px_rgba(155,106,47,0.08)]">
+              <div className="rounded-[1.1rem] border border-[#ead8c0]/80 bg-[#fdf7ef] px-2.5 py-2 shadow-[0_8px_20px_rgba(155,106,47,0.08)]">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-xs leading-5 text-slate-700">
+                  <p className="text-[11px] leading-4 text-slate-700">
                     Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
                   </p>
                   <button
                     type="button"
                     onClick={dismissControlCoachmark}
-                    className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                    className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
                   >
                     Got it
                   </button>
@@ -3529,20 +3529,20 @@ function FitBenchPanel({
             ) : null}
             <div className="neo-toggle flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-ink">Keep Tweaks</p>
-                <p className="text-xs text-muted">Carry the fit tune to the next candidate.</p>
+                <p className="text-[13px] font-semibold text-ink">Keep Tweaks</p>
+                <p className="text-[11px] leading-4 text-muted">Carry the fit tune to the next candidate.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setPreserveSettings((prev) => !prev)}
                 aria-pressed={preserveSettings}
-                className={`relative h-8 w-14 shrink-0 overflow-hidden rounded-full border transition ${
+                className={`relative h-7 w-12 shrink-0 overflow-hidden rounded-full border transition ${
                   preserveSettings ? "border-[#d7c1a3] bg-[#f6ead7]" : "border-line bg-canvas"
                 }`}
               >
                 <span
-                  className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                    preserveSettings ? "translate-x-6" : "translate-x-0"
+                  className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    preserveSettings ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
               </button>
@@ -3599,9 +3599,9 @@ function SliderControl({
   };
 
   return (
-    <div className={`neo-control rounded-[1.15rem] p-3 transition ${highlighted ? "ring-2 ring-[#ead8c0]/90 shadow-[0_0_0_1px_rgba(215,193,163,0.32),0_10px_22px_rgba(155,106,47,0.08)]" : ""}`}>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-[15px] font-semibold text-ink">{label}</span>
+    <div className={`neo-control rounded-[1.05rem] px-3 py-2.5 transition ${highlighted ? "ring-2 ring-[#ead8c0]/90 shadow-[0_0_0_1px_rgba(215,193,163,0.32),0_10px_22px_rgba(155,106,47,0.08)]" : ""}`}>
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-[13px] font-semibold text-ink">{label}</span>
         {displayValue ? <span className="text-xs text-muted">{displayValue}</span> : null}
       </div>
       <input
@@ -3616,12 +3616,12 @@ function SliderControl({
         disabled={disabled}
         aria-label={label}
       />
-      <div className="range-ticks mt-2" aria-hidden="true">
+      <div className="range-ticks mt-1.5" aria-hidden="true">
         {Array.from({ length: 9 }).map((_, index) => (
           <span key={index} />
         ))}
       </div>
-      {hint ? <p className="mt-2 text-[11px] font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
+      {hint ? <p className="mt-1.5 text-[10px] font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
     </div>
   );
 }

@@ -125,7 +125,7 @@ body {
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.9),
     0 10px 22px rgba(56, 44, 32, 0.06);
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 
 .neo-control {
@@ -162,11 +162,11 @@ body {
 .range-ticks {
   display: grid;
   grid-template-columns: repeat(9, minmax(0, 1fr));
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .range-ticks span {
-  height: 6px;
+  height: 5px;
   border-radius: 9999px;
   background: linear-gradient(180deg, var(--range-tick), transparent);
 }
