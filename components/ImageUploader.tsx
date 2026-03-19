@@ -123,16 +123,16 @@ export default function ImageUploader({
           </>
         ) : (
           <>
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="pointer-events-none flex flex-col items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/upload-watch-head-icon.png"
                 alt=""
                 aria-hidden="true"
-                className="h-[86%] w-auto max-w-[72%] object-contain opacity-[0.62]"
+                className="-mt-3 h-[6.25rem] w-auto max-w-[52%] object-contain opacity-[0.62] sm:h-[7rem]"
               />
+              <p className="mt-3 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
             </div>
-            <p className="relative mt-3 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
           </>
         )}
       </label>
