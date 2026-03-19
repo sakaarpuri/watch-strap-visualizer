@@ -42,6 +42,23 @@ export interface FavoriteStrap {
   created_at?: string;
 }
 
+export interface SavedLook {
+  id: string;
+  user_id: string;
+  label: string;
+  image_url: string;
+  watch_label?: string | null;
+  watch_source_type?: "uploaded" | "saved" | null;
+  saved_watch_id?: string | null;
+  strap_label?: string | null;
+  strap_source_type?: "library" | "saved" | "uploaded" | null;
+  library_strap_id?: string | null;
+  saved_strap_id?: string | null;
+  fit_settings?: Record<string, unknown> | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface DrawerStrapItem {
   key: string;
   id: string;

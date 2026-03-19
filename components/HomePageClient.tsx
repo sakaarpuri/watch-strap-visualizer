@@ -119,6 +119,10 @@ type StrapSourceMode = "library" | "uploaded" | "saved";
 type StrapDrawerView = "library" | "saved" | "favorites" | "uploaded";
 type FitState = "auto" | "adjusted" | "locked";
 type GuideDragMode = "move" | "resize-left" | "resize-right";
+type PendingStrapSelection =
+  | { sourceType: "library"; strap: StrapVariant; index: number }
+  | { sourceType: "saved"; strap: SavedStrap }
+  | null;
 
 interface AiToolState {
   loading: boolean;
@@ -539,6 +543,7 @@ export default function HomePageClient() {
     profile,
     savedWatches,
     savedStraps,
+    savedLooks,
     favoriteLookup,
     signIn,
     signUp,
@@ -547,10 +552,13 @@ export default function HomePageClient() {
     updatePassword,
     saveWatch,
     saveStrap,
+    saveLook,
     renameWatch,
     deleteWatch,
     renameStrap,
     deleteStrap,
+    renameLook,
+    deleteLook,
     toggleFavorite
   } = usePersonalCollection();
   const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
@@ -571,6 +579,7 @@ export default function HomePageClient() {
   const [strapIndex, setStrapIndex] = useState(0);
   const [selectedLibraryStrap, setSelectedLibraryStrap] = useState<StrapVariant | null>(null);
   const [selectedSavedStrap, setSelectedSavedStrap] = useState<SavedStrap | null>(null);
+  const [pendingStrapSelection, setPendingStrapSelection] = useState<PendingStrapSelection>(null);
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
   const [dialScale, setDialScale] = useState(DEFAULT_WATCH_PREVIEW_SCALE);
@@ -590,7 +599,6 @@ export default function HomePageClient() {
   const [highlightUploadGuide, setHighlightUploadGuide] = useState(true);
   const [highlightPreviewWindow, setHighlightPreviewWindow] = useState(false);
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
-  const [showControlCoachmark, setShowControlCoachmark] = useState(false);
   const [lugGuideOverrides, setLugGuideOverrides] = useState<PreviewLugGuideOverrides | null>(null);
   const [showLugGuides, setShowLugGuides] = useState(true);
   const [showLugGuideOnboarding, setShowLugGuideOnboarding] = useState(false);
@@ -602,6 +610,7 @@ export default function HomePageClient() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showMyWatchesDialog, setShowMyWatchesDialog] = useState(false);
+  const [showSavedLooksDialog, setShowSavedLooksDialog] = useState(false);
   const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [authError, setAuthError] = useState<string | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
@@ -615,6 +624,7 @@ export default function HomePageClient() {
     label: "",
     stage: ""
   });
+  const [activeSavedWatchId, setActiveSavedWatchId] = useState<string | null>(null);
 
   const canvasRef = useRef<CanvasPreviewRef>(null);
   const previewSectionRef = useRef<HTMLElement | null>(null);
@@ -751,6 +761,7 @@ export default function HomePageClient() {
     () => Boolean(partA && partB && activeStrapASrc && activeStrapBSrc),
     [partA, partB, activeStrapASrc, activeStrapBSrc]
   );
+  const hasPendingPreUploadStrap = Boolean(pendingStrapSelection && hasUserUpload && !canRender);
   const canShowLiveLugGuides = showLugGuides && !lockView && firstRenderedStrapRef.current;
   const canShowWatchOnlyPreview = hasUserUpload && !canRender;
   const previewStageTitle = canRender
@@ -765,7 +776,9 @@ export default function HomePageClient() {
     : cropSourceUrl
       ? "Frame the watch in this same stage, then apply the crop."
       : canShowWatchOnlyPreview
-        ? "Your watch is ready. Line up the lug guides if needed, then pick a strap."
+        ? hasPendingPreUploadStrap
+          ? `Your watch is ready. Line up the lug guides, then apply ${pendingStrapSelection?.strap.label ?? "your selected strap"}.`
+          : "Your watch is ready. Line up the lug guides if needed, then pick a strap."
         : "";
   const canOpenTools = hasUserUpload && !cropSourceUrl;
 
@@ -840,6 +853,7 @@ export default function HomePageClient() {
     setSceneZoom(DEFAULT_SCENE_ZOOM);
     previousDialScaleRef.current = DEFAULT_WATCH_PREVIEW_SCALE;
     setCropSourceUrl(uploadedUrl);
+    setActiveSavedWatchId(null);
     setPartA(null);
     setPartB(null);
     setLockView(false);
@@ -934,18 +948,6 @@ export default function HomePageClient() {
   }, []);
 
   useEffect(() => {
-    if (!canRender || showControlCoachmark) return;
-    try {
-      if (window.localStorage.getItem(CONTROL_COACHMARK_STORAGE_KEY) === "1") return;
-      const timer = window.setTimeout(() => setShowControlCoachmark(true), 450);
-      return () => window.clearTimeout(timer);
-    } catch {
-      const timer = window.setTimeout(() => setShowControlCoachmark(true), 450);
-      return () => window.clearTimeout(timer);
-    }
-  }, [canRender, showControlCoachmark]);
-
-  useEffect(() => {
     if (!canShowWatchOnlyPreview || !hasUserUpload) return;
     try {
       if (window.localStorage.getItem(LUG_GUIDE_TIP_STORAGE_KEY) === "1") return;
@@ -983,13 +985,14 @@ export default function HomePageClient() {
     }
   }, [strapDrawerView, user]);
 
-  const dismissControlCoachmark = () => {
-    setShowControlCoachmark(false);
-    try {
-      window.localStorage.setItem(CONTROL_COACHMARK_STORAGE_KEY, "1");
-    } catch {
-      // Ignore storage failures and just hide for the current session.
-    }
+  const handleGuideToggle = () => {
+    setShowLugGuides((prev) => {
+      const next = !prev;
+      if (prev && !next && hasPendingPreUploadStrap) {
+        window.setTimeout(() => applyPendingSelection(), 0);
+      }
+      return next;
+    });
   };
 
   const onSavePreviewImage = async () => {
@@ -1108,6 +1111,7 @@ export default function HomePageClient() {
       const nextUrl = watch.image_url;
       setOriginalWatchFile(fetched);
       setOriginalWatchSrc(nextUrl);
+      setActiveSavedWatchId(watch.id);
       applyWatchAsset(fetched, nextUrl);
       setShowMyWatchesDialog(false);
     } catch {
@@ -1125,6 +1129,65 @@ export default function HomePageClient() {
       }
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "We couldn't update that favorite.");
+    }
+  };
+
+  const applyPendingSelection = () => {
+    if (!pendingStrapSelection) return;
+    if (pendingStrapSelection.sourceType === "library") {
+      setStrapIndex(pendingStrapSelection.index);
+      setSelectedLibraryStrap(pendingStrapSelection.strap);
+      setSelectedSavedStrap(null);
+      setStrapSourceMode("library");
+    } else {
+      setSelectedSavedStrap(pendingStrapSelection.strap);
+      setSelectedLibraryStrap(null);
+      setStrapSourceMode("saved");
+    }
+    setPendingStrapSelection(null);
+    setShowFitBench(false);
+    setFitState("auto");
+    triggerStrapSettle();
+  };
+
+  const handleSaveLook = async () => {
+    if (!canRender || !requireSignedIn("Sign in to save this finished pairing to Saved Looks.")) return;
+    const blob = await canvasRef.current?.getPngBlob();
+    if (!blob) return;
+    const defaultName = `${activeStrapLabel} look`;
+    const label = window.prompt("Name this finished look.", defaultName)?.trim();
+    if (!label) return;
+
+    try {
+      const lookFile = new File([blob], `${label.replace(/\s+/g, "-").toLowerCase() || "saved-look"}.png`, {
+        type: "image/png"
+      });
+      await saveLook({
+        label,
+        file: lookFile,
+        watchLabel: activeSavedWatchId
+          ? savedWatches.find((watch) => watch.id === activeSavedWatchId)?.label || "Saved watch"
+          : uploadedWatchFile?.name.replace(/\.[^.]+$/, "") || "Uploaded watch",
+        watchSourceType: activeSavedWatchId ? "saved" : "uploaded",
+        savedWatchId: activeSavedWatchId,
+        strapLabel: activeStrapLabel,
+        strapSourceType: strapSourceMode,
+        libraryStrapId: activeLibraryStrap?.id ?? null,
+        savedStrapId: activeSavedStrap?.id ?? null,
+        fitSettings: {
+          lockView,
+          dialScale,
+          sceneZoom,
+          preserveSettings,
+          lugGuideOverrides,
+          partA,
+          partB
+        }
+      });
+      setSaveFeedback(`Saved ${label} to Saved Looks.`);
+      setShowSavedLooksDialog(true);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "We couldn't save that look.");
     }
   };
 
@@ -1694,6 +1757,17 @@ export default function HomePageClient() {
                         <StrapDrawerButton
                           key={strap.id}
                           onClick={() => {
+                            if (!hasUserUpload) {
+                              setPendingStrapSelection({ sourceType: "library", strap, index });
+                              setSelectedLibraryStrap(null);
+                              setSelectedSavedStrap(null);
+                              setStrapSourceMode("library");
+                              setShowFitBench(false);
+                              setFitState("auto");
+                              setHighlightPreviewWindow(true);
+                              return;
+                            }
+                            setPendingStrapSelection(null);
                             setStrapIndex(index);
                             setSelectedLibraryStrap(strap);
                             setSelectedSavedStrap(null);
@@ -1709,8 +1783,12 @@ export default function HomePageClient() {
                             }
                           }}
                           strap={strap}
-                          active={active}
-                          showCategory={category === "All categories"}
+                          active={
+                            !hasUserUpload && pendingStrapSelection?.sourceType === "library"
+                              ? pendingStrapSelection.strap.id === strap.id
+                              : active
+                          }
+                          showCategory={false}
                           isFavorite={favoriteLookup.has(`library:${strap.id}`)}
                           onToggleFavorite={() => void handleFavoriteToggle(item)}
                           animateIn={animateDrawerReveal}
@@ -1773,12 +1851,34 @@ export default function HomePageClient() {
                               joinShape: library?.joinShape
                             }}
                             active={
-                              item.sourceType === "saved"
-                                ? strapSourceMode === "saved" && selectedSavedStrap?.id === saved?.id
-                                : strapSourceMode === "library" && selectedLibraryStrap?.id === library?.id
+                              !hasUserUpload && pendingStrapSelection
+                                ? pendingStrapSelection.sourceType === item.sourceType &&
+                                  (item.sourceType === "saved"
+                                    ? pendingStrapSelection.strap.id === saved?.id
+                                    : pendingStrapSelection.strap.id === library?.id)
+                                : item.sourceType === "saved"
+                                  ? strapSourceMode === "saved" && selectedSavedStrap?.id === saved?.id
+                                  : strapSourceMode === "library" && selectedLibraryStrap?.id === library?.id
                             }
-                            showCategory
+                            showCategory={false}
                             onClick={() => {
+                              if (!hasUserUpload) {
+                                if (item.sourceType === "saved" && saved) {
+                                  setPendingStrapSelection({ sourceType: "saved", strap: saved });
+                                  setStrapSourceMode("saved");
+                                }
+                                if (item.sourceType === "library" && library) {
+                                  setPendingStrapSelection({ sourceType: "library", strap: library, index });
+                                  setStrapSourceMode("library");
+                                }
+                                setSelectedLibraryStrap(null);
+                                setSelectedSavedStrap(null);
+                                setShowFitBench(false);
+                                setFitState("auto");
+                                setHighlightPreviewWindow(true);
+                                return;
+                              }
+                              setPendingStrapSelection(null);
                               if (item.sourceType === "saved" && saved) {
                                 setSelectedSavedStrap(saved);
                                 setSelectedLibraryStrap(null);
@@ -1962,22 +2062,18 @@ export default function HomePageClient() {
               >
                 My Watches
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!requireSignedIn("Sign in to review your saved looks.")) return;
+                  setShowSavedLooksDialog(true);
+                }}
+                className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+              >
+                Saved Looks
+              </button>
               {hasUserUpload ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={reCropCurrentWatch}
-                    className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
-                  >
-                    Re-crop
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => changeWatchInputRef.current?.click()}
-                    className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
-                  >
-                    Change Watch
-                  </button>
                   {!cropSourceUrl ? (
                     <button
                       type="button"
@@ -2009,28 +2105,19 @@ export default function HomePageClient() {
                 >
                   Save Image
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveLook()}
+                  className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                >
+                  Save to Looks
+                </button>
                 </>
               ) : null}
             </div>
           </div>
 
           <div className="relative glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4">
-            <button
-              type="button"
-              onClick={() => {
-                if (!canOpenTools) return;
-                setShowFitBench((prev) => !prev);
-              }}
-              disabled={!canOpenTools}
-              className={`hidden xl:inline-flex absolute right-0 top-8 z-10 translate-x-[88%] items-center rounded-r-2xl rounded-l-none border px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
-                canOpenTools
-                  ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22] hover:bg-[#f0dcc0]"
-                  : "border-line bg-white/90 text-slate-400"
-              }`}
-              aria-disabled={!canOpenTools}
-            >
-              Tools
-            </button>
             {cropSourceUrl && originalWatchFile ? (
               <CropEditor
                 file={originalWatchFile}
@@ -2070,11 +2157,12 @@ export default function HomePageClient() {
                 watchScale={dialScale}
                 highlighted={highlightPreviewWindow}
                 showLugGuides={showLugGuides}
-                onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
+                onToggleLugGuides={handleGuideToggle}
                 lugGuideOverrides={lugGuideOverrides}
                 onLugGuidesChange={handleLugGuidesChange}
                 showGuideOnboarding={showLugGuideOnboarding}
                 onDismissGuideOnboarding={dismissLugGuideOnboarding}
+                pendingStrapLabel={hasPendingPreUploadStrap ? pendingStrapSelection?.strap.label ?? null : null}
               />
             ) : (
               <PreviewUploadStage
@@ -2086,6 +2174,55 @@ export default function HomePageClient() {
                 onFileSelect={onUploadDial}
               />
             )}
+          </div>
+
+          <div className="flex flex-col gap-3 xl:items-end">
+            <div className="flex w-full flex-col gap-2 xl:w-auto xl:items-end">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!canOpenTools) return;
+                  setShowFitBench((prev) => !prev);
+                }}
+                disabled={!canOpenTools}
+                className={`inline-flex items-center self-end rounded-t-2xl border border-b-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
+                  canOpenTools
+                    ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22] hover:bg-[#f0dcc0]"
+                    : "border-line bg-white/90 text-slate-400"
+                }`}
+                aria-disabled={!canOpenTools}
+              >
+                Tools
+              </button>
+              {!canOpenTools ? (
+                <p className="text-xs leading-5 text-muted xl:max-w-[18rem] xl:text-right">
+                  Upload and crop a watch to open tools.
+                </p>
+              ) : null}
+            </div>
+            {showFitBench && canOpenTools ? (
+              <div className="w-full">
+                <FitBenchPanel
+                  canRender={canRender}
+                  fitConfidence={fitConfidence}
+                  showLugGuides={showLugGuides}
+                  onToggleLugGuides={handleGuideToggle}
+                  onResetFit={() => void autoAlignStraps()}
+                  isAutoAligning={isAutoAligning}
+                  strapGap={strapGap}
+                  setGapHalf={setGapHalf}
+                  preserveSettings={preserveSettings}
+                  setPreserveSettings={setPreserveSettings}
+                  strapSizeUi={strapSizeUi}
+                  setStrapScale={setStrapScale}
+                  dialScale={dialScale}
+                  setDialScaleValue={setDialScaleValue}
+                  sceneZoom={sceneZoom}
+                  setSceneZoomValue={setSceneZoomValue}
+                  reCropCurrentWatch={reCropCurrentWatch}
+                />
+              </div>
+            ) : null}
           </div>
 
           {strapDrawerView === "library" ? (
@@ -2345,37 +2482,6 @@ export default function HomePageClient() {
           </div>
         </section>
 
-        {hasUserUpload && showFitBench ? (
-          <aside className="order-3 xl:order-3 xl:pt-14">
-            <FitBenchPanel
-              canRender={canRender}
-              showFitBench={showFitBench}
-              onToggleFitBench={() => setShowFitBench((prev) => !prev)}
-              fitConfidence={fitConfidence}
-              showLugGuides={showLugGuides}
-              onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
-              onResetFit={() => void autoAlignStraps()}
-              isAutoAligning={isAutoAligning}
-              strapGap={strapGap}
-              setGapHalf={setGapHalf}
-              lockView={lockView}
-              showControlCoachmark={showControlCoachmark}
-              strapSizeUi={strapSizeUi}
-              setStrapScale={setStrapScale}
-              dismissControlCoachmark={dismissControlCoachmark}
-              dialScale={dialScale}
-              setDialScaleValue={setDialScaleValue}
-              sceneZoom={sceneZoom}
-              setSceneZoomValue={setSceneZoomValue}
-              onToggleLockView={toggleLockView}
-              preserveSettings={preserveSettings}
-              setPreserveSettings={setPreserveSettings}
-              reCropCurrentWatch={reCropCurrentWatch}
-              onChangeWatch={() => changeWatchInputRef.current?.click()}
-              hasUserUpload={hasUserUpload}
-            />
-          </aside>
-        ) : null}
       </section>
       <ModalShell open={showAuthDialog} onClose={() => setShowAuthDialog(false)} title={authMode === "sign-up" ? "Create your account" : "Sign in"}>
         {accountConfigured ? (
@@ -2528,6 +2634,70 @@ export default function HomePageClient() {
         ) : (
           <p className="text-sm leading-6 text-muted">
             Save a cropped watch head and it will show up here ready to reuse without re-cropping.
+          </p>
+        )}
+      </ModalShell>
+
+      <ModalShell open={showSavedLooksDialog} onClose={() => setShowSavedLooksDialog(false)} title="Saved Looks">
+        {savedLooks.length ? (
+          <div className="space-y-3">
+            {savedLooks.map((look) => (
+              <div key={look.id} className="rounded-[1.35rem] border border-line bg-white/78 p-3">
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={look.image_url} alt={look.label} className="h-20 w-20 rounded-2xl border border-line object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-ink">{look.label}</p>
+                    <p className="text-sm text-muted">
+                      {look.watch_label || "Watch"} · {look.strap_label || "Strap"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href={look.image_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="atelier-accent-solid rounded-2xl border px-4 py-2 text-sm font-semibold"
+                  >
+                    View image
+                  </a>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const nextLabel = window.prompt("Rename this saved look.", look.label)?.trim();
+                      if (!nextLabel || nextLabel === look.label) return;
+                      try {
+                        await renameLook(look.id, nextLabel);
+                      } catch (error) {
+                        setAuthError(error instanceof Error ? error.message : "We couldn't rename that look.");
+                      }
+                    }}
+                    className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+                  >
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!window.confirm(`Delete ${look.label} from Saved Looks?`)) return;
+                      try {
+                        await deleteLook(look);
+                      } catch (error) {
+                        setAuthError(error instanceof Error ? error.message : "We couldn't delete that look.");
+                      }
+                    }}
+                    className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm leading-6 text-muted">
+            Save a finished preview to build a gallery of favorite watch-and-strap pairings.
           </p>
         )}
       </ModalShell>
@@ -2853,7 +3023,7 @@ function StrapDrawerButton({
         </button>
       ) : null}
       <div
-        className={`grid h-[124px] w-[148px] shrink-0 grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
+        className={`drawer-card-media grid h-[124px] w-[148px] shrink-0 grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
           active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
         }`}
       >
@@ -2872,17 +3042,10 @@ function StrapDrawerButton({
           loading="lazy"
         />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-3 text-[13px] font-semibold leading-tight sm:text-[13px]">{strap.label}</p>
-        {showCategory ? (
-          <p
-            className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] ${
-              active ? "bg-[#f6ead7] text-[#9b6a2f]" : "bg-slate-200/70 text-slate-700"
-            }`}
-          >
-            {strap.category}
-          </p>
-        ) : null}
+      <div className="drawer-card-copy min-w-0 flex-1 self-stretch py-1 pr-8">
+        <p className="line-clamp-2 min-h-[2.35rem] text-[13px] font-semibold leading-tight sm:text-[13px]">
+          {strap.label}
+        </p>
       </div>
     </button>
   );
@@ -2897,7 +3060,8 @@ function WatchOnlyPreview({
   lugGuideOverrides,
   onLugGuidesChange,
   showGuideOnboarding,
-  onDismissGuideOnboarding
+  onDismissGuideOnboarding,
+  pendingStrapLabel
 }: {
   watchSrc: string;
   watchScale: number;
@@ -2908,6 +3072,7 @@ function WatchOnlyPreview({
   onLugGuidesChange: (overrides: PreviewLugGuideOverrides) => void;
   showGuideOnboarding: boolean;
   onDismissGuideOnboarding: () => void;
+  pendingStrapLabel: string | null;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
@@ -3051,10 +3216,11 @@ function WatchOnlyPreview({
   }, [watchSrc, watchScale]);
 
   useEffect(() => {
+    if (!showLugGuides) return;
     setShouldBlinkGuides(true);
     const timeout = window.setTimeout(() => setShouldBlinkGuides(false), 1800);
     return () => window.clearTimeout(timeout);
-  }, [watchSrc]);
+  }, [watchSrc, showLugGuides]);
 
   return (
     <div className={highlighted ? "preview-attention-ring rounded-[1.75rem]" : ""}>
@@ -3089,7 +3255,9 @@ function WatchOnlyPreview({
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted">
               {showLugGuides
-                ? "Watch loaded. Line these guides up with the lug openings, then pick a strap."
+                ? pendingStrapLabel
+                  ? `Watch loaded. Line these guides up with the lug openings, then hide guides to apply ${pendingStrapLabel}.`
+                  : "Watch loaded. Line these guides up with the lug openings, then pick a strap."
                 : "Watch loaded. Turn the lug guides back on any time if you want to fine-tune the fit first."}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -3361,8 +3529,6 @@ function ToolButton({
 
 function FitBenchPanel({
   canRender,
-  showFitBench,
-  onToggleFitBench,
   fitConfidence,
   showLugGuides,
   onToggleLugGuides,
@@ -3370,25 +3536,17 @@ function FitBenchPanel({
   isAutoAligning,
   strapGap,
   setGapHalf,
-  lockView,
-  showControlCoachmark,
   strapSizeUi,
   setStrapScale,
-  dismissControlCoachmark,
   dialScale,
   setDialScaleValue,
   sceneZoom,
   setSceneZoomValue,
-  onToggleLockView,
   preserveSettings,
   setPreserveSettings,
-  reCropCurrentWatch,
-  onChangeWatch,
-  hasUserUpload
+  reCropCurrentWatch
 }: {
   canRender: boolean;
-  showFitBench: boolean;
-  onToggleFitBench: () => void;
   fitConfidence: number;
   showLugGuides: boolean;
   onToggleLugGuides: () => void;
@@ -3396,164 +3554,116 @@ function FitBenchPanel({
   isAutoAligning: boolean;
   strapGap: number;
   setGapHalf: (value: number) => void;
-  lockView: boolean;
-  showControlCoachmark: boolean;
   strapSizeUi: number;
   setStrapScale: (value: number) => void;
-  dismissControlCoachmark: () => void;
   dialScale: number;
   setDialScaleValue: (value: number) => void;
   sceneZoom: number;
   setSceneZoomValue: (value: number) => void;
-  onToggleLockView: () => void;
   preserveSettings: boolean;
   setPreserveSettings: (value: boolean | ((prev: boolean) => boolean)) => void;
   reCropCurrentWatch: () => void;
-  onChangeWatch: () => void;
-  hasUserUpload: boolean;
 }) {
   return (
-    <div className={`rounded-[1.75rem] p-4 ${showFitBench ? "atelier-bench-panel" : "glass-card atelier-card-soft border border-line"}`}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
-            Fit Bench
-          </p>
-          {showFitBench ? (
-            <p className="mt-1.5 max-w-[18rem] text-xs leading-5 text-[#5f5143]">
-              {canRender
-                ? fitConfidence >= 0.65
-                ? "Auto-fit has done most of the placement."
-                : "Close fit. Refine size, gap, or framing here."
-                : "Upload and crop first, then pick a strap to activate fit controls."}
-            </p>
-          ) : null}
-        </div>
+    <div className="atelier-bench-panel rounded-[1.75rem] border border-[#e3d3bd] p-4 shadow-[0_18px_34px_rgba(56,44,32,0.08)]">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
+          Tools
+        </p>
+        <p className="mt-1.5 max-w-[28rem] text-xs leading-5 text-[#5f5143]">
+          {fitConfidence >= 0.65
+            ? "Auto-fit is already close. Use these controls only if you want to refine the look."
+            : "Adjust spacing, scale, and framing before you lock or save the pairing."}
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-2 md:grid-cols-2">
+        <SliderControl
+          label="Strap Gap"
+          min={250}
+          max={900}
+          step={10}
+          value={strapGap}
+          onChange={setGapHalf}
+          disabled={!canRender}
+          hint="Closer ↔ Wider"
+        />
+        <SliderControl
+          label="Strap Size"
+          min={0}
+          max={100}
+          step={1}
+          value={strapSizeUi}
+          onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
+          disabled={!canRender}
+          hint="Slimmer ↔ Fuller"
+        />
+        <SliderControl
+          label="Dial Size"
+          min={DIAL_SCALE_MIN}
+          max={DIAL_SCALE_MAX}
+          step={0.02}
+          value={dialScale}
+          onChange={setDialScaleValue}
+          disabled={!canRender}
+          hint="Smaller ↔ Larger"
+        />
+        <SliderControl
+          label="View Zoom"
+          min={0.2}
+          max={1.4}
+          step={0.02}
+          value={sceneZoom}
+          onChange={setSceneZoomValue}
+          disabled={!canRender}
+          hint="Whole watch ↔ Detail"
+        />
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={onToggleFitBench}
-          className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+          onClick={onToggleLugGuides}
+          className="neo-button rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
         >
-          {showFitBench ? "Hide" : "Open"}
+          {showLugGuides ? "Hide lug guides" : "Show lug guides"}
+        </button>
+        <button
+          type="button"
+          onClick={onResetFit}
+          className="neo-button rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
+        >
+          {isAutoAligning ? "Resetting..." : "Reset fit"}
+        </button>
+        <button
+          type="button"
+          onClick={reCropCurrentWatch}
+          className="neo-button rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
+        >
+          Re-crop
         </button>
       </div>
 
-      {showFitBench && canRender ? (
-        <div className="mt-4 space-y-2">
-          <div className="grid gap-2">
-            <div className="relative">
-              <SliderControl
-                label="Strap Gap"
-                min={250}
-                max={900}
-                step={10}
-                value={strapGap}
-                onChange={setGapHalf}
-                disabled={lockView}
-                highlighted={showControlCoachmark}
-                hint="Closer ↔ Wider"
-              />
-              {showControlCoachmark ? (
-                <div className="pointer-events-none absolute inset-x-5 -bottom-2 flex items-center justify-center">
-                  <div className="flex items-center gap-2 rounded-full border border-[#d7c1a3] bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-[#c08a44]" />
-                    Size first. Then trim the gap.
-                  </div>
-                </div>
-              ) : null}
-            </div>
-            <SliderControl
-              label="Strap Size"
-              min={0}
-              max={100}
-              step={1}
-              value={strapSizeUi}
-              onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
-              disabled={lockView}
-              highlighted={showControlCoachmark}
-              hint="Slimmer ↔ Fuller"
-            />
-            <SliderControl
-              label="Dial Size"
-              min={DIAL_SCALE_MIN}
-              max={DIAL_SCALE_MAX}
-              step={0.02}
-              value={dialScale}
-              onChange={setDialScaleValue}
-              disabled={lockView}
-              hint="Smaller ↔ Larger"
-            />
-            <SliderControl
-              label="View Zoom"
-              min={0.2}
-              max={1.4}
-              step={0.02}
-              value={sceneZoom}
-              onChange={setSceneZoomValue}
-              hint="Whole watch ↔ Detail"
-            />
-          </div>
-
-          <div className="space-y-2 pt-0.5">
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={onToggleLugGuides}
-                className="neo-button rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
-              >
-                {showLugGuides ? "Hide lug guides" : "Show lug guides"}
-              </button>
-              <button
-                type="button"
-                onClick={onResetFit}
-                className="neo-button rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
-              >
-                {isAutoAligning ? "Resetting..." : "Reset fit"}
-              </button>
-            </div>
-            {showControlCoachmark ? (
-              <div className="rounded-[1.1rem] border border-[#ead8c0]/80 bg-[#fdf7ef] px-2.5 py-2 shadow-[0_8px_20px_rgba(155,106,47,0.08)]">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="text-[11px] leading-4 text-slate-700">
-                    Bigger straps usually want a little more breathing room. Land the size, then fine-trim the gap.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={dismissControlCoachmark}
-                    className="neo-button pointer-events-auto shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-semibold text-ink"
-                  >
-                    Got it
-                  </button>
-                </div>
-              </div>
-            ) : null}
-            <div className="neo-toggle flex items-center justify-between">
-              <div>
-                <p className="text-[13px] font-semibold text-ink">Keep Tweaks</p>
-                <p className="text-[11px] leading-4 text-muted">Carry the fit tune to the next candidate.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreserveSettings((prev) => !prev)}
-                aria-pressed={preserveSettings}
-                className={`relative h-7 w-12 shrink-0 overflow-hidden rounded-full border transition ${
-                  preserveSettings ? "border-[#d7c1a3] bg-[#f6ead7]" : "border-line bg-canvas"
-                }`}
-              >
-                <span
-                  className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                    preserveSettings ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
+      <div className="mt-3 neo-toggle flex items-center justify-between rounded-[1.1rem] px-3 py-2">
+        <div>
+          <p className="text-[13px] font-semibold text-ink">Keep Tweaks</p>
+          <p className="text-[11px] leading-4 text-muted">Carry this fit tune to the next candidate.</p>
         </div>
-      ) : showFitBench ? (
-        <div className="mt-4 rounded-[1.4rem] border border-[#ead8c0] bg-white/82 px-4 py-4 text-sm text-[#6d5a45] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-          Pick a strap from the drawer to unlock the fit controls.
-        </div>
-      ) : null}
+        <button
+          type="button"
+          onClick={() => setPreserveSettings((prev) => !prev)}
+          aria-pressed={preserveSettings}
+          className={`relative h-7 w-12 shrink-0 overflow-hidden rounded-full border transition ${
+            preserveSettings ? "border-[#d7c1a3] bg-[#f6ead7]" : "border-line bg-canvas"
+          }`}
+        >
+          <span
+            className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+              preserveSettings ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
     </div>
   );
 }
@@ -3622,45 +3732,6 @@ function SliderControl({
         ))}
       </div>
       {hint ? <p className="mt-1.5 text-[10px] font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
-    </div>
-  );
-}
-
-function ToggleControl({
-  label,
-  description,
-  enabled,
-  onToggle
-}: {
-  label: string;
-  description: string;
-  enabled: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div className="neo-control rounded-[1.15rem] p-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[15px] font-semibold text-ink">{label}</p>
-          <p className="text-xs text-muted">{description}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-pressed={enabled}
-          className={`relative h-9 w-16 shrink-0 overflow-hidden rounded-full border transition ${
-            enabled
-              ? "border-[#d7c1a3] bg-gradient-to-r from-[#f7e7cf] to-[#edd0aa]"
-              : "border-line bg-canvas shadow-[inset_2px_2px_8px_rgba(56,44,32,0.08),inset_-4px_-4px_12px_rgba(255,255,255,0.48)]"
-          }`}
-        >
-          <span
-            className={`absolute left-1 top-1 h-7 w-7 rounded-full bg-white shadow-[0_8px_14px_rgba(15,23,42,0.18)] transition-transform ${
-              enabled ? "translate-x-7" : "translate-x-0"
-            }`}
-          />
-        </button>
-      </div>
     </div>
   );
 }

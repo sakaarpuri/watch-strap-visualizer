@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import type { FavoriteStrap, ProfileRecord, SavedStrap, SavedWatch } from "@/lib/collection";
+import type { FavoriteStrap, ProfileRecord, SavedLook, SavedStrap, SavedWatch } from "@/lib/collection";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import type { StrapCategory } from "@/lib/strapLibrary";
 
 const watchBucket = "user-watches";
 const strapBucket = "user-straps";
+const lookBucket = "user-looks";
 
 const ensurePasswordStrength = (password: string) => {
   if (password.length < 6) return "Use at least 6 characters.";
@@ -46,6 +47,7 @@ export function usePersonalCollection() {
   const [profile, setProfile] = useState<ProfileRecord | null>(null);
   const [savedWatches, setSavedWatches] = useState<SavedWatch[]>([]);
   const [savedStraps, setSavedStraps] = useState<SavedStrap[]>([]);
+  const [savedLooks, setSavedLooks] = useState<SavedLook[]>([]);
   const [favorites, setFavorites] = useState<FavoriteStrap[]>([]);
   const [loading, setLoading] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
@@ -57,11 +59,12 @@ export function usePersonalCollection() {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
-    const [{ data: profileData }, { data: watchesData }, { data: strapsData }, { data: favoritesData }] =
+    const [{ data: profileData }, { data: watchesData }, { data: strapsData }, { data: looksData }, { data: favoritesData }] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", nextUser.id).maybeSingle(),
         supabase.from("saved_watches").select("*").eq("user_id", nextUser.id).order("created_at", { ascending: false }),
         supabase.from("saved_straps").select("*").eq("user_id", nextUser.id).order("created_at", { ascending: false }),
+        supabase.from("saved_looks").select("*").eq("user_id", nextUser.id).order("created_at", { ascending: false }),
         supabase.from("favorite_straps").select("*").eq("user_id", nextUser.id).order("created_at", { ascending: false })
       ]);
 
@@ -74,6 +77,7 @@ export function usePersonalCollection() {
     }
     setSavedWatches((watchesData as SavedWatch[] | null) ?? []);
     setSavedStraps((strapsData as SavedStrap[] | null) ?? []);
+    setSavedLooks((looksData as SavedLook[] | null) ?? []);
     setFavorites((favoritesData as FavoriteStrap[] | null) ?? []);
   }, []);
 
@@ -105,6 +109,7 @@ export function usePersonalCollection() {
         setProfile(null);
         setSavedWatches([]);
         setSavedStraps([]);
+        setSavedLooks([]);
         setFavorites([]);
       }
       setLoading(false);
@@ -230,6 +235,49 @@ export function usePersonalCollection() {
     await refresh();
   }, [refresh, user]);
 
+  const saveLook = useCallback(async ({
+    label,
+    file,
+    watchLabel,
+    watchSourceType,
+    savedWatchId,
+    strapLabel,
+    strapSourceType,
+    libraryStrapId,
+    savedStrapId,
+    fitSettings
+  }: {
+    label: string;
+    file: File;
+    watchLabel?: string;
+    watchSourceType?: "uploaded" | "saved";
+    savedWatchId?: string | null;
+    strapLabel?: string;
+    strapSourceType?: "library" | "saved" | "uploaded";
+    libraryStrapId?: string | null;
+    savedStrapId?: string | null;
+    fitSettings?: Record<string, unknown>;
+  }) => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !user) throw new Error("Sign in to save looks.");
+    const uploaded = await uploadUserFile(lookBucket, user.id, file, "look");
+    const { error } = await supabase.from("saved_looks").insert({
+      user_id: user.id,
+      label,
+      image_url: uploaded.publicUrl,
+      watch_label: watchLabel || null,
+      watch_source_type: watchSourceType || null,
+      saved_watch_id: savedWatchId || null,
+      strap_label: strapLabel || null,
+      strap_source_type: strapSourceType || null,
+      library_strap_id: libraryStrapId || null,
+      saved_strap_id: savedStrapId || null,
+      fit_settings: fitSettings || null
+    });
+    if (error) throw error;
+    await refresh();
+  }, [refresh, user]);
+
   const renameWatch = useCallback(async (id: string, label: string) => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase || !user) throw new Error("Sign in to rename watches.");
@@ -263,6 +311,23 @@ export function usePersonalCollection() {
       removePublicStorageObject(strapBucket, strap.strap_b_url)
     ]);
     const { error } = await supabase.from("saved_straps").delete().eq("id", strap.id).eq("user_id", user.id);
+    if (error) throw error;
+    await refresh();
+  }, [refresh, user]);
+
+  const renameLook = useCallback(async (id: string, label: string) => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !user) throw new Error("Sign in to rename looks.");
+    const { error } = await supabase.from("saved_looks").update({ label }).eq("id", id).eq("user_id", user.id);
+    if (error) throw error;
+    await refresh();
+  }, [refresh, user]);
+
+  const deleteLook = useCallback(async (look: SavedLook) => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !user) throw new Error("Sign in to delete looks.");
+    await removePublicStorageObject(lookBucket, look.image_url);
+    const { error } = await supabase.from("saved_looks").delete().eq("id", look.id).eq("user_id", user.id);
     if (error) throw error;
     await refresh();
   }, [refresh, user]);
@@ -307,6 +372,7 @@ export function usePersonalCollection() {
     profile,
     savedWatches,
     savedStraps,
+    savedLooks,
     favorites,
     favoriteLookup,
     signIn,
@@ -316,10 +382,13 @@ export function usePersonalCollection() {
     updatePassword,
     saveWatch,
     saveStrap,
+    saveLook,
     renameWatch,
     deleteWatch,
     renameStrap,
     deleteStrap,
+    renameLook,
+    deleteLook,
     toggleFavorite,
     refresh
   };
