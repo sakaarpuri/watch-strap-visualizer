@@ -25,9 +25,6 @@ export default function RootLayout({
           <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="font-semibold text-[#3b3128]">Watchstrapper</p>
-              <p className="mt-1 max-w-md text-xs leading-5 text-[#7b6a59]">
-                Quiet SEO surface links for the strap catalogue. The main visualizer stays up front; these pages stay tucked into the footer.
-              </p>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs uppercase tracking-[0.14em] text-[#7b6a59]">
               <Link href="/straps" className="hover:text-[#3b3128]">
