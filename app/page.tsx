@@ -659,6 +659,7 @@ export default function Home() {
       : canShowWatchOnlyPreview
         ? "Your watch is ready. Line up the lug guides if needed, then pick a strap."
         : "";
+  const canOpenTools = hasUserUpload && !cropSourceUrl;
 
   const triggerDrawerReveal = () => {
     setAnimateDrawerReveal(false);
@@ -1528,7 +1529,7 @@ export default function Home() {
 
         <section
           ref={previewSectionRef}
-          className={`order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
+          className={`relative order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
         >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -1587,7 +1588,23 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4">
+          <div className="relative glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4">
+            <button
+              type="button"
+              onClick={() => {
+                if (!canOpenTools) return;
+                setShowFitBench((prev) => !prev);
+              }}
+              disabled={!canOpenTools}
+              className={`hidden xl:inline-flex absolute right-[-0.95rem] top-8 z-10 items-center rounded-r-2xl rounded-l-[1rem] border px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
+                canOpenTools
+                  ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22] hover:bg-[#f0dcc0]"
+                  : "border-line bg-white/90 text-slate-400"
+              }`}
+              aria-disabled={!canOpenTools}
+            >
+              Tools
+            </button>
             {cropSourceUrl && originalWatchFile ? (
               <CropEditor
                 file={originalWatchFile}
@@ -1847,7 +1864,7 @@ export default function Home() {
           </div>
         </section>
 
-        {hasUserUpload ? (
+        {hasUserUpload && showFitBench ? (
           <aside className="order-3 xl:order-3 xl:pt-14">
             <FitBenchPanel
               canRender={canRender}
@@ -1961,7 +1978,9 @@ function PreviewUploadStage({
   onFileSelect: (file: File) => void;
 }) {
   return (
-    <div className={`relative overflow-hidden rounded-[1.75rem] ${highlightUploadGuide ? "upload-attention-ring" : ""}`}>
+    <div
+      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_96%_92%,rgba(245,141,24,0.72)_0%,rgba(248,160,42,0.34)_14%,rgba(251,214,170,0.12)_30%,rgba(255,252,248,0)_60%),linear-gradient(145deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_58%,rgba(249,238,223,0.78)_82%,rgba(245,203,151,0.12)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+    >
       <div className="pointer-events-none absolute inset-0 opacity-60">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -1985,54 +2004,52 @@ function PreviewUploadStage({
           className="absolute bottom-8 right-8 hidden h-56 w-24 rotate-[11deg] object-contain opacity-[0.05] lg:block"
         />
       </div>
-      <div className="relative rounded-[1.7rem] border border-line bg-[radial-gradient(circle_at_96%_92%,rgba(245,141,24,0.5)_0%,rgba(247,180,82,0.24)_18%,rgba(251,223,190,0.1)_38%,rgba(255,252,248,0)_64%),linear-gradient(145deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_52%,rgba(249,238,223,0.82)_78%,rgba(245,203,151,0.18)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7">
-        <div className="mx-auto max-w-[34rem]">
-          <ImageUploader
-            id="watch-stage"
-            label=""
-            helperText=""
-            previewUrl={previewUrl}
-            onFileSelect={onFileSelect}
-            className="w-full"
-            bare
-          />
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">Front-on, straight shots work best.</p>
+      <div className="relative mx-auto max-w-[34rem]">
+        <ImageUploader
+          id="watch-stage"
+          label=""
+          helperText=""
+          previewUrl={previewUrl}
+          onFileSelect={onFileSelect}
+          className="w-full"
+          bare
+        />
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted">Front-on, straight shots work best.</p>
+          <button
+            type="button"
+            onClick={onToggleUploadGuide}
+            className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
+            aria-expanded={showUploadGuide}
+            aria-controls="preview-upload-guide-panel"
+          >
+            Photo Tips
+            <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
+          </button>
+        </div>
+        {showUploadGuide ? (
+          <div
+            id="preview-upload-guide-panel"
+            className="mt-4 overflow-hidden rounded-2xl border border-line bg-white/70 p-3 transition-all duration-300"
+          >
             <button
               type="button"
-              onClick={onToggleUploadGuide}
-              className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
+              onClick={onCloseUploadGuide}
+              className="mb-2 flex w-full items-center rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
               aria-expanded={showUploadGuide}
               aria-controls="preview-upload-guide-panel"
             >
-              Photo Tips
-              <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
+              <p className="text-base font-semibold text-ink">Photo Tips</p>
             </button>
-          </div>
-          {showUploadGuide ? (
-            <div
-              id="preview-upload-guide-panel"
-              className="mt-4 overflow-hidden rounded-2xl border border-line bg-white/70 p-3 transition-all duration-300"
-            >
-              <button
-                type="button"
-                onClick={onCloseUploadGuide}
-                className="mb-2 flex w-full items-center rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
-                aria-expanded={showUploadGuide}
-                aria-controls="preview-upload-guide-panel"
-              >
-                <p className="text-base font-semibold text-ink">Photo Tips</p>
-              </button>
-              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-                {UPLOAD_GUIDE_ITEMS.map((item) => (
-                  <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
-                    <UploadGuideCard item={item} />
-                  </div>
-                ))}
-              </div>
+            <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+              {UPLOAD_GUIDE_ITEMS.map((item) => (
+                <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
+                  <UploadGuideCard item={item} />
+                </div>
+              ))}
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -2363,23 +2380,14 @@ function WatchOnlyLugGuideOverlay({
   guides: PreviewLugGuides;
   blink: boolean;
 }) {
-  const topLeft = ((guides.centerX - guides.topWidth / 2) / CANVAS_SIZE) * 100;
-  const topRight = ((guides.centerX + guides.topWidth / 2) / CANVAS_SIZE) * 100;
-  const topY = (guides.topY / CANVAS_SIZE) * 100;
-  const bottomLeft = ((guides.centerX - guides.bottomWidth / 2) / CANVAS_SIZE) * 100;
-  const bottomRight = ((guides.centerX + guides.bottomWidth / 2) / CANVAS_SIZE) * 100;
-  const bottomY = (guides.bottomY / CANVAS_SIZE) * 100;
-  const handleStyle = (left: number, top: number) => ({
-    left: `${left}%`,
-    top: `${top}%`,
-    width: "14px",
-    height: "14px",
-    transform: "translate(-50%, -50%)"
-  });
-
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl">
-      <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`} preserveAspectRatio="none" aria-hidden="true">
+      <svg
+        className="absolute inset-0 h-full w-full overflow-visible"
+        viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
         <line
           x1={guides.centerX - guides.topWidth / 2}
           y1={guides.topY}
@@ -2398,31 +2406,26 @@ function WatchOnlyLugGuideOverlay({
           strokeWidth="2"
           strokeLinecap="round"
         />
+        {[
+          { x: guides.centerX - guides.topWidth / 2, y: guides.topY },
+          { x: guides.centerX + guides.topWidth / 2, y: guides.topY },
+          { x: guides.centerX - guides.bottomWidth / 2, y: guides.bottomY },
+          { x: guides.centerX + guides.bottomWidth / 2, y: guides.bottomY }
+        ].map((point, index) => (
+          <g key={`${point.x}-${point.y}-${index}`}>
+            {blink ? (
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r="11"
+                className="watch-lug-handle-pulse-stroke"
+                fill="none"
+              />
+            ) : null}
+            <circle cx={point.x} cy={point.y} r="7" fill="white" stroke="#d7c1a3" strokeWidth="2" />
+          </g>
+        ))}
       </svg>
-      <div
-        className="absolute overflow-visible rounded-full border border-[#d7c1a3] bg-white"
-        style={handleStyle(topLeft, topY)}
-      >
-        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
-      </div>
-      <div
-        className="absolute overflow-visible rounded-full border border-[#d7c1a3] bg-white"
-        style={handleStyle(topRight, topY)}
-      >
-        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
-      </div>
-      <div
-        className="absolute overflow-visible rounded-full border border-[#d7c1a3] bg-white"
-        style={handleStyle(bottomLeft, bottomY)}
-      >
-        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
-      </div>
-      <div
-        className="absolute overflow-visible rounded-full border border-[#d7c1a3] bg-white"
-        style={handleStyle(bottomRight, bottomY)}
-      >
-        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#d7c1a3]/70" /> : null}
-      </div>
     </div>
   );
 }
@@ -2668,31 +2671,26 @@ function FitBenchPanel({
   hasUserUpload: boolean;
 }) {
   return (
-    <div
-      className={`rounded-[1.75rem] p-4 ${
-        showFitBench && canRender
-          ? "atelier-bench-panel"
-          : "glass-card atelier-card-soft border border-line"
-      }`}
-    >
+    <div className={`rounded-[1.75rem] p-4 ${showFitBench ? "atelier-bench-panel" : "glass-card atelier-card-soft border border-line"}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
             Fit Bench
           </p>
-          {showFitBench && canRender ? (
+          {showFitBench ? (
             <p className="mt-1.5 max-w-[18rem] text-xs leading-5 text-[#5f5143]">
-              {fitConfidence >= 0.65
+              {canRender
+                ? fitConfidence >= 0.65
                 ? "Auto-fit has done most of the placement."
-                : "Close fit. Refine size, gap, or framing here."}
+                : "Close fit. Refine size, gap, or framing here."
+                : "Upload and crop first, then pick a strap to activate fit controls."}
             </p>
           ) : null}
         </div>
         <button
           type="button"
           onClick={onToggleFitBench}
-          disabled={!canRender}
-          className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink disabled:opacity-45"
+          className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
         >
           {showFitBench ? "Hide" : "Open"}
         </button>
@@ -2831,6 +2829,10 @@ function FitBenchPanel({
               </button>
             </div>
           </div>
+        </div>
+      ) : showFitBench ? (
+        <div className="mt-4 rounded-[1.4rem] border border-[#ead8c0] bg-white/82 px-4 py-4 text-sm text-[#6d5a45] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+          Pick a strap from the drawer to unlock the fit controls.
         </div>
       ) : null}
     </div>

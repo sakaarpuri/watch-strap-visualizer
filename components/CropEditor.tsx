@@ -146,50 +146,44 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
       return;
     }
 
+    const left = drag.cropX;
+    const top = drag.cropY;
+    const right = drag.cropX + drag.cropSize;
+    const bottom = drag.cropY + drag.cropSize;
+
     if (drag.corner === "nw") {
-      const right = drag.cropX + drag.cropSize;
-      const bottom = drag.cropY + drag.cropSize;
-      const nextSize = clamp(
-        Math.min(right - (drag.cropX + deltaX), bottom - (drag.cropY + deltaY)),
-        MIN_CROP_SIZE,
-        Math.min(right, bottom)
-      );
+      const nextLeft = clamp(left + deltaX, 0, right - MIN_CROP_SIZE);
+      const nextTop = clamp(top + deltaY, 0, bottom - MIN_CROP_SIZE);
+      const nextSize = clamp(Math.min(right - nextLeft, bottom - nextTop), MIN_CROP_SIZE, Math.min(right, bottom));
       setCropSize(nextSize);
-      setCropX(clamp(right - nextSize, 0, VIEWPORT_SIZE - nextSize));
-      setCropY(clamp(bottom - nextSize, 0, VIEWPORT_SIZE - nextSize));
+      setCropX(right - nextSize);
+      setCropY(bottom - nextSize);
       return;
     }
+
     if (drag.corner === "ne") {
-      const left = drag.cropX;
-      const bottom = drag.cropY + drag.cropSize;
-      const nextSize = clamp(
-        Math.min((drag.cropX + drag.cropSize + deltaX) - left, bottom - (drag.cropY + deltaY)),
-        MIN_CROP_SIZE,
-        Math.min(VIEWPORT_SIZE - left, bottom)
-      );
+      const nextRight = clamp(right + deltaX, left + MIN_CROP_SIZE, VIEWPORT_SIZE);
+      const nextTop = clamp(top + deltaY, 0, bottom - MIN_CROP_SIZE);
+      const nextSize = clamp(Math.min(nextRight - left, bottom - nextTop), MIN_CROP_SIZE, Math.min(VIEWPORT_SIZE - left, bottom));
       setCropSize(nextSize);
       setCropX(left);
-      setCropY(clamp(bottom - nextSize, 0, VIEWPORT_SIZE - nextSize));
+      setCropY(bottom - nextSize);
       return;
     }
+
     if (drag.corner === "sw") {
-      const right = drag.cropX + drag.cropSize;
-      const top = drag.cropY;
-      const nextSize = clamp(
-        Math.min(right - (drag.cropX + deltaX), drag.cropY + drag.cropSize + deltaY - top),
-        MIN_CROP_SIZE,
-        Math.min(right, VIEWPORT_SIZE - top)
-      );
+      const nextLeft = clamp(left + deltaX, 0, right - MIN_CROP_SIZE);
+      const nextBottom = clamp(bottom + deltaY, top + MIN_CROP_SIZE, VIEWPORT_SIZE);
+      const nextSize = clamp(Math.min(right - nextLeft, nextBottom - top), MIN_CROP_SIZE, Math.min(right, VIEWPORT_SIZE - top));
       setCropSize(nextSize);
-      setCropX(clamp(right - nextSize, 0, VIEWPORT_SIZE - nextSize));
+      setCropX(right - nextSize);
       setCropY(top);
       return;
     }
-    const nextSize = clamp(
-      Math.min(drag.cropSize + deltaX, drag.cropSize + deltaY),
-      MIN_CROP_SIZE,
-      Math.min(VIEWPORT_SIZE - drag.cropX, VIEWPORT_SIZE - drag.cropY)
-    );
+
+    const nextRight = clamp(right + deltaX, left + MIN_CROP_SIZE, VIEWPORT_SIZE);
+    const nextBottom = clamp(bottom + deltaY, top + MIN_CROP_SIZE, VIEWPORT_SIZE);
+    const nextSize = clamp(Math.min(nextRight - left, nextBottom - top), MIN_CROP_SIZE, Math.min(VIEWPORT_SIZE - left, VIEWPORT_SIZE - top));
     setCropSize(nextSize);
   };
 

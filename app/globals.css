@@ -339,6 +339,13 @@ body {
   animation: watch-lug-handle-pulse 560ms ease-out 3;
 }
 
+.watch-lug-handle-pulse-stroke {
+  animation: watch-lug-handle-pulse 560ms ease-out 3;
+  transform-origin: center;
+  stroke: rgba(215, 193, 163, 0.72);
+  stroke-width: 1.75px;
+}
+
 .strap-layer-enter-left,
 .strap-layer-enter-right,
 .strap-layer-exit-left,
