@@ -2176,55 +2176,6 @@ export default function HomePageClient() {
             )}
           </div>
 
-          <div className="flex flex-col gap-3 xl:items-end">
-            <div className="flex w-full flex-col gap-2 xl:w-auto xl:items-end">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!canOpenTools) return;
-                  setShowFitBench((prev) => !prev);
-                }}
-                disabled={!canOpenTools}
-                className={`inline-flex items-center self-end rounded-t-2xl border border-b-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
-                  canOpenTools
-                    ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22] hover:bg-[#f0dcc0]"
-                    : "border-line bg-white/90 text-slate-400"
-                }`}
-                aria-disabled={!canOpenTools}
-              >
-                Tools
-              </button>
-              {!canOpenTools ? (
-                <p className="text-xs leading-5 text-muted xl:max-w-[18rem] xl:text-right">
-                  Upload and crop a watch to open tools.
-                </p>
-              ) : null}
-            </div>
-            {showFitBench && canOpenTools ? (
-              <div className="w-full">
-                <FitBenchPanel
-                  canRender={canRender}
-                  fitConfidence={fitConfidence}
-                  showLugGuides={showLugGuides}
-                  onToggleLugGuides={handleGuideToggle}
-                  onResetFit={() => void autoAlignStraps()}
-                  isAutoAligning={isAutoAligning}
-                  strapGap={strapGap}
-                  setGapHalf={setGapHalf}
-                  preserveSettings={preserveSettings}
-                  setPreserveSettings={setPreserveSettings}
-                  strapSizeUi={strapSizeUi}
-                  setStrapScale={setStrapScale}
-                  dialScale={dialScale}
-                  setDialScaleValue={setDialScaleValue}
-                  sceneZoom={sceneZoom}
-                  setSceneZoomValue={setSceneZoomValue}
-                  reCropCurrentWatch={reCropCurrentWatch}
-                />
-              </div>
-            ) : null}
-          </div>
-
           {strapDrawerView === "library" ? (
             <div className="glass-card atelier-card-soft rounded-[1.6rem] p-4 sm:p-5">
               <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -2480,7 +2431,48 @@ export default function HomePageClient() {
               Enquiries / Feedback
             </Link>
           </div>
+
         </section>
+
+        {canOpenTools ? (
+          <aside className="order-3 min-w-0 xl:pt-14">
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setShowFitBench((prev) => !prev)}
+                className={`inline-flex items-center self-end rounded-t-2xl border border-b-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
+                  showFitBench
+                    ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22]"
+                    : "border-line bg-white/96 text-[#7c7165] hover:bg-white"
+                }`}
+                aria-expanded={showFitBench}
+              >
+                Tools
+              </button>
+              {showFitBench ? (
+                <FitBenchPanel
+                  canRender={canRender}
+                  fitConfidence={fitConfidence}
+                  showLugGuides={showLugGuides}
+                  onToggleLugGuides={handleGuideToggle}
+                  onResetFit={() => void autoAlignStraps()}
+                  isAutoAligning={isAutoAligning}
+                  strapGap={strapGap}
+                  setGapHalf={setGapHalf}
+                  preserveSettings={preserveSettings}
+                  setPreserveSettings={setPreserveSettings}
+                  strapSizeUi={strapSizeUi}
+                  setStrapScale={setStrapScale}
+                  dialScale={dialScale}
+                  setDialScaleValue={setDialScaleValue}
+                  sceneZoom={sceneZoom}
+                  setSceneZoomValue={setSceneZoomValue}
+                  reCropCurrentWatch={reCropCurrentWatch}
+                />
+              ) : null}
+            </div>
+          </aside>
+        ) : null}
 
       </section>
       <ModalShell open={showAuthDialog} onClose={() => setShowAuthDialog(false)} title={authMode === "sign-up" ? "Create your account" : "Sign in"}>
@@ -3218,9 +3210,9 @@ function WatchOnlyPreview({
   useEffect(() => {
     if (!showLugGuides) return;
     setShouldBlinkGuides(true);
-    const timeout = window.setTimeout(() => setShouldBlinkGuides(false), 1800);
+    const timeout = window.setTimeout(() => setShouldBlinkGuides(false), 2400);
     return () => window.clearTimeout(timeout);
-  }, [watchSrc, showLugGuides]);
+  }, [watchSrc, showLugGuides, lugGuideOverrides]);
 
   return (
     <div className={highlighted ? "preview-attention-ring rounded-[1.75rem]" : ""}>
@@ -3303,8 +3295,8 @@ function WatchOnlyLugGuideOverlay({
           y1={guides.topY}
           x2={guides.centerX + guides.topWidth / 2}
           y2={guides.topY}
-          stroke="#d7c1a3"
-          strokeWidth="2"
+          stroke="#2ea8ff"
+          strokeWidth="3.5"
           strokeLinecap="round"
         />
         <line
@@ -3332,7 +3324,7 @@ function WatchOnlyLugGuideOverlay({
                 fill="none"
               />
             ) : null}
-            <circle cx={point.x} cy={point.y} r="7" fill="white" stroke="#d7c1a3" strokeWidth="2" />
+            <circle cx={point.x} cy={point.y} r="8.5" fill="white" stroke="#2ea8ff" strokeWidth="2.6" />
           </g>
         ))}
       </svg>

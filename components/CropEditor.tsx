@@ -98,7 +98,7 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const beginCropDrag = (event: PointerEvent<HTMLDivElement>) => {
+  const beginCropDrag = (event: PointerEvent<HTMLDivElement | HTMLButtonElement>) => {
     dragRef.current = {
       type: "crop",
       startX: event.clientX,
@@ -322,10 +322,19 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
               style={{ width: "100%", height: `${cropBottom}px` }}
             />
 
-            <div
-              className="absolute rounded-[24px] border-2 border-[#30486c] shadow-[0_0_0_1px_rgba(255,255,255,0.75),0_0_0_999px_rgba(255,255,255,0.02)]"
-              style={{ left: `${cropX}px`, top: `${cropY}px`, width: `${cropSize}px`, height: `${cropSize}px` }}
+            <button
+              type="button"
+              aria-label="Move crop box"
               onPointerDown={beginCropDrag}
+              className="absolute left-1/2 top-2 z-10 h-8 w-16 -translate-x-1/2 rounded-full border border-[#30486c] bg-white/92 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#30486c] shadow-[0_4px_10px_rgba(15,23,42,0.12)]"
+              style={{ transform: 'translateX(-50%)' }}
+            >
+              Crop
+            </button>
+
+            <div
+              className="pointer-events-none absolute rounded-[24px] border-2 border-[#30486c] shadow-[0_0_0_1px_rgba(255,255,255,0.75),0_0_0_999px_rgba(255,255,255,0.02)]"
+              style={{ left: `${cropX}px`, top: `${cropY}px`, width: `${cropSize}px`, height: `${cropSize}px` }}
             >
               {(["nw", "ne", "sw", "se"] as const).map((corner) => (
                 <button
@@ -333,7 +342,7 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
                   type="button"
                   aria-label={`Resize crop ${corner}`}
                   onPointerDown={beginResizeDrag(corner)}
-                  className="absolute h-5 w-5 rounded-full border-2 border-[#30486c] bg-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]"
+                  className="pointer-events-auto absolute h-5 w-5 rounded-full border-2 border-[#30486c] bg-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]"
                   style={{
                     left: corner.includes("w") ? "-10px" : undefined,
                     right: corner.includes("e") ? "-10px" : undefined,

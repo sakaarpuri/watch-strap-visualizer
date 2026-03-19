@@ -713,12 +713,12 @@ function GuideLine({
           x2={lineRight}
           y2={y}
           stroke={tone === "cyan" ? "#67e8f9" : "#f0abfc"}
-          strokeWidth="2"
+          strokeWidth="3.5"
           strokeLinecap="round"
         />
       </svg>
       <div
-        className={`absolute rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorClasses}`}
+        className={`absolute rounded-full border px-2.5 py-1 text-[10px] font-semibold shadow-[0_8px_18px_rgba(15,23,42,0.14)] ${colorClasses}`}
         style={{
           left: `${centerX + lineWidth / 2 + 10}px`,
           top: `${y - 11}px`
@@ -731,24 +731,24 @@ function GuideLine({
         style={{
           left: `${lineLeft}px`,
           top: `${y}px`,
-          width: "14px",
-          height: "14px",
+          width: "18px",
+          height: "18px",
           transform: "translate(-50%, -50%)"
         }}
       >
-        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#67e8f9]/70" /> : null}
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-9px] rounded-full border-2 border-[#38bdf8]/85" /> : null}
       </div>
       <div
         className={`absolute rounded-full border bg-white ${colorClasses}`}
         style={{
           left: `${lineRight}px`,
           top: `${y}px`,
-          width: "14px",
-          height: "14px",
+          width: "18px",
+          height: "18px",
           transform: "translate(-50%, -50%)"
         }}
       >
-        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#67e8f9]/70" /> : null}
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-9px] rounded-full border-2 border-[#38bdf8]/85" /> : null}
       </div>
     </>
   );
