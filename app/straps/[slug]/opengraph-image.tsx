@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { getStrapBySlug } from "@/lib/strapLibrary";
 
 export const size = {
@@ -8,13 +10,19 @@ export const size = {
 
 export const contentType = "image/png";
 
+const toDataUrl = async (src: string) => {
+  const filePath = path.join(process.cwd(), "public", src.replace(/^\//, ""));
+  const image = await readFile(filePath);
+  return `data:image/png;base64,${image.toString("base64")}`;
+};
+
 const humanize = (value: string) =>
   value
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
-export default function StrapOpenGraphImage({ params }: { params: { slug: string } }) {
+export default async function StrapOpenGraphImage({ params }: { params: { slug: string } }) {
   const strap = getStrapBySlug(params.slug);
 
   if (!strap) {
@@ -40,6 +48,8 @@ export default function StrapOpenGraphImage({ params }: { params: { slug: string
       size
     );
   }
+
+  const [strapADataUrl, strapBDataUrl] = await Promise.all([toDataUrl(strap.strapASrc), toDataUrl(strap.strapBSrc)]);
 
   return new ImageResponse(
     (
@@ -117,7 +127,7 @@ export default function StrapOpenGraphImage({ params }: { params: { slug: string
               }}
             >
               <img
-                src={`https://watchstrapper.com${strap.strapASrc}`}
+                src={strapADataUrl}
                 alt=""
                 style={{ width: "84%", height: "84%", objectFit: "contain" }}
               />
@@ -136,7 +146,7 @@ export default function StrapOpenGraphImage({ params }: { params: { slug: string
               }}
             >
               <img
-                src={`https://watchstrapper.com${strap.strapBSrc}`}
+                src={strapBDataUrl}
                 alt=""
                 style={{ width: "84%", height: "84%", objectFit: "contain" }}
               />
