@@ -1,6 +1,6 @@
 "use client";
 
-import { PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from "react";
+import { PointerEvent as ReactPointerEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import CropEditor from "@/components/CropEditor";
@@ -23,6 +23,14 @@ import {
   StrapVariant
 } from "@/lib/strapLibrary";
 import type { SimilarProductCard } from "@/lib/shopping";
+import {
+  DrawerStrapItem,
+  libraryStrapToDrawerItem,
+  SavedStrap,
+  SavedWatch,
+  savedStrapToDrawerItem
+} from "@/lib/collection";
+import { usePersonalCollection } from "@/hooks/usePersonalCollection";
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -105,7 +113,8 @@ const applyCenterToPair = (
 };
 
 type AiToolKey = "cleanup" | "rescue" | "final";
-type StrapSourceMode = "library" | "uploaded";
+type StrapSourceMode = "library" | "uploaded" | "saved";
+type StrapDrawerView = "library" | "saved" | "favorites" | "uploaded";
 type FitState = "auto" | "adjusted" | "locked";
 type GuideDragMode = "move" | "resize-left" | "resize-right";
 
@@ -136,11 +145,19 @@ interface StrapThumbProps {
   active: boolean;
   showCategory: boolean;
   onClick: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 interface UploadedSplitPart {
   file: File;
   url: string;
+}
+
+interface AuthFormState {
+  fullName: string;
+  email: string;
+  password: string;
 }
 
 const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
@@ -511,6 +528,29 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
 }
 
 export default function Home() {
+  const {
+    configured: accountConfigured,
+    loading: accountLoading,
+    authBusy,
+    authMessage,
+    user,
+    profile,
+    savedWatches,
+    savedStraps,
+    favoriteLookup,
+    signIn,
+    signUp,
+    signOut,
+    updateDisplayName,
+    updatePassword,
+    saveWatch,
+    saveStrap,
+    renameWatch,
+    deleteWatch,
+    renameStrap,
+    deleteStrap,
+    toggleFavorite
+  } = usePersonalCollection();
   const [watchSrc, setWatchSrc] = useState("/mock-dial.svg");
   const [watchPreviewSrc, setWatchPreviewSrc] = useState("");
   const [originalWatchSrc, setOriginalWatchSrc] = useState<string | null>(null);
@@ -523,9 +563,11 @@ export default function Home() {
   const [strapSplitSourceUrl, setStrapSplitSourceUrl] = useState<string | null>(null);
   const [uploadedStrapPartA, setUploadedStrapPartA] = useState<UploadedSplitPart | null>(null);
   const [uploadedStrapPartB, setUploadedStrapPartB] = useState<UploadedSplitPart | null>(null);
+  const [strapDrawerView, setStrapDrawerView] = useState<StrapDrawerView>("library");
   const [category, setCategory] = useState<StrapCategory>("All categories");
   const [strapIndex, setStrapIndex] = useState(0);
-  const [hasSelectedLibraryStrap, setHasSelectedLibraryStrap] = useState(false);
+  const [selectedLibraryStrap, setSelectedLibraryStrap] = useState<StrapVariant | null>(null);
+  const [selectedSavedStrap, setSelectedSavedStrap] = useState<SavedStrap | null>(null);
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
   const [dialScale, setDialScale] = useState(DEFAULT_WATCH_PREVIEW_SCALE);
@@ -554,6 +596,17 @@ export default function Home() {
   const [mockupReadyHighlight, setMockupReadyHighlight] = useState(false);
   const [animateDrawerReveal, setAnimateDrawerReveal] = useState(false);
   const [animateStrapSettle, setAnimateStrapSettle] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showMyWatchesDialog, setShowMyWatchesDialog] = useState(false);
+  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+  const [authForm, setAuthForm] = useState<AuthFormState>({
+    fullName: "",
+    email: "",
+    password: ""
+  });
   const [activeAiStatus, setActiveAiStatus] = useState<ActiveAiStatus>({
     tool: null,
     label: "",
@@ -622,23 +675,71 @@ export default function Home() {
       return a.label.localeCompare(b.label);
     });
   }, [category]);
+  const allLibraryStraps = useMemo(() => getStrapsForCategory("All categories"), []);
+  const favoriteLibraryStraps = useMemo(
+    () =>
+      allLibraryStraps.filter((strap) =>
+        favoriteLookup.has(`library:${strap.id}`)
+      ),
+    [allLibraryStraps, favoriteLookup]
+  );
+  const favoriteSavedStraps = useMemo(
+    () =>
+      savedStraps.filter((strap) =>
+        favoriteLookup.has(`saved:${strap.id}`)
+      ),
+    [favoriteLookup, savedStraps]
+  );
+  const favoriteDrawerItems = useMemo<DrawerStrapItem[]>(
+    () => [
+      ...favoriteLibraryStraps.map(libraryStrapToDrawerItem),
+      ...favoriteSavedStraps.map(savedStrapToDrawerItem)
+    ],
+    [favoriteLibraryStraps, favoriteSavedStraps]
+  );
+  const savedDrawerItems = useMemo<DrawerStrapItem[]>(
+    () => savedStraps.map(savedStrapToDrawerItem),
+    [savedStraps]
+  );
+  const libraryDrawerItems = useMemo<DrawerStrapItem[]>(
+    () => strapsInCategory.map(libraryStrapToDrawerItem),
+    [strapsInCategory]
+  );
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
-  const activeLibraryStrap = hasSelectedLibraryStrap ? currentStrap : null;
+  const activeLibraryStrap = strapSourceMode === "library" ? selectedLibraryStrap : null;
+  const activeSavedStrap = strapSourceMode === "saved" ? selectedSavedStrap : null;
   const activeStrapASrc =
-    strapSourceMode === "uploaded" && uploadedStrapPartA ? uploadedStrapPartA.url : activeLibraryStrap?.strapASrc;
+    strapSourceMode === "uploaded" && uploadedStrapPartA
+      ? uploadedStrapPartA.url
+      : activeSavedStrap?.strap_a_url ?? activeLibraryStrap?.strapASrc;
   const activeStrapBSrc =
-    strapSourceMode === "uploaded" && uploadedStrapPartB ? uploadedStrapPartB.url : activeLibraryStrap?.strapBSrc;
+    strapSourceMode === "uploaded" && uploadedStrapPartB
+      ? uploadedStrapPartB.url
+      : activeSavedStrap?.strap_b_url ?? activeLibraryStrap?.strapBSrc;
   const activeStrapLabel =
-    strapSourceMode === "uploaded" ? "Your Strap" : activeLibraryStrap?.label || "Selected strap";
-  const activeJoinShape = strapSourceMode === "uploaded" ? "flat" : activeLibraryStrap?.joinShape;
-  const activeAutoFitWidthFactor =
     strapSourceMode === "uploaded"
+      ? "Your Strap"
+      : activeSavedStrap?.label ?? activeLibraryStrap?.label ?? "Selected strap";
+  const activeJoinShape =
+    strapSourceMode === "uploaded" || strapSourceMode === "saved"
+      ? "flat"
+      : activeLibraryStrap?.joinShape;
+  const activeAutoFitWidthFactor =
+    strapSourceMode === "uploaded" || strapSourceMode === "saved"
       ? DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR
       : activeLibraryStrap?.autoFitWidthFactor ?? DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR;
   const activeAutoGapFactor =
-    strapSourceMode === "uploaded" ? undefined : activeLibraryStrap?.autoGapFactor;
+    strapSourceMode === "uploaded" || strapSourceMode === "saved"
+      ? undefined
+      : activeLibraryStrap?.autoGapFactor;
+  const activeDrawerItems =
+    strapDrawerView === "favorites"
+      ? favoriteDrawerItems
+      : strapDrawerView === "saved"
+        ? savedDrawerItems
+        : libraryDrawerItems;
   const canRender = useMemo(
     () => Boolean(partA && partB && activeStrapASrc && activeStrapBSrc),
     [partA, partB, activeStrapASrc, activeStrapBSrc]
@@ -755,6 +856,7 @@ export default function Home() {
     setUploadedStrapPartA(null);
     setUploadedStrapPartB(null);
     setStrapSourceMode("uploaded");
+    setStrapDrawerView("uploaded");
   };
 
   const applySplitStrap = (payload: { partA: UploadedSplitPart; partB: UploadedSplitPart }) => {
@@ -768,6 +870,7 @@ export default function Home() {
     });
     setStrapSplitSourceUrl(null);
     setStrapSourceMode("uploaded");
+    setStrapDrawerView("uploaded");
     setShowFitBench(false);
     setFitState("auto");
     triggerStrapSettle();
@@ -794,7 +897,7 @@ export default function Home() {
     if (strapSourceMode !== "library") return;
     triggerDrawerReveal();
     return undefined;
-  }, [category, strapSourceMode]);
+  }, [category, strapSourceMode, strapDrawerView]);
 
   useEffect(() => {
     if (!hasUserUpload || strapSourceMode !== "library") return;
@@ -852,6 +955,19 @@ export default function Home() {
       dismissLugGuideOnboarding();
     }
   }, [canRender, showLugGuideOnboarding]);
+
+  useEffect(() => {
+    if (!saveFeedback) return undefined;
+    const timeout = window.setTimeout(() => setSaveFeedback(null), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [saveFeedback]);
+
+  useEffect(() => {
+    if (user) return;
+    if (strapDrawerView === "saved" || strapDrawerView === "favorites") {
+      setStrapDrawerView("library");
+    }
+  }, [strapDrawerView, user]);
 
   const dismissControlCoachmark = () => {
     setShowControlCoachmark(false);
@@ -920,6 +1036,84 @@ export default function Home() {
     setShowFitBench(false);
   };
 
+  const requireSignedIn = (message = "Sign in to save items to your collection.") => {
+    if (user) return true;
+    setAuthError(message);
+    setShowAuthDialog(true);
+    return false;
+  };
+
+  const handleAuthSubmit = async () => {
+    try {
+      setAuthError(null);
+      if (authMode === "sign-up") {
+        await signUp(authForm.fullName.trim(), authForm.email.trim(), authForm.password);
+      } else {
+        await signIn(authForm.email.trim(), authForm.password);
+        setShowAuthDialog(false);
+      }
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "We couldn't sign you in.");
+    }
+  };
+
+  const handleSaveWatchToCollection = async () => {
+    if (!uploadedWatchFile || !requireSignedIn("Sign in to save this watch to your collection.")) return;
+    const defaultLabel = uploadedWatchFile.name.replace(/\.[^.]+$/, "") || "My watch";
+    const label = window.prompt("Name this watch for your collection.", defaultLabel)?.trim();
+    if (!label) return;
+    try {
+      await saveWatch({ label, file: uploadedWatchFile });
+      setSaveFeedback(`Saved ${label} to My Watches.`);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "We couldn't save that watch.");
+    }
+  };
+
+  const handleSaveStrapToCollection = async () => {
+    if (!uploadedStrapPartA || !uploadedStrapPartB || !requireSignedIn("Sign in to save this strap to your collection.")) return;
+    const label = window.prompt("Name this strap for your collection.", "My strap")?.trim();
+    if (!label) return;
+    try {
+      await saveStrap({
+        label,
+        category,
+        partAFile: uploadedStrapPartA.file,
+        partBFile: uploadedStrapPartB.file
+      });
+      setSaveFeedback(`Saved ${label} to My Straps.`);
+      setStrapDrawerView("saved");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "We couldn't save that strap.");
+    }
+  };
+
+  const handleSelectSavedWatch = async (watch: SavedWatch) => {
+    try {
+      const fetched = await fileFromSrc(watch.image_url, `${watch.label}.png`);
+      const nextUrl = watch.image_url;
+      setOriginalWatchFile(fetched);
+      setOriginalWatchSrc(nextUrl);
+      applyWatchAsset(fetched, nextUrl);
+      setShowMyWatchesDialog(false);
+    } catch {
+      setAuthError("We couldn't load that saved watch.");
+    }
+  };
+
+  const handleFavoriteToggle = async (item: DrawerStrapItem) => {
+    if (!requireSignedIn("Sign in to save favorites across devices.")) return;
+    try {
+      if (item.sourceType === "library" && item.libraryStrap) {
+        await toggleFavorite({ sourceType: "library", libraryStrapId: item.libraryStrap.id });
+      } else if (item.sourceType === "saved" && item.savedStrap) {
+        await toggleFavorite({ sourceType: "saved", savedStrapId: item.savedStrap.id });
+      }
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "We couldn't update that favorite.");
+    }
+  };
+
   const toggleLockView = () => {
     setLockView((prev) => {
       const next = !prev;
@@ -984,7 +1178,7 @@ export default function Home() {
   }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor, dialScale, lugGuideOverrides]);
 
   useEffect(() => {
-    if (strapSourceMode !== "library" || !hasSelectedLibraryStrap) return;
+    if (strapSourceMode !== "library" || !selectedLibraryStrap) return;
     const total = strapsInCategory.length;
     if (!total) return;
     const neighborIndices = [
@@ -1000,14 +1194,19 @@ export default function Home() {
         return [loadStrapImage(strap.strapASrc), loadStrapImage(strap.strapBSrc)];
       })
     ).catch(() => undefined);
-  }, [category, strapIndex, strapSourceMode, hasSelectedLibraryStrap]);
+  }, [category, strapIndex, strapSourceMode, selectedLibraryStrap, strapsInCategory]);
 
   const onCycleStrap = (direction: 1 | -1) => {
-    if (strapSourceMode !== "library" || !hasSelectedLibraryStrap) return;
+    if (strapSourceMode !== "library" || !selectedLibraryStrap) return;
     triggerStrapSettle();
     setStrapIndex((prev) => {
       const total = strapsInCategory.length;
-      return (prev + direction + total) % total;
+      const nextIndex = (prev + direction + total) % total;
+      const nextStrap = strapsInCategory[nextIndex];
+      if (nextStrap) {
+        setSelectedLibraryStrap(nextStrap);
+      }
+      return nextIndex;
     });
   };
 
@@ -1308,7 +1507,35 @@ export default function Home() {
 
   return (
       <main className="mx-auto max-w-[92rem] px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
-      <header className="mb-10 text-center sm:mb-12">
+      <header className="relative mb-10 text-center sm:mb-12">
+        <div className="absolute right-0 top-0 flex items-center gap-2">
+          {saveFeedback ? (
+            <span className="rounded-full border border-[#d7c1a3] bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#7c5b2e]">
+              {saveFeedback}
+            </span>
+          ) : null}
+          {user ? (
+            <button
+              type="button"
+              onClick={() => setShowSettingsDialog(true)}
+              className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+            >
+              {profile?.full_name?.trim() || user.email || "Account"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode("sign-in");
+                setAuthError(null);
+                setShowAuthDialog(true);
+              }}
+              className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+            >
+              {accountConfigured ? "Sign in" : "Connect Supabase"}
+            </button>
+          )}
+        </div>
         <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
           Watchstrapper
         </p>
@@ -1365,22 +1592,35 @@ export default function Home() {
                 </span>
               ) : null}
             </div>
-            <div className="mt-4 inline-flex rounded-full border border-line bg-canvas p-1">
+            <div className="mt-4 inline-flex flex-wrap rounded-full border border-line bg-canvas p-1">
               {[
-                { mode: "library" as const, label: "Library" },
-                { mode: "uploaded" as const, label: "Your Strap" }
+                { view: "library" as const, label: "Library" },
+                { view: "saved" as const, label: "My Straps", disabled: !user },
+                { view: "favorites" as const, label: "Favorites", disabled: !user },
+                { view: "uploaded" as const, label: "Your Strap" }
               ].map((option) => {
-                const active = strapSourceMode === option.mode;
+                const active = strapDrawerView === option.view;
                 return (
                   <button
-                    key={option.mode}
+                    key={option.view}
                     type="button"
-                    onClick={() => setStrapSourceMode(option.mode)}
+                    onClick={() => {
+                      if (option.disabled) {
+                        setAuthMode("sign-in");
+                        setAuthError("Sign in to view your saved straps and favorites.");
+                        setShowAuthDialog(true);
+                        return;
+                      }
+                      setStrapDrawerView(option.view);
+                      if (option.view === "uploaded") {
+                        setStrapSourceMode("uploaded");
+                      }
+                    }}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                       active
                         ? "atelier-pill-active"
                         : "text-ink hover:bg-white"
-                    }`}
+                    } ${option.disabled ? "opacity-60" : ""}`}
                     aria-pressed={active}
                   >
                     {option.label}
@@ -1389,7 +1629,7 @@ export default function Home() {
               })}
             </div>
 
-            {strapSourceMode === "library" ? (
+            {strapDrawerView === "library" ? (
               <>
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {STRAP_CATEGORIES.map((option) => {
@@ -1402,7 +1642,9 @@ export default function Home() {
                         onClick={() => {
                           setCategory(option);
                           setStrapIndex(0);
-                          setHasSelectedLibraryStrap(false);
+                          setSelectedLibraryStrap(null);
+                          setSelectedSavedStrap(null);
+                          setStrapSourceMode("library");
                           setShowFitBench(false);
                           setFitState("auto");
                         }}
@@ -1428,14 +1670,17 @@ export default function Home() {
                     {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
                   </p>
                   <div className="strap-browser-stack mt-3 max-h-[42rem] overflow-y-auto pr-1">
-                    {strapsInCategory.map((strap, index) => {
-                      const active = hasSelectedLibraryStrap && index === strapIndex;
+                    {libraryDrawerItems.map((item, index) => {
+                      const strap = item.libraryStrap as StrapVariant;
+                      const active = strapSourceMode === "library" && selectedLibraryStrap?.id === strap.id;
                       return (
                         <StrapDrawerButton
                           key={strap.id}
                           onClick={() => {
                             setStrapIndex(index);
-                            setHasSelectedLibraryStrap(true);
+                            setSelectedLibraryStrap(strap);
+                            setSelectedSavedStrap(null);
+                            setStrapSourceMode("library");
                             setShowFitBench(false);
                             setFitState("auto");
                             if (hasUserUpload) {
@@ -1449,6 +1694,8 @@ export default function Home() {
                           strap={strap}
                           active={active}
                           showCategory={category === "All categories"}
+                          isFavorite={favoriteLookup.has(`library:${strap.id}`)}
+                          onToggleFavorite={() => void handleFavoriteToggle(item)}
                           animateIn={animateDrawerReveal}
                           animationDelayMs={index * 45}
                           stackIndex={index}
@@ -1459,6 +1706,126 @@ export default function Home() {
                   </div>
                 </div>
               </>
+            ) : strapDrawerView === "saved" || strapDrawerView === "favorites" ? (
+              <div className="mt-4 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
+                    {strapDrawerView === "saved" ? "My Straps" : "Favorite Straps"}
+                  </p>
+                  {!user ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode("sign-in");
+                        setShowAuthDialog(true);
+                      }}
+                      className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                    >
+                      Sign in
+                    </button>
+                  ) : null}
+                </div>
+                {activeDrawerItems.length ? (
+                  <div className="mt-3 space-y-3">
+                    {activeDrawerItems.map((item, index) => {
+                      const saved = item.savedStrap;
+                      const library = item.libraryStrap;
+                      return (
+                        <div key={item.key} className="space-y-2">
+                          <StrapDrawerButton
+                            strap={{
+                              id: item.id,
+                              label: item.label,
+                              category: item.category,
+                              strapASrc: item.strapASrc,
+                              strapBSrc: item.strapBSrc,
+                              tint: library?.tint ?? { name: "Original", color: "#000000", alpha: 0 },
+                              shopping: library?.shopping ?? {
+                                material: "leather",
+                                styleFamily: "classic",
+                                colorFamily: "brown",
+                                hardwareFinish: "silver",
+                                keywords: []
+                              },
+                              joinShape: library?.joinShape
+                            }}
+                            active={
+                              item.sourceType === "saved"
+                                ? strapSourceMode === "saved" && selectedSavedStrap?.id === saved?.id
+                                : strapSourceMode === "library" && selectedLibraryStrap?.id === library?.id
+                            }
+                            showCategory
+                            onClick={() => {
+                              if (item.sourceType === "saved" && saved) {
+                                setSelectedSavedStrap(saved);
+                                setSelectedLibraryStrap(null);
+                                setStrapSourceMode("saved");
+                              }
+                              if (item.sourceType === "library" && library) {
+                                setSelectedLibraryStrap(library);
+                                setSelectedSavedStrap(null);
+                                setStrapSourceMode("library");
+                              }
+                              setShowFitBench(false);
+                              setFitState("auto");
+                              if (hasUserUpload) {
+                                triggerStrapSettle();
+                              }
+                            }}
+                            isFavorite={favoriteLookup.has(`${item.sourceType}:${item.id}`)}
+                            onToggleFavorite={() => void handleFavoriteToggle(item)}
+                            animateIn={animateDrawerReveal}
+                            animationDelayMs={index * 45}
+                            stackIndex={index}
+                            totalItems={activeDrawerItems.length}
+                          />
+                          {item.sourceType === "saved" && saved ? (
+                            <div className="flex flex-wrap gap-2 pl-2">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const nextLabel = window.prompt("Rename this saved strap.", saved.label)?.trim();
+                                  if (!nextLabel || nextLabel === saved.label) return;
+                                  try {
+                                    await renameStrap(saved.id, nextLabel);
+                                  } catch (error) {
+                                    setAuthError(error instanceof Error ? error.message : "We couldn't rename that strap.");
+                                  }
+                                }}
+                                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                              >
+                                Rename
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!window.confirm(`Delete ${saved.label} from My Straps?`)) return;
+                                  try {
+                                    await deleteStrap(saved);
+                                  } catch (error) {
+                                    setAuthError(error instanceof Error ? error.message : "We couldn't delete that strap.");
+                                  }
+                                }}
+                                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted">
+                    {user
+                      ? strapDrawerView === "saved"
+                        ? "Save a split strap to build your own drawer."
+                        : "Favorite straps you love and they will collect here."
+                      : "Sign in to use your saved strap collection."}
+                  </p>
+                )}
+              </div>
             ) : (
               <div className="mt-4 space-y-4">
                 <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
@@ -1495,6 +1862,14 @@ export default function Home() {
                         Re-open Split Tool
                       </button>
                     ) : null}
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveStrapToCollection()}
+                      disabled={!hasUploadedStrap}
+                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
+                    >
+                      Save Strap to Collection
+                    </button>
                   </div>
                 </div>
 
@@ -1547,6 +1922,23 @@ export default function Home() {
               ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => changeWatchInputRef.current?.click()}
+                className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+              >
+                {hasUserUpload ? "Upload New Watch" : "Upload Watch"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!requireSignedIn("Sign in to reuse your prepared watch collection.")) return;
+                  setShowMyWatchesDialog(true);
+                }}
+                className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+              >
+                My Watches
+              </button>
               {hasUserUpload ? (
                 <>
                   <button
@@ -1563,6 +1955,15 @@ export default function Home() {
                   >
                     Change Watch
                   </button>
+                  {!cropSourceUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveWatchToCollection()}
+                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                    >
+                      Save Watch to Collection
+                    </button>
+                  ) : null}
                 </>
               ) : null}
               {canRender ? (
@@ -1631,7 +2032,7 @@ export default function Home() {
                   showLugGuides={canShowLiveLugGuides}
                   lugGuideOverrides={lugGuideOverrides}
                   onLugGuidesChange={handleLugGuidesChange}
-                  showCycleControls={strapSourceMode === "library" && hasSelectedLibraryStrap}
+                  showCycleControls={strapDrawerView === "library" && strapSourceMode === "library" && Boolean(selectedLibraryStrap)}
                   onDragPartsChange={(nextA, nextB) => {
                     setPartA(nextA);
                     setPartB(nextB);
@@ -1898,7 +2299,269 @@ export default function Home() {
           </aside>
         ) : null}
       </section>
+      <ModalShell open={showAuthDialog} onClose={() => setShowAuthDialog(false)} title={authMode === "sign-up" ? "Create your account" : "Sign in"}>
+        {accountConfigured ? (
+          <div className="space-y-4">
+            {authMode === "sign-up" ? (
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-ink">Display name</span>
+                <input
+                  value={authForm.fullName}
+                  onChange={(event) => setAuthForm((prev) => ({ ...prev, fullName: event.target.value }))}
+                  className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none"
+                  placeholder="Your name"
+                />
+              </label>
+            ) : null}
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-ink">Email</span>
+              <input
+                type="email"
+                value={authForm.email}
+                onChange={(event) => setAuthForm((prev) => ({ ...prev, email: event.target.value }))}
+                className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none"
+                placeholder="you@example.com"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-ink">Password</span>
+              <input
+                type="password"
+                value={authForm.password}
+                onChange={(event) => setAuthForm((prev) => ({ ...prev, password: event.target.value }))}
+                className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none"
+                placeholder="At least 6 characters"
+              />
+            </label>
+            {authError ? <p className="text-sm text-rose-600">{authError}</p> : null}
+            {authMessage ? <p className="text-sm text-[#7c5b2e]">{authMessage}</p> : null}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => void handleAuthSubmit()}
+                disabled={authBusy}
+                className="atelier-accent-solid rounded-2xl border px-5 py-3 text-sm font-semibold disabled:opacity-60"
+              >
+                {authBusy ? "Working..." : authMode === "sign-up" ? "Create account" : "Sign in"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode((prev) => (prev === "sign-up" ? "sign-in" : "sign-up"));
+                  setAuthError(null);
+                }}
+                className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+              >
+                {authMode === "sign-up" ? "Have an account?" : "Need an account?"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm leading-6 text-muted">
+            Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to enable account-backed collections.
+          </p>
+        )}
+      </ModalShell>
+
+      <ModalShell open={showSettingsDialog} onClose={() => setShowSettingsDialog(false)} title="Account settings">
+        {user ? (
+          <AccountSettingsPanel
+            profileName={profile?.full_name || ""}
+            email={user.email || ""}
+            busy={authBusy || accountLoading}
+            onSaveName={async (fullName) => {
+              try {
+                await updateDisplayName(fullName);
+                setSaveFeedback("Updated your display name.");
+              } catch (error) {
+                setAuthError(error instanceof Error ? error.message : "We couldn't update your name.");
+              }
+            }}
+            onChangePassword={async (password) => {
+              try {
+                await updatePassword(password);
+                setSaveFeedback("Password updated.");
+              } catch (error) {
+                setAuthError(error instanceof Error ? error.message : "We couldn't update your password.");
+              }
+            }}
+            onSignOut={async () => {
+              await signOut();
+              setShowSettingsDialog(false);
+            }}
+          />
+        ) : null}
+      </ModalShell>
+
+      <ModalShell open={showMyWatchesDialog} onClose={() => setShowMyWatchesDialog(false)} title="My Watches">
+        {savedWatches.length ? (
+          <div className="space-y-3">
+            {savedWatches.map((watch) => (
+              <div key={watch.id} className="rounded-[1.35rem] border border-line bg-white/78 p-3">
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={watch.image_url} alt={watch.label} className="h-20 w-20 rounded-2xl border border-line object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base font-semibold text-ink">{watch.label}</p>
+                    <p className="text-sm text-muted">{watch.watch_brand || "Prepared watch head"}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleSelectSavedWatch(watch)}
+                    className="atelier-accent-solid rounded-2xl border px-4 py-2 text-sm font-semibold"
+                  >
+                    Use this watch
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const nextLabel = window.prompt("Rename this saved watch.", watch.label)?.trim();
+                      if (!nextLabel || nextLabel === watch.label) return;
+                      try {
+                        await renameWatch(watch.id, nextLabel);
+                      } catch (error) {
+                        setAuthError(error instanceof Error ? error.message : "We couldn't rename that watch.");
+                      }
+                    }}
+                    className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+                  >
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!window.confirm(`Delete ${watch.label} from My Watches?`)) return;
+                      try {
+                        await deleteWatch(watch);
+                      } catch (error) {
+                        setAuthError(error instanceof Error ? error.message : "We couldn't delete that watch.");
+                      }
+                    }}
+                    className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm leading-6 text-muted">
+            Save a cropped watch head and it will show up here ready to reuse without re-cropping.
+          </p>
+        )}
+      </ModalShell>
     </main>
+  );
+}
+
+function ModalShell({
+  open,
+  onClose,
+  title,
+  children
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(28,24,20,0.44)] px-4 py-6">
+      <div className="w-full max-w-[34rem] rounded-[2rem] border border-line bg-[#fffaf3] p-5 shadow-[0_30px_70px_rgba(28,24,20,0.22)]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-lg font-semibold text-ink">{title}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="neo-button rounded-2xl px-3 py-2 text-sm font-semibold text-ink"
+          >
+            Close
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function AccountSettingsPanel({
+  profileName,
+  email,
+  busy,
+  onSaveName,
+  onChangePassword,
+  onSignOut
+}: {
+  profileName: string;
+  email: string;
+  busy: boolean;
+  onSaveName: (fullName: string) => Promise<void>;
+  onChangePassword: (password: string) => Promise<void>;
+  onSignOut: () => Promise<void>;
+}) {
+  const [fullName, setFullName] = useState(profileName);
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    setFullName(profileName);
+  }, [profileName]);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-[1.35rem] border border-line bg-white/82 p-4">
+        <p className="text-sm font-semibold text-ink">Signed in as</p>
+        <p className="mt-1 text-sm text-muted">{email}</p>
+      </div>
+      <label className="block">
+        <span className="mb-1 block text-sm font-medium text-ink">Display name</span>
+        <input
+          value={fullName}
+          onChange={(event) => setFullName(event.target.value)}
+          className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none"
+        />
+      </label>
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void onSaveName(fullName.trim())}
+          className="atelier-accent-solid rounded-2xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+        >
+          Save name
+        </button>
+      </div>
+      <label className="block">
+        <span className="mb-1 block text-sm font-medium text-ink">New password</span>
+        <input
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none"
+          placeholder="At least 6 characters with a number or symbol"
+        />
+      </label>
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          disabled={busy || !password.trim()}
+          onClick={() => void onChangePassword(password)}
+          className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-60"
+        >
+          Update password
+        </button>
+        <button
+          type="button"
+          onClick={() => void onSignOut()}
+          className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -2073,6 +2736,8 @@ function StrapDrawerButton({
   active,
   showCategory,
   onClick,
+  isFavorite = false,
+  onToggleFavorite,
   animateIn = false,
   animationDelayMs = 0,
   stackIndex = 0,
@@ -2083,7 +2748,7 @@ function StrapDrawerButton({
       type="button"
       onClick={onClick}
       data-testid={`strap-${strap.id}`}
-      className={`drawer-card flex w-full items-center gap-2 rounded-[1.25rem] border px-2 py-2 text-left transition ${
+      className={`drawer-card relative flex w-full items-center gap-2 rounded-[1.25rem] border px-2 py-2 text-left transition ${
         active
           ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
@@ -2094,6 +2759,21 @@ function StrapDrawerButton({
       }}
       aria-pressed={active}
     >
+      {onToggleFavorite ? (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleFavorite();
+          }}
+          className={`absolute right-3 top-3 z-10 rounded-full border px-2 py-1 text-xs font-semibold ${
+            isFavorite ? "border-[#d7c1a3] bg-[#fff2df] text-[#a8661c]" : "border-line bg-white/88 text-slate-500"
+          }`}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          {isFavorite ? "★" : "☆"}
+        </button>
+      ) : null}
       <div
         className={`grid h-[124px] w-[148px] shrink-0 grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
           active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
