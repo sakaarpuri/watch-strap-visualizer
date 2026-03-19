@@ -18,8 +18,10 @@ import {
 } from "@/lib/compose";
 import {
   STRAP_CATEGORIES,
+  STRAP_STYLE_TAGS,
   getStrapsForCategory,
   StrapCategory,
+  StrapStyleTag,
   StrapVariant
 } from "@/lib/strapLibrary";
 import type { SimilarProductCard } from "@/lib/shopping";
@@ -565,6 +567,7 @@ export default function Home() {
   const [uploadedStrapPartB, setUploadedStrapPartB] = useState<UploadedSplitPart | null>(null);
   const [strapDrawerView, setStrapDrawerView] = useState<StrapDrawerView>("library");
   const [category, setCategory] = useState<StrapCategory>("All categories");
+  const [styleFilter, setStyleFilter] = useState<StrapStyleTag | "All styles">("All styles");
   const [strapIndex, setStrapIndex] = useState(0);
   const [selectedLibraryStrap, setSelectedLibraryStrap] = useState<StrapVariant | null>(null);
   const [selectedSavedStrap, setSelectedSavedStrap] = useState<SavedStrap | null>(null);
@@ -675,6 +678,10 @@ export default function Home() {
       return a.label.localeCompare(b.label);
     });
   }, [category]);
+  const filteredLibraryStraps = useMemo(() => {
+    if (styleFilter === "All styles") return strapsInCategory;
+    return strapsInCategory.filter((strap) => strap.styleTags.includes(styleFilter));
+  }, [strapsInCategory, styleFilter]);
   const allLibraryStraps = useMemo(() => getStrapsForCategory("All categories"), []);
   const favoriteLibraryStraps = useMemo(
     () =>
@@ -702,10 +709,10 @@ export default function Home() {
     [savedStraps]
   );
   const libraryDrawerItems = useMemo<DrawerStrapItem[]>(
-    () => strapsInCategory.map(libraryStrapToDrawerItem),
-    [strapsInCategory]
+    () => filteredLibraryStraps.map(libraryStrapToDrawerItem),
+    [filteredLibraryStraps]
   );
-  const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
+  const currentStrap: StrapVariant = filteredLibraryStraps[strapIndex] ?? filteredLibraryStraps[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
   const activeLibraryStrap = strapSourceMode === "library" ? selectedLibraryStrap : null;
@@ -898,6 +905,13 @@ export default function Home() {
     triggerDrawerReveal();
     return undefined;
   }, [category, strapSourceMode, strapDrawerView]);
+
+  useEffect(() => {
+    setStrapIndex(0);
+    if (selectedLibraryStrap && !filteredLibraryStraps.some((strap) => strap.id === selectedLibraryStrap.id)) {
+      setSelectedLibraryStrap(null);
+    }
+  }, [filteredLibraryStraps, selectedLibraryStrap]);
 
   useEffect(() => {
     if (!hasUserUpload || strapSourceMode !== "library") return;
@@ -1179,7 +1193,7 @@ export default function Home() {
 
   useEffect(() => {
     if (strapSourceMode !== "library" || !selectedLibraryStrap) return;
-    const total = strapsInCategory.length;
+    const total = filteredLibraryStraps.length;
     if (!total) return;
     const neighborIndices = [
       strapIndex,
@@ -1189,20 +1203,20 @@ export default function Home() {
     const uniqueIndices = [...new Set(neighborIndices)];
     void Promise.all(
       uniqueIndices.flatMap((index) => {
-        const strap = strapsInCategory[index];
+        const strap = filteredLibraryStraps[index];
         if (!strap) return [];
         return [loadStrapImage(strap.strapASrc), loadStrapImage(strap.strapBSrc)];
       })
     ).catch(() => undefined);
-  }, [category, strapIndex, strapSourceMode, selectedLibraryStrap, strapsInCategory]);
+  }, [category, strapIndex, strapSourceMode, selectedLibraryStrap, filteredLibraryStraps]);
 
   const onCycleStrap = (direction: 1 | -1) => {
     if (strapSourceMode !== "library" || !selectedLibraryStrap) return;
     triggerStrapSettle();
     setStrapIndex((prev) => {
-      const total = strapsInCategory.length;
+      const total = filteredLibraryStraps.length;
       const nextIndex = (prev + direction + total) % total;
-      const nextStrap = strapsInCategory[nextIndex];
+      const nextStrap = filteredLibraryStraps[nextIndex];
       if (nextStrap) {
         setSelectedLibraryStrap(nextStrap);
       }
@@ -1664,10 +1678,13 @@ export default function Home() {
                     );
                   })}
                 </div>
-
                 <div className="strap-browser-shell mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
-                    {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
+                    {styleFilter === "All styles"
+                      ? category === "All categories"
+                        ? "Full Strap Drawer"
+                        : `Inside ${category}`
+                      : `${styleFilter} straps`}
                   </p>
                   <div className="strap-browser-stack mt-3 max-h-[42rem] overflow-y-auto pr-1">
                     {libraryDrawerItems.map((item, index) => {
@@ -1703,6 +1720,11 @@ export default function Home() {
                         />
                       );
                     })}
+                    {!libraryDrawerItems.length ? (
+                      <p className="rounded-2xl border border-dashed border-line bg-white/60 px-4 py-6 text-sm text-muted">
+                        No straps in this category match the current style filter yet.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </>
@@ -1737,6 +1759,7 @@ export default function Home() {
                               id: item.id,
                               label: item.label,
                               category: item.category,
+                              styleTags: library?.styleTags ?? [],
                               strapASrc: item.strapASrc,
                               strapBSrc: item.strapBSrc,
                               tint: library?.tint ?? { name: "Original", color: "#000000", alpha: 0 },
@@ -2064,6 +2087,61 @@ export default function Home() {
               />
             )}
           </div>
+
+          {strapDrawerView === "library" ? (
+            <div className="glass-card atelier-card-soft rounded-[1.6rem] p-4 sm:p-5">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                    Style Mood
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    Narrow the drawer by fashion style, not just material.
+                  </p>
+                </div>
+                <p className="text-xs uppercase tracking-[0.14em] text-[#7c7165]">
+                  {styleFilter === "All styles" ? "All visible straps" : `${styleFilter} focus`}
+                </p>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setStyleFilter("All styles")}
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                    styleFilter === "All styles"
+                      ? "atelier-pill-active"
+                      : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                  }`}
+                  aria-pressed={styleFilter === "All styles"}
+                >
+                  All styles
+                </button>
+                {STRAP_STYLE_TAGS.map((tag) => {
+                  const count = strapsInCategory.filter((strap) => strap.styleTags.includes(tag)).length;
+                  if (!count) return null;
+                  const active = styleFilter === tag;
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setStyleFilter(tag)}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium capitalize transition ${
+                        active
+                          ? "atelier-pill-active"
+                          : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                      }`}
+                      aria-pressed={active}
+                    >
+                      {tag}
+                      <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
 
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">

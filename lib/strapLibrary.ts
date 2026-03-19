@@ -8,6 +8,31 @@ export type StrapCategory =
   | "Metal"
   | "Women";
 
+export type StrapStyleTag =
+  | "dressy"
+  | "rugged"
+  | "sporty"
+  | "minimalist"
+  | "heritage"
+  | "artisanal"
+  | "statement"
+  | "formal"
+  | "casual"
+  | "boho";
+
+export const STRAP_STYLE_TAGS: StrapStyleTag[] = [
+  "dressy",
+  "rugged",
+  "sporty",
+  "minimalist",
+  "heritage",
+  "artisanal",
+  "statement",
+  "formal",
+  "casual",
+  "boho"
+];
+
 export interface StrapShoppingMeta {
   material: "leather" | "rubber" | "fabric" | "metal";
   styleFamily:
@@ -49,6 +74,7 @@ export interface StrapVariant {
   id: string;
   label: string;
   category: StrapCategory;
+  styleTags: StrapStyleTag[];
   strapASrc: string;
   strapBSrc: string;
   tint: StrapStyle;
@@ -58,11 +84,82 @@ export interface StrapVariant {
   joinShape?: "flat" | "curved";
 }
 
-type RawStrapVariant = Omit<StrapVariant, "shopping">;
+type RawStrapVariant = Omit<StrapVariant, "shopping" | "styleTags">;
 
 const SEL = "/strap-selection-kie";
 
 const ORIG_TINT: StrapStyle = { name: "Original", color: "#000000", alpha: 0 };
+
+const STRAP_STYLE_TAGS_BY_ID: Record<string, StrapStyleTag[]> = {
+  "leather-classic": ["heritage"],
+  "leather-black-smooth": ["dressy", "formal", "minimalist"],
+  "leather-black-grain": ["heritage"],
+  "leather-espresso-smooth": ["dressy", "formal", "heritage"],
+  "leather-dark-brown-smooth": ["dressy", "formal", "heritage"],
+  "leather-cognac-smooth": ["heritage", "minimalist"],
+  "leather-tan-smooth": ["heritage", "minimalist"],
+  "leather-beige-smooth": ["heritage", "minimalist"],
+  "leather-beige-suede": ["heritage", "casual"],
+  "leather-burgundy-smooth": ["dressy", "formal", "heritage"],
+  "leather-burgundy-pebbled": ["heritage"],
+  "leather-navy-smooth": ["minimalist"],
+  "leather-olive-smooth": ["rugged", "minimalist", "casual"],
+  "leather-gray-smooth": ["minimalist"],
+  "leather-chocolate-smooth": ["minimalist"],
+  "leather-bourbon-pullup": ["heritage"],
+  "leather-taupe-nubuck": ["heritage"],
+  "leather-oxblood-pebbled": ["statement", "heritage"],
+  "leather-forest-calf": ["rugged", "heritage"],
+  "leather-slate-saffiano": ["dressy", "heritage", "minimalist"],
+  "leather-cognac-grain": ["heritage"],
+  "leather-sand-suede": ["casual"],
+  "leather-tan-suede": ["heritage", "casual"],
+  "leather-emerald-suede": ["statement", "casual"],
+  "leather-sapphire-suede": ["statement", "casual"],
+  "leather-oxblood-suede": ["statement", "heritage", "casual"],
+  "leather-aubergine-suede": ["statement", "casual"],
+  "leather-mustard-suede": ["statement", "casual"],
+  "leather-indian-paisley": ["artisanal", "statement", "boho"],
+  "leather-indian-mughal": ["artisanal", "statement", "boho"],
+  "leather-indian-block-print": ["artisanal", "statement", "boho"],
+  "rubber-blue-tropic": ["rugged", "sporty"],
+  "rubber-orange-tropic": ["statement", "rugged", "sporty"],
+  "rubber-sand-fkm": ["rugged", "sporty", "casual"],
+  "rubber-navy-performance": ["rugged", "sporty"],
+  "rubber-olive-performance": ["rugged", "sporty", "casual"],
+  "fabric-grey-canvas": ["rugged", "minimalist", "casual"],
+  "fabric-navy-canvas": ["rugged", "casual"],
+  "fabric-sand-canvas": ["rugged", "casual"],
+  "fabric-khaki-canvas": ["rugged", "casual"],
+  "fabric-black-sailcloth": ["sporty"],
+  "fabric-grey-sailcloth": ["sporty", "minimalist"],
+  "fabric-bond-nato": ["rugged", "casual"],
+  "fabric-olive-seatbelt-nato": ["rugged", "casual"],
+  "fabric-navy-bond-nato": ["rugged", "casual"],
+  "fabric-sand-stripe-nato": ["rugged", "casual"],
+  "fabric-charcoal-seatbelt-nato": ["rugged", "casual"],
+  "fabric-olive-nato": ["rugged", "casual"],
+  "fabric-jaipur-saffron-nato": ["artisanal", "statement", "boho"],
+  "fabric-indigo-block-nato": ["artisanal", "boho", "casual"],
+  "fabric-holi-stripe-nato": ["artisanal", "statement", "boho"],
+  "fabric-oaxaca-serape-nato": ["artisanal", "statement", "boho"],
+  "fabric-talavera-blue-nato": ["artisanal", "statement", "boho"],
+  "metal-steel-bracelet": ["dressy", "formal", "minimalist"],
+  "metal-steel-link-bracelet": ["dressy", "formal", "minimalist"],
+  "metal-black-pvd-bracelet": ["dressy", "formal", "minimalist"],
+  "metal-gold-silver-bracelet": ["dressy", "formal", "minimalist"],
+  "metal-gold-bracelet": ["statement", "dressy", "formal"],
+  "women-leather-beige-smooth": ["heritage", "minimalist"],
+  "women-leather-taupe-nubuck": ["heritage"],
+  "women-leather-sand-suede": ["casual"],
+  "women-leather-aubergine-suede": ["statement", "casual"],
+  "women-leather-oxblood-pebbled": ["statement", "heritage"],
+  "women-leather-cognac-grain": ["heritage"],
+  "women-fabric-navy-canvas": ["rugged", "casual"],
+  "women-fabric-talavera-blue-nato": ["artisanal", "statement", "boho"],
+  "women-metal-gold-silver-bracelet": ["dressy", "formal", "minimalist"],
+  "women-metal-gold-bracelet": ["statement", "dressy", "formal"]
+};
 
 const inferShoppingMeta = (strap: RawStrapVariant): StrapShoppingMeta => {
   const haystack = `${strap.id} ${strap.label}`.toLowerCase();
@@ -176,6 +273,7 @@ const inferShoppingMeta = (strap: RawStrapVariant): StrapShoppingMeta => {
 
 const withShopping = (strap: RawStrapVariant): StrapVariant => ({
   ...strap,
+  styleTags: STRAP_STYLE_TAGS_BY_ID[strap.id] ?? [],
   shopping: inferShoppingMeta(strap)
 });
 
