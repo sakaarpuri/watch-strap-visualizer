@@ -3250,7 +3250,7 @@ function StrapDrawerButton({
       } ${animateIn ? "drawer-reveal-item" : ""}`}
       style={{
         ...(animateIn ? { animationDelay: `${animationDelayMs}ms` } : {}),
-        zIndex: totalItems - stackIndex
+        zIndex: stackIndex + 1
       }}
       aria-pressed={active}
     >
@@ -3271,7 +3271,7 @@ function StrapDrawerButton({
       ) : null}
       <div
         className={`drawer-card-media grid h-[124px] w-full grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
-          active ? "border-[#d7c1a3] bg-white" : "border-line bg-slate-50"
+          active ? "border-[#d7c1a3] bg-white" : "border-[#ddd3c5] bg-white"
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
