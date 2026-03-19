@@ -1,0 +1,17 @@
+{
+  "prompt": "Front-on isolated watch head only, no strap attached, unbranded field watch style, brushed steel case, cream dial, Arabic numerals, simple minute track, syringe hands, practical heritage proportions, centered product shot, understated tool aesthetic, no logo, realistic studio product photo, isolated object.",
+  "negative_prompt": "brand logo, text logo, strap, bracelet, wrist, military insignia, background clutter, perspective distortion, cropped case, fantasy design, diver bezel, smartwatch, skeleton dial, colorful accents",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "1024x1024",
+    "style": "photorealistic product photography",
+    "lighting": "soft neutral studio light",
+    "camera_angle": "straight-on centered packshot",
+    "depth_of_field": "deep focus",
+    "quality": "clean numerals, realistic brushed steel, crisp heritage detail"
+  }
+}

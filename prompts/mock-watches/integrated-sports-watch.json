@@ -1,0 +1,17 @@
+{
+  "prompt": "Front-on isolated watch head only, no strap attached, unbranded integrated sports watch head, angular brushed steel case shape, blue textured dial, applied baton indices, sporty luxury proportions, clean bezel, no logo, centered product shot, realistic studio lighting, isolated object.",
+  "negative_prompt": "brand logo, text logo, strap, bracelet, wrist, background clutter, perspective distortion, cropped case, fantasy design, diver bezel, smartwatch, skeleton dial, gemstones, gold bling",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "1024x1024",
+    "style": "photorealistic product photography",
+    "lighting": "premium studio light with controlled brushed steel reflections",
+    "camera_angle": "straight-on centered packshot",
+    "depth_of_field": "deep focus",
+    "quality": "sharp facets, realistic dial texture, clean luxury sports finish"
+  }
+}

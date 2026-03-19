@@ -1,0 +1,17 @@
+{
+  "prompt": "Front-on isolated watch head only, no strap attached, unbranded pilot watch style, brushed steel case, matte black dial, large Arabic numerals, triangle marker at 12, clean flieger-inspired layout, sword hands, centered product shot, no logo, realistic studio product lighting, isolated object.",
+  "negative_prompt": "brand logo, text logo, strap, bracelet, wrist, cockpit background, perspective distortion, cropped case, fantasy design, diver bezel, smartwatch, skeleton dial, excess color accents",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "1024x1024",
+    "style": "photorealistic product photography",
+    "lighting": "neutral studio light with soft edge contrast",
+    "camera_angle": "straight-on centered packshot",
+    "depth_of_field": "deep focus",
+    "quality": "clear numerals, realistic brushed metal, sharp hand shapes"
+  }
+}

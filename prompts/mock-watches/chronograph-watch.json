@@ -1,0 +1,17 @@
+{
+  "prompt": "Front-on isolated watch head only, no strap attached, unbranded panda chronograph watch head, polished steel case, white dial with black subdials, clean tachymeter-free outer track, balanced pushers, sporty but refined proportions, centered product shot, no brand marks, realistic studio product lighting, isolated object.",
+  "negative_prompt": "brand logo, text logo, strap, bracelet, wrist, background clutter, racing scene, perspective distortion, cropped watch, diver bezel, smartwatch, skeleton dial, overcomplicated subdials, fantasy colors",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "1024x1024",
+    "style": "photorealistic product photography",
+    "lighting": "clean studio lighting with polished steel highlights",
+    "camera_angle": "straight-on centered packshot",
+    "depth_of_field": "deep focus",
+    "quality": "clear subdials, sharp pushers, realistic polished case"
+  }
+}

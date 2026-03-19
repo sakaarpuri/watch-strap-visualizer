@@ -488,6 +488,17 @@ const UPLOAD_GUIDE_ITEMS: UploadGuideItem[] = [
   }
 ];
 
+const SAMPLE_WATCH_HEADS = [
+  { id: "dress", label: "Dress", src: "/mock-watches/dress-watch.webp" },
+  { id: "diver", label: "Diver", src: "/mock-watches/diver-watch.webp" },
+  { id: "field", label: "Field", src: "/mock-watches/field-watch.webp" },
+  { id: "chronograph", label: "Chronograph", src: "/mock-watches/chronograph-watch.webp" },
+  { id: "pilot", label: "Pilot", src: "/mock-watches/pilot-watch.webp" },
+  { id: "integrated-sports", label: "Integrated", src: "/mock-watches/integrated-sports-watch.webp" }
+] as const;
+
+type SampleWatchHead = (typeof SAMPLE_WATCH_HEADS)[number];
+
 function UploadGuideCard({ item }: { item: UploadGuideItem }) {
   const shellTone =
     item.tone === "ideal"
@@ -1116,6 +1127,18 @@ export default function HomePageClient() {
       setShowMyWatchesDialog(false);
     } catch {
       setAuthError("We couldn't load that saved watch.");
+    }
+  };
+
+  const handleSelectSampleWatch = async (sample: SampleWatchHead) => {
+    try {
+      const fetched = await fileFromSrc(sample.src, `${sample.id}.png`);
+      setOriginalWatchFile(fetched);
+      setOriginalWatchSrc(sample.src);
+      setActiveSavedWatchId(null);
+      applyWatchAsset(fetched, sample.src);
+    } catch {
+      setAuthError("We couldn't load that sample watch.");
     }
   };
 
@@ -2168,6 +2191,8 @@ export default function HomePageClient() {
                 onToggleUploadGuide={() => setShowUploadGuide((prev) => !prev)}
                 onCloseUploadGuide={() => setShowUploadGuide(false)}
                 onFileSelect={onUploadDial}
+                sampleWatches={SAMPLE_WATCH_HEADS}
+                onSelectSampleWatch={handleSelectSampleWatch}
               />
             )}
           </div>
@@ -3128,7 +3153,9 @@ function PreviewUploadStage({
   highlightUploadGuide,
   onToggleUploadGuide,
   onCloseUploadGuide,
-  onFileSelect
+  onFileSelect,
+  sampleWatches,
+  onSelectSampleWatch
 }: {
   previewUrl: string;
   showUploadGuide: boolean;
@@ -3136,6 +3163,8 @@ function PreviewUploadStage({
   onToggleUploadGuide: () => void;
   onCloseUploadGuide: () => void;
   onFileSelect: (file: File) => void;
+  sampleWatches: readonly SampleWatchHead[];
+  onSelectSampleWatch: (sample: SampleWatchHead) => void;
 }) {
   return (
     <div
@@ -3163,6 +3192,39 @@ function PreviewUploadStage({
             Photo Tips
             <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
           </button>
+        </div>
+        <div className="mt-4 rounded-2xl border border-line bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7c7165]">
+                Try a Sample Watch
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                Jump straight in with a mock watch head if you want to test straps first.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {sampleWatches.map((sample) => (
+              <button
+                key={sample.id}
+                type="button"
+                onClick={() => onSelectSampleWatch(sample)}
+                className="rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={sample.src}
+                  alt={`${sample.label} watch head`}
+                  className="mx-auto h-16 w-auto object-contain sm:h-[4.5rem]"
+                  loading="lazy"
+                />
+                <p className="mt-1 text-[11px] font-semibold leading-tight text-ink sm:text-xs">
+                  {sample.label}
+                </p>
+              </button>
+            ))}
+          </div>
         </div>
         {showUploadGuide ? (
           <div

@@ -1,0 +1,17 @@
+{
+  "prompt": "Front-on isolated watch head only, no strap attached, classic unbranded dress watch, polished stainless steel round case, slim bezel, white dial, simple applied indices, dauphine hands, small seconds-free clean layout, elegant minimalist proportions, centered product shot, realistic metal reflections, premium but non-branded, crisp studio lighting, symmetrical, isolated object.",
+  "negative_prompt": "brand logo, text logo, watermark, strap, bracelet, wrist, hand, background clutter, dramatic angle, perspective distortion, cropped case, oversized crown, fantasy design, skeleton dial, smart watch, numerals clutter, bezel text, poor symmetry",
+  "api_parameters": {
+    "resolution": "1K",
+    "output_format": "png",
+    "aspect_ratio": "1:1"
+  },
+  "settings": {
+    "resolution": "1024x1024",
+    "style": "photorealistic product photography",
+    "lighting": "soft luxury studio lighting with clean reflections",
+    "camera_angle": "straight-on centered packshot",
+    "depth_of_field": "deep focus",
+    "quality": "clean edges, realistic materials, precise dial details"
+  }
+}
