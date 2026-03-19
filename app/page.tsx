@@ -17,12 +17,21 @@ export const metadata: Metadata = {
     description,
     url: siteUrl,
     siteName: "Watchstrapper",
-    type: "website"
+    type: "website",
+    images: [
+      {
+        url: `${siteUrl}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: "Watchstrapper homepage preview"
+      }
+    ]
   },
   twitter: {
     card: "summary_large_image",
     title,
-    description
+    description,
+    images: [`${siteUrl}/opengraph-image`]
   }
 };
 

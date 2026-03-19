@@ -888,14 +888,21 @@ export const STRAP_CATEGORIES: StrapCategory[] = [
   "Metal"
 ];
 
+export const ALL_PUBLIC_STRAPS: StrapVariant[] = [
+  ...STRAP_LIBRARY.Leather,
+  ...STRAP_LIBRARY.Rubber,
+  ...STRAP_LIBRARY.Fabric,
+  ...STRAP_LIBRARY.Metal
+];
+
+export const getStrapSlug = (strap: Pick<StrapVariant, "id">): string => strap.id;
+
+export const getStrapBySlug = (slug: string): StrapVariant | undefined =>
+  ALL_PUBLIC_STRAPS.find((strap) => getStrapSlug(strap) === slug);
+
 export const getStrapsForCategory = (category: StrapCategory): StrapVariant[] => {
   if (category === "All categories") {
-    return [
-      ...STRAP_LIBRARY.Leather,
-      ...STRAP_LIBRARY.Rubber,
-      ...STRAP_LIBRARY.Fabric,
-      ...STRAP_LIBRARY.Metal
-    ];
+    return ALL_PUBLIC_STRAPS;
   }
   return STRAP_LIBRARY[category];
 };
