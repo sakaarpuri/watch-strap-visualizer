@@ -11,7 +11,6 @@ const clamp = (value: number, min: number, max: number) =>
 
 type DragMode =
   | { type: "image"; startX: number; startY: number; offsetX: number; offsetY: number }
-  | { type: "crop"; startX: number; startY: number; cropX: number; cropY: number }
   | {
       type: "resize";
       corner: "nw" | "ne" | "sw" | "se";
@@ -98,19 +97,6 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const beginCropDrag = (event: PointerEvent<HTMLDivElement | HTMLButtonElement>) => {
-    dragRef.current = {
-      type: "crop",
-      startX: event.clientX,
-      startY: event.clientY,
-      cropX,
-      cropY
-    };
-    setStatusText("Moving the crop box.");
-    event.stopPropagation();
-    viewportRef.current?.setPointerCapture(event.pointerId);
-  };
-
   const beginResizeDrag =
     (corner: "nw" | "ne" | "sw" | "se") => (event: PointerEvent<HTMLButtonElement>) => {
       dragRef.current = {
@@ -137,12 +123,6 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
     if (drag.type === "image") {
       setOffsetX(clamp(drag.offsetX + deltaX, -layout.limitX, layout.limitX));
       setOffsetY(clamp(drag.offsetY + deltaY, -layout.limitY, layout.limitY));
-      return;
-    }
-
-    if (drag.type === "crop") {
-      setCropX(clamp(drag.cropX + deltaX, 0, VIEWPORT_SIZE - cropSize));
-      setCropY(clamp(drag.cropY + deltaY, 0, VIEWPORT_SIZE - cropSize));
       return;
     }
 
@@ -322,20 +302,13 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
               style={{ width: "100%", height: `${cropBottom}px` }}
             />
 
-            <button
-              type="button"
-              aria-label="Move crop box"
-              onPointerDown={beginCropDrag}
-              className="absolute left-1/2 top-2 z-10 h-8 w-16 -translate-x-1/2 rounded-full border border-[#30486c] bg-white/92 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#30486c] shadow-[0_4px_10px_rgba(15,23,42,0.12)]"
-              style={{ transform: 'translateX(-50%)' }}
-            >
-              Crop
-            </button>
-
             <div
               className="pointer-events-none absolute rounded-[24px] border-2 border-[#30486c] shadow-[0_0_0_1px_rgba(255,255,255,0.75),0_0_0_999px_rgba(255,255,255,0.02)]"
               style={{ left: `${cropX}px`, top: `${cropY}px`, width: `${cropSize}px`, height: `${cropSize}px` }}
             >
+              <div className="absolute left-1/2 top-2 -translate-x-1/2 rounded-full border border-[#30486c] bg-white/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#30486c] shadow-[0_4px_10px_rgba(15,23,42,0.12)]">
+                Crop
+              </div>
               {(["nw", "ne", "sw", "se"] as const).map((corner) => (
                 <button
                   key={corner}

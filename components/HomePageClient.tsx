@@ -3632,16 +3632,15 @@ function WatchOnlyLugGuideOverlay({
           { x: guides.centerX + guides.bottomWidth / 2, y: guides.bottomY }
         ].map((point, index) => (
           <g key={`${point.x}-${point.y}-${index}`}>
-            {blink ? (
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="11"
-                className="watch-lug-handle-pulse-stroke"
-                fill="none"
-              />
-            ) : null}
-            <circle cx={point.x} cy={point.y} r="8.5" fill="white" stroke="#2ea8ff" strokeWidth="2.6" />
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="8.5"
+              fill="white"
+              stroke="#2ea8ff"
+              strokeWidth="2.6"
+              className={blink ? "watch-lug-handle-blink-stroke" : undefined}
+            />
           </g>
         ))}
       </svg>

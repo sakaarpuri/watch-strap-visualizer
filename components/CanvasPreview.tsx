@@ -761,7 +761,7 @@ function GuideLine({
         {label}
       </div>
       <div
-        className={`absolute rounded-full border bg-white ${colorClasses}`}
+        className={`absolute rounded-full border bg-white ${colorClasses} ${blink ? "watch-lug-handle-blink" : ""}`}
         style={{
           left: `${lineLeft}px`,
           top: `${y}px`,
@@ -770,10 +770,9 @@ function GuideLine({
           transform: "translate(-50%, -50%)"
         }}
       >
-        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-9px] rounded-full border-2 border-[#38bdf8]/85" /> : null}
       </div>
       <div
-        className={`absolute rounded-full border bg-white ${colorClasses}`}
+        className={`absolute rounded-full border bg-white ${colorClasses} ${blink ? "watch-lug-handle-blink" : ""}`}
         style={{
           left: `${lineRight}px`,
           top: `${y}px`,
@@ -782,7 +781,6 @@ function GuideLine({
           transform: "translate(-50%, -50%)"
         }}
       >
-        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-9px] rounded-full border-2 border-[#38bdf8]/85" /> : null}
       </div>
     </>
   );
