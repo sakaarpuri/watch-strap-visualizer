@@ -513,7 +513,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
     },
     {
       id: "leather-indian-mughal",
-      label: "Indian Persian Leather",
+      label: "Persian Leather",
       category: "Leather",
       strapASrc: `${SEL}/indian-mughal-leather-buckle.png`,
       strapBSrc: `${SEL}/indian-mughal-leather-tail.png`,
