@@ -3527,12 +3527,6 @@ function FitBenchPanel({
                 </div>
               </div>
             ) : null}
-            <ToggleControl
-              label="Lock Fit"
-              description="Freeze the fit and inspect the pairing"
-              enabled={lockView}
-              onToggle={onToggleLockView}
-            />
             <div className="neo-toggle flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-ink">Keep Tweaks</p>
@@ -3551,23 +3545,6 @@ function FitBenchPanel({
                     preserveSettings ? "translate-x-6" : "translate-x-0"
                   }`}
                 />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={reCropCurrentWatch}
-                disabled={!hasUserUpload}
-                className="neo-button rounded-xl px-3 py-2 text-xs font-semibold text-ink disabled:opacity-50"
-              >
-                Re-crop current watch
-              </button>
-              <button
-                type="button"
-                onClick={onChangeWatch}
-                className="neo-button rounded-xl px-3 py-2 text-xs font-semibold text-ink"
-              >
-                Change Watch
               </button>
             </div>
           </div>
