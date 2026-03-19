@@ -1423,11 +1423,11 @@ export default function Home() {
                   })}
                 </div>
 
-                <div className="mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <div className="strap-browser-shell mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
                     {category === "All categories" ? "Full Strap Drawer" : `Inside ${category}`}
                   </p>
-                  <div className="mt-3 max-h-[42rem] space-y-2 overflow-y-auto pr-1">
+                  <div className="strap-browser-stack mt-3 max-h-[42rem] overflow-y-auto pr-1">
                     {strapsInCategory.map((strap, index) => {
                       const active = hasSelectedLibraryStrap && index === strapIndex;
                       return (
@@ -1451,6 +1451,8 @@ export default function Home() {
                           showCategory={category === "All categories"}
                           animateIn={animateDrawerReveal}
                           animationDelayMs={index * 45}
+                          stackIndex={index}
+                          totalItems={strapsInCategory.length}
                         />
                       );
                     })}
@@ -1979,7 +1981,7 @@ function PreviewUploadStage({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_96%_92%,rgba(245,141,24,0.72)_0%,rgba(248,160,42,0.34)_14%,rgba(251,214,170,0.12)_30%,rgba(255,252,248,0)_60%),linear-gradient(145deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_58%,rgba(249,238,223,0.78)_82%,rgba(245,203,151,0.12)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_92%_88%,rgba(245,141,24,0.82)_0%,rgba(248,160,42,0.46)_18%,rgba(250,193,112,0.22)_34%,rgba(251,226,191,0.1)_52%,rgba(255,252,248,0)_76%),radial-gradient(circle_at_78%_100%,rgba(248,165,54,0.16)_0%,rgba(255,252,248,0)_58%),linear-gradient(145deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_58%,rgba(249,238,223,0.82)_82%,rgba(245,203,151,0.14)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
     >
       <div className="pointer-events-none absolute inset-0 opacity-60">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2095,8 +2097,10 @@ function StrapDrawerButton({
   showCategory,
   onClick,
   animateIn = false,
-  animationDelayMs = 0
-}: StrapThumbProps & { animateIn?: boolean; animationDelayMs?: number }) {
+  animationDelayMs = 0,
+  stackIndex = 0,
+  totalItems = 1
+}: StrapThumbProps & { animateIn?: boolean; animationDelayMs?: number; stackIndex?: number; totalItems?: number }) {
   return (
     <button
       type="button"
@@ -2107,7 +2111,10 @@ function StrapDrawerButton({
           ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
       } ${animateIn ? "drawer-reveal-item" : ""}`}
-      style={animateIn ? { animationDelay: `${animationDelayMs}ms` } : undefined}
+      style={{
+        ...(animateIn ? { animationDelay: `${animationDelayMs}ms` } : {}),
+        zIndex: totalItems - stackIndex
+      }}
       aria-pressed={active}
     >
       <div
