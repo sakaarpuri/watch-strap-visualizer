@@ -1,4 +1,7 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { getOgShowcaseStraps } from "@/lib/strapSeo";
 
 export const size = {
   width: 1200,
@@ -7,7 +10,18 @@ export const size = {
 
 export const contentType = "image/png";
 
-export default function StrapsOpenGraphImage() {
+const toDataUrl = async (src: string) => {
+  const filePath = path.join(process.cwd(), "public", src.replace(/^\//, ""));
+  const image = await readFile(filePath);
+  return `data:image/png;base64,${image.toString("base64")}`;
+};
+
+export default async function StrapsOpenGraphImage() {
+  const showcase = getOgShowcaseStraps();
+  const showcaseImages = await Promise.all(
+    showcase.flatMap((strap) => [strap.strapASrc, strap.strapBSrc].map((src) => toDataUrl(src)))
+  );
+
   return new ImageResponse(
     (
       <div
@@ -61,26 +75,62 @@ export default function StrapsOpenGraphImage() {
             style={{
               marginTop: "auto",
               display: "flex",
-              gap: 22,
+              gap: 18,
               alignItems: "flex-end"
             }}
           >
-            {[
-              { color: "#2c476d", height: 236 },
-              { color: "#6b342b", height: 268 },
-              { color: "#74787e", height: 252 },
-              { color: "#4d6a3e", height: 228 }
-            ].map((item) => (
+            {showcase.map((strap, index) => (
               <div
-                key={`${item.color}-${item.height}`}
+                key={strap.id}
                 style={{
-                  width: 90,
-                  height: item.height,
+                  width: 118,
+                  height: 250,
                   borderRadius: 28,
-                  background: item.color,
-                  boxShadow: "0 24px 40px rgba(49, 32, 21, 0.14)"
+                  background: "rgba(255,250,243,0.96)",
+                  border: "1px solid rgba(181, 148, 109, 0.32)",
+                  boxShadow: "0 24px 40px rgba(49, 32, 21, 0.14)",
+                  transform: `rotate(${index % 2 === 0 ? -3 : 4}deg)`,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  padding: "14px 10px"
                 }}
-              />
+              >
+                <div
+                  style={{
+                    height: 98,
+                    borderRadius: 20,
+                    background: "#f7f2ea",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden"
+                  }}
+                >
+                  <img
+                    src={showcaseImages[index * 2]}
+                    alt=""
+                    style={{ width: "82%", height: "82%", objectFit: "contain" }}
+                  />
+                </div>
+                <div
+                  style={{
+                    height: 98,
+                    borderRadius: 20,
+                    background: "#f7f2ea",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden"
+                  }}
+                >
+                  <img
+                    src={showcaseImages[index * 2 + 1]}
+                    alt=""
+                    style={{ width: "82%", height: "82%", objectFit: "contain" }}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>
