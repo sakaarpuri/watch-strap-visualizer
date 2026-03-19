@@ -4,6 +4,8 @@ import {
   CSSProperties,
   forwardRef,
   PointerEvent,
+  KeyboardEvent,
+  TouchEvent,
   ReactNode,
   useEffect,
   useImperativeHandle,
@@ -141,6 +143,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       startScaleA: number;
       startScaleB: number;
     } | null>(null);
+    const touchSwipeRef = useRef<{ startX: number; startY: number } | null>(null);
 
     useEffect(() => {
       let active = true;
@@ -467,6 +470,47 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       setCursor("grab");
     };
 
+    const triggerCycle = (direction: 1 | -1) => {
+      setIsTicking(true);
+      window.setTimeout(() => setIsTicking(false), 90);
+      const previousSrc = strapCanvasRef.current?.toDataURL("image/png");
+      if (previousSrc) {
+        setStrapTransition({ direction, previousSrc });
+      }
+      onCycleStrap(direction);
+    };
+
+    const handleCycleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+      if (!showCycleControls || locked) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        triggerCycle(-1);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        triggerCycle(1);
+      }
+    };
+
+    const handleTouchStartCapture = (event: TouchEvent<HTMLDivElement>) => {
+      if (!showCycleControls || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      touchSwipeRef.current = { startX: touch.clientX, startY: touch.clientY };
+    };
+
+    const handleTouchEndCapture = (event: TouchEvent<HTMLDivElement>) => {
+      if (!showCycleControls || !touchSwipeRef.current) return;
+      const touch = event.changedTouches[0];
+      if (!touch) {
+        touchSwipeRef.current = null;
+        return;
+      }
+      const deltaX = touch.clientX - touchSwipeRef.current.startX;
+      const deltaY = touch.clientY - touchSwipeRef.current.startY;
+      touchSwipeRef.current = null;
+      if (Math.abs(deltaX) < 56 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+      triggerCycle(deltaX < 0 ? 1 : -1);
+    };
+
     return (
       <div
         className={`rounded-2xl border p-2.5 transition sm:p-3 ${
@@ -484,15 +528,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             {showCycleControls ? (
               <button
                 type="button"
-                onClick={() => {
-                  setIsTicking(true);
-                  window.setTimeout(() => setIsTicking(false), 90);
-                  const previousSrc = strapCanvasRef.current?.toDataURL("image/png");
-                  if (previousSrc) {
-                    setStrapTransition({ direction: -1, previousSrc });
-                  }
-                  onCycleStrap(-1);
-                }}
+                onClick={() => triggerCycle(-1)}
+                onKeyDown={handleCycleKeyDown}
                 disabled={locked}
                 className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-cyan-200/80 bg-gradient-to-b from-white/95 to-cyan-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(59,130,246,.2)] hover:from-white hover:to-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Previous strap"
@@ -500,7 +537,11 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
                 ←
               </button>
             ) : null}
-            <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-line bg-canvas">
+            <div
+              className="relative aspect-square w-full overflow-hidden rounded-xl border border-line bg-canvas"
+              onTouchStartCapture={handleTouchStartCapture}
+              onTouchEndCapture={handleTouchEndCapture}
+            >
               <canvas
                 ref={watchCanvasRef}
                 className="absolute inset-0 h-full w-full bg-canvas"
@@ -543,15 +584,8 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
             {showCycleControls ? (
               <button
                 type="button"
-                onClick={() => {
-                  setIsTicking(true);
-                  window.setTimeout(() => setIsTicking(false), 90);
-                  const previousSrc = strapCanvasRef.current?.toDataURL("image/png");
-                  if (previousSrc) {
-                    setStrapTransition({ direction: 1, previousSrc });
-                  }
-                  onCycleStrap(1);
-                }}
+                onClick={() => triggerCycle(1)}
+                onKeyDown={handleCycleKeyDown}
                 disabled={locked}
                 className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-fuchsia-200/80 bg-gradient-to-b from-white/95 to-fuchsia-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(217,70,239,.2)] hover:from-white hover:to-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Next strap"
