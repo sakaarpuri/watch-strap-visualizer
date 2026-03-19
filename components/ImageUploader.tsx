@@ -129,11 +129,8 @@ export default function ImageUploader({
                 src="/upload-watch-head-silhouette.svg"
                 alt=""
                 aria-hidden="true"
-                className="h-[84%] w-auto max-w-[70%] object-contain opacity-[0.2]"
+                className="h-[86%] w-auto max-w-[72%] object-contain opacity-[0.48]"
               />
-            </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 bg-white/80 text-xl text-muted">
-              +
             </div>
             <p className="relative mt-3 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
           </>

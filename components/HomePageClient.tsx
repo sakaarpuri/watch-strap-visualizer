@@ -2892,7 +2892,7 @@ function PreviewUploadStage({
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_92%_88%,rgba(245,141,24,0.88)_0%,rgba(248,160,42,0.56)_18%,rgba(250,193,112,0.28)_34%,rgba(251,226,191,0.12)_54%,rgba(255,252,248,0)_78%),radial-gradient(120%_58%_at_56%_100%,rgba(247,157,44,0.42)_0%,rgba(249,185,91,0.28)_24%,rgba(251,219,169,0.14)_46%,rgba(255,252,248,0)_78%),linear-gradient(180deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_56%,rgba(250,240,226,0.9)_82%,rgba(246,214,170,0.34)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_94%_90%,rgba(245,141,24,0.92)_0%,rgba(248,160,42,0.7)_18%,rgba(250,188,88,0.44)_34%,rgba(252,215,150,0.2)_54%,rgba(255,252,248,0)_82%),radial-gradient(145%_74%_at_62%_104%,rgba(247,157,44,0.56)_0%,rgba(249,181,76,0.38)_24%,rgba(251,209,136,0.22)_46%,rgba(255,252,248,0.08)_67%,rgba(255,252,248,0)_88%),radial-gradient(112%_54%_at_24%_100%,rgba(248,181,74,0.26)_0%,rgba(251,222,177,0.16)_38%,rgba(255,252,248,0)_72%),linear-gradient(180deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_56%,rgba(250,240,226,0.9)_82%,rgba(246,214,170,0.36)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
     >
       <div className="relative mx-auto max-w-[34rem]">
         <ImageUploader

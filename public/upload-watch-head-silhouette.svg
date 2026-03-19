@@ -1,42 +1,8 @@
-<svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <radialGradient id="dialGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(450 448) rotate(90) scale(255)">
-      <stop stop-color="#FFF8F0"/>
-      <stop offset="0.55" stop-color="#F8EEE0"/>
-      <stop offset="1" stop-color="#F2E4D1"/>
-    </radialGradient>
-    <linearGradient id="caseTone" x1="238" y1="214" x2="660" y2="692" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E9D6BF"/>
-      <stop offset="1" stop-color="#D7BE9E"/>
-    </linearGradient>
-    <linearGradient id="innerTone" x1="303" y1="263" x2="598" y2="618" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFFDF9"/>
-      <stop offset="1" stop-color="#F8F2E8"/>
-    </linearGradient>
-    <filter id="softShadow" x="182" y="169" width="534" height="565" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-      <feOffset dy="14"/>
-      <feGaussianBlur stdDeviation="22"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.615686 0 0 0 0 0.415686 0 0 0 0 0.184314 0 0 0 0.12 0"/>
-      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
-      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
-    </filter>
-  </defs>
-  <rect width="900" height="900" fill="none"/>
-  <g filter="url(#softShadow)" opacity="0.96">
-    <path d="M314 220C314 196.804 332.804 178 356 178H544C567.196 178 586 196.804 586 220V266H612C632.987 266 650 283.013 650 304V596C650 616.987 632.987 634 612 634H586V680C586 703.196 567.196 722 544 722H356C332.804 722 314 703.196 314 680V634H288C267.013 634 250 616.987 250 596V304C250 283.013 267.013 266 288 266H314V220Z" fill="url(#caseTone)"/>
-    <rect x="328" y="208" width="244" height="484" rx="88" fill="url(#innerTone)" stroke="#E8D8C3" stroke-width="8"/>
-    <circle cx="450" cy="450" r="164" fill="url(#dialGlow)" stroke="#E1D2BF" stroke-width="10"/>
-    <circle cx="450" cy="450" r="144" stroke="#DECDB7" stroke-width="3" stroke-dasharray="3 18"/>
-    <circle cx="450" cy="450" r="10" fill="#CE9A5B"/>
-    <line x1="450" y1="450" x2="450" y2="344" stroke="#C28C4B" stroke-width="12" stroke-linecap="round"/>
-    <line x1="450" y1="450" x2="533" y2="487" stroke="#C28C4B" stroke-width="9" stroke-linecap="round"/>
-    <line x1="450" y1="298" x2="450" y2="318" stroke="#D0A067" stroke-width="6" stroke-linecap="round"/>
-    <line x1="450" y1="582" x2="450" y2="602" stroke="#D0A067" stroke-width="6" stroke-linecap="round"/>
-    <line x1="602" y1="450" x2="582" y2="450" stroke="#D0A067" stroke-width="6" stroke-linecap="round"/>
-    <line x1="318" y1="450" x2="298" y2="450" stroke="#D0A067" stroke-width="6" stroke-linecap="round"/>
-    <rect x="594" y="392" width="32" height="116" rx="16" fill="#DEC6A7"/>
-    <rect x="604" y="427" width="18" height="44" rx="9" fill="#F7EFE4"/>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g opacity="0.92">
+    <path d="M392 212L426 196V276C478 248 539 234 603 238C665 242 722 262 771 297V208L805 222L812 319C874 380 912 464 912 557C912 650 874 734 812 795L805 890L771 904V815C722 850 665 870 603 874C539 878 478 864 426 836V916L392 900L384 804C323 744 286 662 286 572C286 482 322 401 381 341L392 212Z" stroke="#2B2621" stroke-width="24" stroke-linejoin="round"/>
+    <path d="M512 364V662" stroke="#2B2621" stroke-width="22" stroke-linecap="round"/>
+    <path d="M363 513H661" stroke="#2B2621" stroke-width="22" stroke-linecap="round"/>
+    <path d="M812 450H872C889.673 450 904 464.327 904 482V544C904 561.673 889.673 576 872 576H812" stroke="#2B2621" stroke-width="24" stroke-linejoin="round"/>
   </g>
 </svg>
