@@ -109,6 +109,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const [isTicking, setIsTicking] = useState(false);
     const [cursor, setCursor] = useState<CSSProperties["cursor"]>("grab");
     const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
+    const [shouldBlinkGuides, setShouldBlinkGuides] = useState(false);
     const [strapTransition, setStrapTransition] = useState<{
       direction: 1 | -1;
       previousSrc: string;
@@ -177,6 +178,13 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       const timeout = window.setTimeout(() => setStrapTransition(null), 240);
       return () => window.clearTimeout(timeout);
     }, [strapTransition]);
+
+    useEffect(() => {
+      if (!showLugGuides) return undefined;
+      setShouldBlinkGuides(true);
+      const timeout = window.setTimeout(() => setShouldBlinkGuides(false), 1800);
+      return () => window.clearTimeout(timeout);
+    }, [showLugGuides, watchSrc, strapASrc, strapBSrc]);
 
     useEffect(() => {
       let active = true;
@@ -530,7 +538,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
               ) : null}
             </div>
             {showLugGuides && effectiveLugGuides ? (
-              <LugGuideOverlay guides={effectiveLugGuides} sceneZoom={sceneZoom} />
+              <LugGuideOverlay guides={effectiveLugGuides} sceneZoom={sceneZoom} blink={shouldBlinkGuides} />
             ) : null}
             {showCycleControls ? (
               <button
@@ -626,10 +634,12 @@ const getNextGuideWidthState = (
 
 function LugGuideOverlay({
   guides,
-  sceneZoom
+  sceneZoom,
+  blink
 }: {
   guides: PreviewLugGuides;
   sceneZoom: number;
+  blink: boolean;
 }) {
   const toScreen = (value: number) => CANVAS_SIZE / 2 + (value - CANVAS_SIZE / 2) * sceneZoom;
   const centerX = toScreen(guides.centerX);
@@ -647,6 +657,7 @@ function LugGuideOverlay({
         y={topY}
         width={topWidth}
         tone="cyan"
+        blink={blink}
       />
       <GuideLine
         label={confident ? "Bottom lug fit" : "Bottom lug guide"}
@@ -654,6 +665,7 @@ function LugGuideOverlay({
         y={bottomY}
         width={bottomWidth}
         tone="cyan"
+        blink={blink}
       />
       {!confident ? (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-amber-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
@@ -669,13 +681,15 @@ function GuideLine({
   centerX,
   y,
   width,
-  tone
+  tone,
+  blink
 }: {
   label: string;
   centerX: number;
   y: number;
   width: number;
   tone: "cyan" | "fuchsia";
+  blink: boolean;
 }) {
   const colorClasses =
     tone === "cyan"
@@ -721,7 +735,9 @@ function GuideLine({
           height: "14px",
           transform: "translate(-50%, -50%)"
         }}
-      />
+      >
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#67e8f9]/70" /> : null}
+      </div>
       <div
         className={`absolute rounded-full border bg-white ${colorClasses}`}
         style={{
@@ -731,7 +747,9 @@ function GuideLine({
           height: "14px",
           transform: "translate(-50%, -50%)"
         }}
-      />
+      >
+        {blink ? <span className="watch-lug-handle-pulse absolute inset-[-5px] rounded-full border border-[#67e8f9]/70" /> : null}
+      </div>
     </>
   );
 }
