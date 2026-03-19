@@ -2072,50 +2072,51 @@ export default function HomePageClient() {
               >
                 Saved Looks
               </button>
-              {hasUserUpload ? (
-                <>
-                  {!cropSourceUrl ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleSaveWatchToCollection()}
-                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
-                    >
-                      Save Watch to Collection
-                    </button>
-                  ) : null}
-                </>
+            </div>
+          </div>
+
+          {(hasUserUpload && !cropSourceUrl) || canRender ? (
+            <div className="flex flex-wrap gap-2 rounded-[1.35rem] border border-line bg-white/62 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+              {hasUserUpload && !cropSourceUrl ? (
+                <button
+                  type="button"
+                  onClick={() => void handleSaveWatchToCollection()}
+                  className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                >
+                  Save Watch to Collection
+                </button>
               ) : null}
               {canRender ? (
                 <>
-                <button
-                  type="button"
-                  onClick={toggleLockView}
-                  className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${
-                    lockView
-                      ? "atelier-accent-soft"
-                      : "border-line bg-white/78 text-ink hover:bg-white"
-                  }`}
-                >
-                  {lockView ? "Unlock Fit" : "Lock Fit"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void onSavePreviewImage()}
-                  className="atelier-accent-solid rounded-2xl border px-5 py-2.5 text-sm font-semibold transition hover:opacity-95"
-                >
-                  Save Image
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleSaveLook()}
-                  className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
-                >
-                  Save to Looks
-                </button>
+                  <button
+                    type="button"
+                    onClick={toggleLockView}
+                    className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${
+                      lockView
+                        ? "atelier-accent-soft"
+                        : "border-line bg-white/78 text-ink hover:bg-white"
+                    }`}
+                  >
+                    {lockView ? "Unlock Fit" : "Lock Fit"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void onSavePreviewImage()}
+                    className="atelier-accent-solid rounded-2xl border px-5 py-2.5 text-sm font-semibold transition hover:opacity-95"
+                  >
+                    Save Image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveLook()}
+                    className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                  >
+                    Save to Looks
+                  </button>
                 </>
               ) : null}
             </div>
-          </div>
+          ) : null}
 
           <div className="relative glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4">
             {cropSourceUrl && originalWatchFile ? (
