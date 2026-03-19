@@ -129,7 +129,7 @@ export default function ImageUploader({
                 src="/upload-watch-head-silhouette.svg"
                 alt=""
                 aria-hidden="true"
-                className="h-[74%] w-auto max-w-[62%] object-contain opacity-[0.11]"
+                className="h-[84%] w-auto max-w-[70%] object-contain opacity-[0.2]"
               />
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 bg-white/80 text-xl text-muted">

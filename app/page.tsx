@@ -1983,29 +1983,6 @@ function PreviewUploadStage({
     <div
       className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_92%_88%,rgba(245,141,24,0.82)_0%,rgba(248,160,42,0.46)_18%,rgba(250,193,112,0.22)_34%,rgba(251,226,191,0.1)_52%,rgba(255,252,248,0)_76%),radial-gradient(circle_at_78%_100%,rgba(248,165,54,0.16)_0%,rgba(255,252,248,0)_58%),linear-gradient(145deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_58%,rgba(249,238,223,0.82)_82%,rgba(245,203,151,0.14)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/upload-watch-head-silhouette.svg"
-          alt=""
-          aria-hidden="true"
-          className="absolute left-1/2 top-1/2 h-[66%] -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/strap-selection-kie/cognac-grain-leather-buckle.png"
-          alt=""
-          aria-hidden="true"
-          className="absolute left-8 top-10 hidden h-52 w-24 -rotate-[14deg] object-contain opacity-[0.06] lg:block"
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/strap-selection-kie/black-grain-leather-tail.png"
-          alt=""
-          aria-hidden="true"
-          className="absolute bottom-8 right-8 hidden h-56 w-24 rotate-[11deg] object-contain opacity-[0.05] lg:block"
-        />
-      </div>
       <div className="relative mx-auto max-w-[34rem]">
         <ImageUploader
           id="watch-stage"
