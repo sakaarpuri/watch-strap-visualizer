@@ -131,7 +131,7 @@ export default function ImageUploader({
                 aria-hidden="true"
                 className="-mt-3 h-[6.25rem] w-auto max-w-[52%] object-contain opacity-[0.62] sm:h-[7rem]"
               />
-              <p className="mt-3 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
+              <p className="mt-1.5 text-lg font-semibold text-ink">Click to upload or drag a watch photo here</p>
             </div>
           </>
         )}
