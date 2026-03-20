@@ -3359,14 +3359,14 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full translate-x-[8px] scale-[2.5] object-contain"
+          className="h-full w-full translate-x-[4px] translate-y-[6px] scale-[2.5] object-contain"
           loading="lazy"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full -translate-x-[8px] scale-[2.5] object-contain"
+          className="h-full w-full -translate-x-[4px] translate-y-[6px] scale-[2.5] object-contain"
           loading="lazy"
         />
       </div>
