@@ -3233,12 +3233,12 @@ function PreviewUploadStage({
   const [sampleWatchAnimationReady, setSampleWatchAnimationReady] = useState(false);
 
   const sampleWatchAnimationDelays = useMemo(() => {
-    const slots = sampleWatches.map((_, index) => 120 + index * 110);
-    const shuffled = [...slots];
-    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const order = sampleWatches.map((_, index) => index);
+    for (let index = order.length - 1; index > 0; index -= 1) {
       const swapIndex = Math.floor(Math.random() * (index + 1));
-      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+      [order[index], order[swapIndex]] = [order[swapIndex], order[index]];
     }
+    const shuffled = order.map((position) => 120 + position * 240);
     return sampleWatches.reduce<Record<string, number>>((acc, sample, index) => {
       acc[sample.id] = shuffled[index];
       return acc;
