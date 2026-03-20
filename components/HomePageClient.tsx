@@ -733,10 +733,21 @@ export default function HomePageClient() {
     () => filteredLibraryStraps.map(libraryStrapToDrawerItem),
     [filteredLibraryStraps]
   );
-  const currentStrap: StrapVariant = filteredLibraryStraps[strapIndex] ?? filteredLibraryStraps[0];
+  const resolvedLibraryIndex =
+    selectedLibraryStrap && strapSourceMode === "library"
+      ? filteredLibraryStraps.findIndex((strap) => strap.id === selectedLibraryStrap.id)
+      : -1;
+  const activeLibraryIndex = resolvedLibraryIndex >= 0 ? resolvedLibraryIndex : strapIndex;
+  const currentStrap: StrapVariant =
+    (strapSourceMode === "library" ? selectedLibraryStrap : null) ??
+    filteredLibraryStraps[activeLibraryIndex] ??
+    filteredLibraryStraps[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
-  const activeLibraryStrap = strapSourceMode === "library" ? selectedLibraryStrap : null;
+  const activeLibraryStrap =
+    strapSourceMode === "library"
+      ? selectedLibraryStrap ?? filteredLibraryStraps[activeLibraryIndex] ?? null
+      : null;
   const activeSavedStrap = strapSourceMode === "saved" ? selectedSavedStrap : null;
   const activeStrapASrc =
     strapSourceMode === "uploaded" && uploadedStrapPartA
@@ -937,6 +948,12 @@ export default function HomePageClient() {
       setSelectedLibraryStrap(null);
     }
   }, [filteredLibraryStraps, selectedLibraryStrap]);
+
+  useEffect(() => {
+    if (resolvedLibraryIndex >= 0 && resolvedLibraryIndex !== strapIndex) {
+      setStrapIndex(resolvedLibraryIndex);
+    }
+  }, [resolvedLibraryIndex, strapIndex]);
 
   useEffect(() => {
     if (!hasUserUpload || strapSourceMode !== "library") return;
@@ -1278,13 +1295,13 @@ export default function HomePageClient() {
   }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor, dialScale, lugGuideOverrides]);
 
   useEffect(() => {
-    if (strapSourceMode !== "library" || !selectedLibraryStrap) return;
+    if (strapSourceMode !== "library" || !activeLibraryStrap) return;
     const total = filteredLibraryStraps.length;
     if (!total) return;
     const neighborIndices = [
-      strapIndex,
-      (strapIndex + 1) % total,
-      (strapIndex - 1 + total) % total
+      activeLibraryIndex,
+      (activeLibraryIndex + 1) % total,
+      (activeLibraryIndex - 1 + total) % total
     ];
     const uniqueIndices = [...new Set(neighborIndices)];
     void Promise.all(
@@ -1294,20 +1311,18 @@ export default function HomePageClient() {
         return [loadStrapImage(strap.strapASrc), loadStrapImage(strap.strapBSrc)];
       })
     ).catch(() => undefined);
-  }, [category, strapIndex, strapSourceMode, selectedLibraryStrap, filteredLibraryStraps]);
+  }, [activeLibraryIndex, activeLibraryStrap, category, strapSourceMode, filteredLibraryStraps]);
 
   const onCycleStrap = (direction: 1 | -1) => {
-    if (strapSourceMode !== "library" || !selectedLibraryStrap) return;
+    if (strapSourceMode !== "library") return;
+    const total = filteredLibraryStraps.length;
+    if (!total) return;
     triggerStrapSettle();
-    setStrapIndex((prev) => {
-      const total = filteredLibraryStraps.length;
-      const nextIndex = (prev + direction + total) % total;
-      const nextStrap = filteredLibraryStraps[nextIndex];
-      if (nextStrap) {
-        setSelectedLibraryStrap(nextStrap);
-      }
-      return nextIndex;
-    });
+    const nextIndex = (activeLibraryIndex + direction + total) % total;
+    const nextStrap = filteredLibraryStraps[nextIndex];
+    if (!nextStrap) return;
+    setStrapIndex(nextIndex);
+    setSelectedLibraryStrap(nextStrap);
   };
 
   const setGapHalf = (nextHalfGap: number) => {
@@ -1759,6 +1774,50 @@ export default function HomePageClient() {
                     );
                   })}
                 </div>
+                <div className="mt-3 xl:hidden">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7c7165]">
+                      Style Mood
+                    </p>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-[#8d7e70]">
+                      {styleFilter === "All styles" ? "All visible straps" : `${styleFilter} focus`}
+                    </p>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setStyleFilter("All styles")}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        styleFilter === "All styles"
+                          ? "atelier-pill-active"
+                          : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                      }`}
+                      aria-pressed={styleFilter === "All styles"}
+                    >
+                      All styles
+                    </button>
+                    {STRAP_STYLE_TAGS.map((tag) => {
+                      const count = strapsInCategory.filter((strap) => strap.styleTags.includes(tag)).length;
+                      if (!count) return null;
+                      const active = styleFilter === tag;
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => setStyleFilter(tag)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition ${
+                            active
+                              ? "atelier-pill-active"
+                              : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                          }`}
+                          aria-pressed={active}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <div className="strap-browser-shell mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
                     {styleFilter === "All styles"
@@ -1812,7 +1871,7 @@ export default function HomePageClient() {
                           animateIn={animateDrawerReveal}
                           animationDelayMs={index * 45}
                           stackIndex={index}
-                          totalItems={strapsInCategory.length}
+                          totalItems={libraryDrawerItems.length}
                         />
                       );
                     })}
@@ -2136,7 +2195,13 @@ export default function HomePageClient() {
             </div>
           ) : null}
 
-          <div className="relative glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4">
+          <div
+            className={
+              cropSourceUrl || canRender || canShowWatchOnlyPreview
+                ? "relative glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4"
+                : "relative"
+            }
+          >
             {cropSourceUrl && originalWatchFile ? (
               <CropEditor
                 file={originalWatchFile}
@@ -2161,7 +2226,7 @@ export default function HomePageClient() {
                   showLugGuides={canShowLiveLugGuides}
                   lugGuideOverrides={lugGuideOverrides}
                   onLugGuidesChange={handleLugGuidesChange}
-                  showCycleControls={strapDrawerView === "library" && strapSourceMode === "library" && Boolean(selectedLibraryStrap)}
+                  showCycleControls={strapDrawerView === "library" && strapSourceMode === "library" && filteredLibraryStraps.length > 1}
                   onDragPartsChange={(nextA, nextB) => {
                     setPartA(nextA);
                     setPartB(nextB);
@@ -2195,6 +2260,65 @@ export default function HomePageClient() {
                 onSelectSampleWatch={handleSelectSampleWatch}
               />
             )}
+          </div>
+
+          <div className="xl:hidden">
+            {(hasUserUpload || canRender) && !cropSourceUrl ? (
+              <div className="glass-card atelier-card-soft rounded-[1.6rem] p-4">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void runCleanupFallback()}
+                    disabled={!hasUserUpload || aiTools.cleanup.loading}
+                    className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
+                  >
+                    {aiTools.cleanup.loading ? "Extracting..." : "Extract Watch with AI"}
+                  </button>
+                  {canOpenTools ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowFitBench((prev) => !prev)}
+                      className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${
+                        showFitBench
+                          ? "atelier-accent-soft"
+                          : "border-line bg-white/78 text-ink hover:bg-white"
+                      }`}
+                      aria-expanded={showFitBench}
+                    >
+                      {showFitBench ? "Hide Tools" : "Tools"}
+                    </button>
+                  ) : null}
+                </div>
+                {aiTools.cleanup.error ? (
+                  <div className="mt-3">
+                    <ErrorText message={aiTools.cleanup.error} />
+                  </div>
+                ) : null}
+                {canOpenTools && showFitBench ? (
+                  <div className="mt-4">
+                    <FitBenchPanel
+                      canRender={canRender}
+                      fitConfidence={fitConfidence}
+                      showLugGuides={showLugGuides}
+                      onToggleLugGuides={handleGuideToggle}
+                      onResetFit={() => void autoAlignStraps()}
+                      isAutoAligning={isAutoAligning}
+                      strapGap={strapGap}
+                      setGapHalf={setGapHalf}
+                      preserveSettings={preserveSettings}
+                      setPreserveSettings={setPreserveSettings}
+                      strapSizeUi={strapSizeUi}
+                      setStrapScale={setStrapScale}
+                      dialScale={dialScale}
+                      setDialScaleValue={setDialScaleValue}
+                      sceneZoom={sceneZoom}
+                      setSceneZoomValue={setSceneZoomValue}
+                      reCropCurrentWatch={reCropCurrentWatch}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="hidden xl:block xl:space-y-4">
@@ -2456,61 +2580,6 @@ export default function HomePageClient() {
         </section>
 
         <section className="order-3 min-w-0 space-y-4 xl:hidden">
-          {strapDrawerView === "library" ? (
-            <div className="glass-card atelier-card-soft rounded-[1.6rem] p-4 sm:p-5">
-              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
-                    Style Mood
-                  </p>
-                  <p className="mt-1 text-sm text-muted">
-                    Narrow the drawer by fashion style, not just material.
-                  </p>
-                </div>
-                <p className="text-xs uppercase tracking-[0.14em] text-[#7c7165]">
-                  {styleFilter === "All styles" ? "All visible straps" : `${styleFilter} focus`}
-                </p>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setStyleFilter("All styles")}
-                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-                    styleFilter === "All styles"
-                      ? "atelier-pill-active"
-                      : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
-                  }`}
-                  aria-pressed={styleFilter === "All styles"}
-                >
-                  All styles
-                </button>
-                {STRAP_STYLE_TAGS.map((tag) => {
-                  const count = strapsInCategory.filter((strap) => strap.styleTags.includes(tag)).length;
-                  if (!count) return null;
-                  const active = styleFilter === tag;
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => setStyleFilter(tag)}
-                      className={`rounded-full border px-3 py-1.5 text-sm font-medium capitalize transition ${
-                        active
-                          ? "atelier-pill-active"
-                          : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
-                      }`}
-                      aria-pressed={active}
-                    >
-                      {tag}
-                      <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
@@ -2713,7 +2782,7 @@ export default function HomePageClient() {
         </section>
 
         {canOpenTools ? (
-          <aside className="order-4 min-w-0 xl:order-3 xl:pt-14">
+          <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:pt-14">
             <div className="flex flex-col gap-2">
               <button
                 type="button"
@@ -3392,14 +3461,14 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full translate-x-[4px] translate-y-[6px] scale-[2.5] object-contain"
+          className="h-full w-full translate-x-[1px] translate-y-[9px] scale-[2.56] object-contain"
           loading="lazy"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full -translate-x-[4px] translate-y-[6px] scale-[2.5] object-contain"
+          className="h-full w-full -translate-x-[1px] translate-y-[9px] scale-[2.56] object-contain"
           loading="lazy"
         />
       </div>
