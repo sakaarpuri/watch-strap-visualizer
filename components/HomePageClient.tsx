@@ -3291,6 +3291,14 @@ function PreviewUploadStage({
     };
   }, [sampleWatchAnimationReady]);
 
+  useEffect(() => {
+    if (!sampleWatchesLoaded || sampleWatchAnimationReady) return;
+    const fallback = window.setTimeout(() => {
+      setSampleWatchAnimationReady(true);
+    }, 2200);
+    return () => window.clearTimeout(fallback);
+  }, [sampleWatchesLoaded, sampleWatchAnimationReady]);
+
   const canAnimateSampleWatches = sampleWatchAnimationReady && sampleWatchesLoaded;
 
   return (
