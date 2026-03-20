@@ -2411,12 +2411,12 @@ export default function HomePageClient() {
                           rel="noreferrer"
                           className="flex items-center gap-4 rounded-2xl border border-[#d4cec4] bg-white/80 p-3 transition hover:bg-white/88"
                         >
-                          <div className="w-28 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
+                          <div className="w-36 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={product.imageSrc}
                               alt={product.title}
-                              className="h-28 w-full object-contain p-2"
+                              className="h-36 w-full object-contain p-2.5"
                             />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -2600,12 +2600,12 @@ export default function HomePageClient() {
                         rel="noreferrer"
                         className="flex items-center gap-4 rounded-2xl border border-[#d4cec4] bg-white/80 p-3 transition hover:bg-white/88"
                       >
-                        <div className="w-28 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
+                        <div className="w-36 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={product.imageSrc}
                             alt={product.title}
-                            className="h-28 w-full object-contain p-2"
+                            className="h-36 w-full object-contain p-2.5"
                           />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -3360,7 +3360,7 @@ function StrapDrawerButton({
         </button>
       ) : null}
       <div
-        className={`drawer-card-media grid h-[138px] w-full grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
+        className={`drawer-card-media grid h-[148px] w-full grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
           active ? "border-[#d7c1a3] bg-white" : "border-[#ddd3c5] bg-white"
         }`}
       >
@@ -3368,7 +3368,7 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full translate-x-[7px] translate-y-[18px] scale-[2.48] object-contain"
+          className="h-full w-full translate-x-[6px] translate-y-[24px] scale-[2.26] object-contain"
           loading={stackIndex < 6 ? "eager" : "lazy"}
           fetchPriority={stackIndex < 3 ? "high" : "auto"}
           />
@@ -3376,7 +3376,7 @@ function StrapDrawerButton({
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full -translate-x-[7px] translate-y-[18px] scale-[2.48] object-contain"
+          className="h-full w-full -translate-x-[6px] translate-y-[24px] scale-[2.26] object-contain"
           loading={stackIndex < 6 ? "eager" : "lazy"}
           fetchPriority={stackIndex < 3 ? "high" : "auto"}
         />
