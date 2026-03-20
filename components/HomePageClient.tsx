@@ -607,7 +607,6 @@ export default function HomePageClient() {
   });
   const [inlineMockupUrl, setInlineMockupUrl] = useState<string | null>(null);
   const [showUploadGuide, setShowUploadGuide] = useState(false);
-  const [highlightUploadGuide, setHighlightUploadGuide] = useState(true);
   const [highlightPreviewWindow, setHighlightPreviewWindow] = useState(false);
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
   const [lugGuideOverrides, setLugGuideOverrides] = useState<PreviewLugGuideOverrides | null>(null);
@@ -866,7 +865,6 @@ export default function HomePageClient() {
     setShowLugGuides(true);
     setShowLugGuideOnboarding(false);
     setShowUploadGuide(false);
-    setHighlightUploadGuide(true);
     if (!hasAutoOpenedUploadGuide) {
       setHasAutoOpenedUploadGuide(true);
     }
@@ -899,12 +897,6 @@ export default function HomePageClient() {
     setFitState("auto");
     triggerStrapSettle();
   };
-
-  useEffect(() => {
-    if (!highlightUploadGuide) return undefined;
-    const timeout = window.setTimeout(() => setHighlightUploadGuide(false), 10000);
-    return () => window.clearTimeout(timeout);
-  }, [highlightUploadGuide]);
 
   useEffect(() => {
     if (!highlightPreviewWindow) return undefined;
@@ -2209,7 +2201,6 @@ export default function HomePageClient() {
               <PreviewUploadStage
                 previewUrl={watchPreviewSrc}
                 showUploadGuide={showUploadGuide}
-                highlightUploadGuide={highlightUploadGuide}
                 onToggleUploadGuide={() => setShowUploadGuide((prev) => !prev)}
                 onCloseUploadGuide={() => setShowUploadGuide(false)}
                 onFileSelect={onUploadDial}
@@ -3174,7 +3165,6 @@ function ErrorText({ message }: { message: string }) {
 function PreviewUploadStage({
   previewUrl,
   showUploadGuide,
-  highlightUploadGuide,
   onToggleUploadGuide,
   onCloseUploadGuide,
   onFileSelect,
@@ -3183,15 +3173,15 @@ function PreviewUploadStage({
 }: {
   previewUrl: string;
   showUploadGuide: boolean;
-  highlightUploadGuide: boolean;
   onToggleUploadGuide: () => void;
   onCloseUploadGuide: () => void;
   onFileSelect: (file: File) => void;
   sampleWatches: readonly SampleWatchHead[];
   onSelectSampleWatch: (sample: SampleWatchHead) => void;
 }) {
-  const [sampleWatchAnimationReady, setSampleWatchAnimationReady] = useState(false);
+  const [uploadSectionActivated, setUploadSectionActivated] = useState(false);
   const [sampleWatchesLoaded, setSampleWatchesLoaded] = useState(false);
+  const uploadStageRef = useRef<HTMLDivElement | null>(null);
 
   const sampleWatchAnimationDelays = useMemo(() => {
     const order = sampleWatches.map((_, index) => index);
@@ -3230,40 +3220,29 @@ function PreviewUploadStage({
   }, [sampleWatches]);
 
   useEffect(() => {
-    if (sampleWatchAnimationReady) return;
+    if (uploadSectionActivated || !uploadStageRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        setUploadSectionActivated(true);
+        observer.disconnect();
+      },
+      {
+        threshold: 0.38,
+        rootMargin: "0px 0px -8% 0px"
+      }
+    );
+    observer.observe(uploadStageRef.current);
+    return () => observer.disconnect();
+  }, [uploadSectionActivated]);
 
-    const activate = () => setSampleWatchAnimationReady(true);
-
-    if (window.scrollY > 0) {
-      activate();
-      return;
-    }
-
-    const onWheel = () => activate();
-    const onTouchMove = () => activate();
-
-    window.addEventListener("wheel", onWheel, { passive: true, once: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: true, once: true });
-
-    return () => {
-      window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("touchmove", onTouchMove);
-    };
-  }, [sampleWatchAnimationReady]);
-
-  useEffect(() => {
-    if (!sampleWatchesLoaded || sampleWatchAnimationReady) return;
-    const fallback = window.setTimeout(() => {
-      setSampleWatchAnimationReady(true);
-    }, 2200);
-    return () => window.clearTimeout(fallback);
-  }, [sampleWatchesLoaded, sampleWatchAnimationReady]);
-
-  const canAnimateSampleWatches = sampleWatchAnimationReady && sampleWatchesLoaded;
+  const canAnimateSampleWatches = uploadSectionActivated;
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_94%_90%,rgba(245,141,24,0.92)_0%,rgba(248,160,42,0.7)_18%,rgba(250,188,88,0.44)_34%,rgba(252,215,150,0.2)_54%,rgba(255,252,248,0)_82%),radial-gradient(145%_74%_at_62%_104%,rgba(247,157,44,0.56)_0%,rgba(249,181,76,0.38)_24%,rgba(251,209,136,0.22)_46%,rgba(255,252,248,0.08)_67%,rgba(255,252,248,0)_88%),radial-gradient(112%_54%_at_24%_100%,rgba(248,181,74,0.26)_0%,rgba(251,222,177,0.16)_38%,rgba(255,252,248,0)_72%),linear-gradient(180deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_56%,rgba(250,240,226,0.9)_82%,rgba(246,214,170,0.36)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${highlightUploadGuide ? "upload-attention-ring" : ""}`}
+      ref={uploadStageRef}
+      className={`relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_94%_90%,rgba(245,141,24,0.92)_0%,rgba(248,160,42,0.7)_18%,rgba(250,188,88,0.44)_34%,rgba(252,215,150,0.2)_54%,rgba(255,252,248,0)_82%),radial-gradient(145%_74%_at_62%_104%,rgba(247,157,44,0.56)_0%,rgba(249,181,76,0.38)_24%,rgba(251,209,136,0.22)_46%,rgba(255,252,248,0.08)_67%,rgba(255,252,248,0)_88%),radial-gradient(112%_54%_at_24%_100%,rgba(248,181,74,0.26)_0%,rgba(251,222,177,0.16)_38%,rgba(255,252,248,0)_72%),linear-gradient(180deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_56%,rgba(250,240,226,0.9)_82%,rgba(246,214,170,0.36)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${uploadSectionActivated ? "upload-attention-ring" : ""}`}
     >
       <div className="relative mx-auto max-w-[34rem]">
         <ImageUploader
@@ -3333,7 +3312,7 @@ function PreviewUploadStage({
                 type="button"
                 onClick={() => onSelectSampleWatch(sample)}
                 className={`sample-watch-card rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white ${
-                  canAnimateSampleWatches ? "sample-watch-card-ready" : "sample-watch-card-pending"
+                  canAnimateSampleWatches ? "sample-watch-card-ready" : ""
                 }`}
                 style={canAnimateSampleWatches ? {
                   animationDelay: `${sampleWatchAnimationDelays[sample.id]}ms`,

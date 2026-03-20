@@ -331,11 +331,6 @@ body {
   will-change: transform, opacity;
 }
 
-.sample-watch-card-pending {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
 .sample-watch-card-ready {
   opacity: 0;
   animation: sample-watch-card-settle 1320ms cubic-bezier(0.16, 0.86, 0.2, 1) forwards;
