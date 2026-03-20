@@ -1361,16 +1361,16 @@ export default function HomePageClient() {
     if (!uploadedWatchFile) return;
     setToolLoading("cleanup", true);
     try {
-      setAiStage("cleanup", "Extract Watch", "Uploading");
+      setAiStage("cleanup", "Extract Watch with AI", "Uploading");
       const preparedFile = await prepareAiInput(uploadedWatchFile, {
         maxSide: 1200,
         quality: 0.86
       });
       const formData = new FormData();
       formData.append("image", preparedFile);
-      setAiStage("cleanup", "Extract Watch", "Removing background");
+      setAiStage("cleanup", "Extract Watch with AI", "Removing background");
       const imageUrl = await postToolForm("/api/kie/cleanup", formData);
-      setAiStage("cleanup", "Extract Watch", "Applying result");
+      setAiStage("cleanup", "Extract Watch with AI", "Applying result");
       applyProcessedWatch(imageUrl);
       setToolLoading("cleanup", false);
     } catch (error) {
@@ -2335,7 +2335,7 @@ export default function HomePageClient() {
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <div className="space-y-2">
                   <ToolButton
-                    title="Extract Watch"
+                    title="Extract Watch with AI"
                     subtitle="from messy backgrounds"
                     disabled={!hasUserUpload}
                     loading={aiTools.cleanup.loading}
@@ -2524,7 +2524,7 @@ export default function HomePageClient() {
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
               <div className="space-y-2">
                 <ToolButton
-                  title="Extract Watch"
+                  title="Extract Watch with AI"
                   subtitle="from messy backgrounds"
                   disabled={!hasUserUpload}
                   loading={aiTools.cleanup.loading}
@@ -3237,9 +3237,9 @@ function PreviewUploadStage({
                     ×
                   </button>
                 </div>
-                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+                <div className="grid grid-cols-2 gap-3">
                   {UPLOAD_GUIDE_ITEMS.map((item) => (
-                    <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
+                    <div key={item.title} className="min-w-0">
                       <UploadGuideCard item={item} />
                     </div>
                   ))}
@@ -3368,7 +3368,7 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full translate-x-[11px] translate-y-[16px] scale-[2.68] object-contain"
+          className="h-full w-full translate-x-[7px] translate-y-[18px] scale-[2.48] object-contain"
           loading={stackIndex < 6 ? "eager" : "lazy"}
           fetchPriority={stackIndex < 3 ? "high" : "auto"}
           />
@@ -3376,7 +3376,7 @@ function StrapDrawerButton({
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full -translate-x-[11px] translate-y-[16px] scale-[2.68] object-contain"
+          className="h-full w-full -translate-x-[7px] translate-y-[18px] scale-[2.48] object-contain"
           loading={stackIndex < 6 ? "eager" : "lazy"}
           fetchPriority={stackIndex < 3 ? "high" : "auto"}
         />
