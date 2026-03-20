@@ -3231,6 +3231,7 @@ function PreviewUploadStage({
   onSelectSampleWatch: (sample: SampleWatchHead) => void;
 }) {
   const [sampleWatchAnimationReady, setSampleWatchAnimationReady] = useState(false);
+  const [sampleWatchesLoaded, setSampleWatchesLoaded] = useState(false);
 
   const sampleWatchAnimationDelays = useMemo(() => {
     const order = sampleWatches.map((_, index) => index);
@@ -3238,7 +3239,7 @@ function PreviewUploadStage({
       const swapIndex = Math.floor(Math.random() * (index + 1));
       [order[index], order[swapIndex]] = [order[swapIndex], order[index]];
     }
-    const shuffled = order.map((position) => 120 + position * 240);
+    const shuffled = order.map((position) => 160 + position * 320);
     return sampleWatches.reduce<Record<string, number>>((acc, sample, index) => {
       acc[sample.id] = shuffled[index];
       return acc;
@@ -3246,10 +3247,26 @@ function PreviewUploadStage({
   }, [sampleWatches]);
 
   useEffect(() => {
-    for (const sample of sampleWatches) {
-      const preloader = new Image();
-      preloader.src = sample.src;
-    }
+    let cancelled = false;
+    const loaders = sampleWatches.map(
+      (sample) =>
+        new Promise<void>((resolve) => {
+          const preloader = new Image();
+          preloader.onload = () => resolve();
+          preloader.onerror = () => resolve();
+          preloader.src = sample.src;
+        })
+    );
+
+    void Promise.all(loaders).then(() => {
+      if (!cancelled) {
+        setSampleWatchesLoaded(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [sampleWatches]);
 
   useEffect(() => {
@@ -3273,6 +3290,8 @@ function PreviewUploadStage({
       window.removeEventListener("touchmove", onTouchMove);
     };
   }, [sampleWatchAnimationReady]);
+
+  const canAnimateSampleWatches = sampleWatchAnimationReady && sampleWatchesLoaded;
 
   return (
     <div
@@ -3345,8 +3364,10 @@ function PreviewUploadStage({
                 key={sample.id}
                 type="button"
                 onClick={() => onSelectSampleWatch(sample)}
-                className={`sample-watch-card rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white ${sampleWatchAnimationReady ? "sample-watch-card-ready" : ""}`}
-                style={sampleWatchAnimationReady ? {
+                className={`sample-watch-card rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white ${
+                  canAnimateSampleWatches ? "sample-watch-card-ready" : "sample-watch-card-pending"
+                }`}
+                style={canAnimateSampleWatches ? {
                   animationDelay: `${sampleWatchAnimationDelays[sample.id]}ms`,
                   ["--sample-watch-delay" as string]: `${sampleWatchAnimationDelays[sample.id]}ms`
                 } : undefined}

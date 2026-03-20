@@ -335,9 +335,14 @@ body {
   will-change: transform, opacity;
 }
 
+.sample-watch-card-pending {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
 .sample-watch-card-ready {
   opacity: 0;
-  animation: sample-watch-card-settle 980ms cubic-bezier(0.2, 0.88, 0.2, 1) forwards;
+  animation: sample-watch-card-settle 1180ms cubic-bezier(0.18, 0.84, 0.22, 1) forwards;
 }
 
 .sample-watch-card-image {
@@ -346,7 +351,7 @@ body {
 }
 
 .sample-watch-card-ready .sample-watch-card-image {
-  animation: sample-watch-image-settle 980ms cubic-bezier(0.2, 0.88, 0.2, 1) forwards;
+  animation: sample-watch-image-settle 1180ms cubic-bezier(0.18, 0.84, 0.22, 1) forwards;
   animation-delay: var(--sample-watch-delay, 0ms);
 }
 
@@ -663,7 +668,7 @@ body {
 @keyframes sample-watch-card-settle {
   0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   100% {
     opacity: 1;
@@ -675,8 +680,8 @@ body {
   0% {
     transform: scale(1.42);
   }
-  65% {
-    transform: scale(0.975);
+  70% {
+    transform: scale(0.982);
   }
   100% {
     transform: scale(1);
