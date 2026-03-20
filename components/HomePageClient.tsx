@@ -1622,7 +1622,7 @@ export default function HomePageClient() {
             >
               {profile?.full_name?.trim() || user.email || "Account"}
             </button>
-          ) : (
+          ) : accountConfigured ? (
             <button
               type="button"
               onClick={() => {
@@ -1632,9 +1632,9 @@ export default function HomePageClient() {
               }}
               className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
             >
-              {accountConfigured ? "Sign in" : "Connect Supabase"}
+              Sign in
             </button>
-          )}
+          ) : null}
         </div>
         <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
           Watchstrapper
