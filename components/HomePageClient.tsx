@@ -2326,24 +2326,10 @@ export default function HomePageClient() {
             ) : null}
 
             <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
-              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
-                    Materials
-                  </p>
-                  <p className="mt-1 text-sm text-muted">
-                    Bench references for texture and hardware finish.
-                  </p>
-                </div>
-              </div>
-              <MaterialsStrip />
-            </div>
-
-            <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
               <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
-                    4. Bench Tools
+                    3. Bench Tools
                   </p>
                 </div>
                 {activeAiStatus.tool ? (
@@ -2393,10 +2379,10 @@ export default function HomePageClient() {
             </div>
             {strapSourceMode === "library" ? (
               <div
-                className={`glass-card atelier-card-soft rounded-[1.9rem] p-4 transition ${
+                className={`glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 transition ${
                   lockView
-                    ? ""
-                    : "opacity-80"
+                    ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_24px_rgba(56,44,32,0.08)]"
+                    : "opacity-78 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] grayscale-[0.14]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -2429,14 +2415,14 @@ export default function HomePageClient() {
                           href={product.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center gap-3 rounded-2xl border border-line bg-white/85 p-3 transition hover:-translate-y-0.5 hover:bg-white"
+                          className="flex items-center gap-4 rounded-2xl border border-[#d4cec4] bg-white/80 p-3 transition hover:bg-white/88"
                         >
-                          <div className="w-20 shrink-0 overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+                          <div className="w-28 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={product.imageSrc}
                               alt={product.title}
-                              className="h-20 w-full object-contain p-2"
+                              className="h-28 w-full object-contain p-2"
                             />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -2457,7 +2443,7 @@ export default function HomePageClient() {
                     </p>
                   )
                 ) : (
-                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
+                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/42 p-4 grayscale-[0.18]">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <MaterialInset
                         src="/strap-selection-kie/cognac-grain-leather-buckle.png"
@@ -2529,24 +2515,10 @@ export default function HomePageClient() {
 
         <section className="order-3 min-w-0 space-y-4 xl:hidden">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
-            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
-                  Materials
-                </p>
-                <p className="mt-1 text-sm text-muted">
-                  Bench references for texture and hardware finish.
-                </p>
-              </div>
-            </div>
-            <MaterialsStrip />
-          </div>
-
-          <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
-                  4. Bench Tools
+                  3. Bench Tools
                 </p>
               </div>
               {activeAiStatus.tool ? (
@@ -2596,10 +2568,10 @@ export default function HomePageClient() {
           </div>
           {strapSourceMode === "library" ? (
             <div
-              className={`glass-card atelier-card-soft rounded-[1.9rem] p-4 transition ${
+              className={`glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 transition ${
                 lockView
-                  ? ""
-                  : "opacity-80"
+                  ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_24px_rgba(56,44,32,0.08)]"
+                  : "opacity-78 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] grayscale-[0.14]"
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -2632,14 +2604,14 @@ export default function HomePageClient() {
                         href={product.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-3 rounded-2xl border border-line bg-white/85 p-3 transition hover:-translate-y-0.5 hover:bg-white"
+                        className="flex items-center gap-4 rounded-2xl border border-[#d4cec4] bg-white/80 p-3 transition hover:bg-white/88"
                       >
-                        <div className="w-20 shrink-0 overflow-hidden rounded-[1rem] border border-line bg-slate-50">
+                        <div className="w-28 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={product.imageSrc}
                             alt={product.title}
-                            className="h-20 w-full object-contain p-2"
+                            className="h-28 w-full object-contain p-2"
                           />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -2660,7 +2632,7 @@ export default function HomePageClient() {
                   </p>
                 )
               ) : (
-                <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
+                <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/42 p-4 grayscale-[0.18]">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <MaterialInset
                       src="/strap-selection-kie/cognac-grain-leather-buckle.png"
@@ -3349,15 +3321,6 @@ function MaterialInset({
         />
       </div>
       <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7c7165]">{label}</p>
-    </div>
-  );
-}
-
-function MaterialsStrip() {
-  return (
-    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      <MaterialInset src="/bench-details/leather-grain.webp" label="Leather grain" fit="cover" />
-      <MaterialInset src="/bench-details/hardware-tone.jpg" label="Hardware tone" fit="cover" />
     </div>
   );
 }
