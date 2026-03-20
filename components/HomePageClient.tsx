@@ -3164,6 +3164,8 @@ function PreviewUploadStage({
   sampleWatches: readonly SampleWatchHead[];
   onSelectSampleWatch: (sample: SampleWatchHead) => void;
 }) {
+  const [sampleWatchAnimationReady, setSampleWatchAnimationReady] = useState(false);
+
   const sampleWatchAnimationDelays = useMemo(() => {
     const slots = sampleWatches.map((_, index) => 120 + index * 110);
     const shuffled = [...slots];
@@ -3176,6 +3178,35 @@ function PreviewUploadStage({
       return acc;
     }, {});
   }, [sampleWatches]);
+
+  useEffect(() => {
+    for (const sample of sampleWatches) {
+      const preloader = new Image();
+      preloader.src = sample.src;
+    }
+  }, [sampleWatches]);
+
+  useEffect(() => {
+    if (sampleWatchAnimationReady) return;
+
+    const activate = () => setSampleWatchAnimationReady(true);
+
+    if (window.scrollY > 0) {
+      activate();
+      return;
+    }
+
+    const onWheel = () => activate();
+    const onTouchMove = () => activate();
+
+    window.addEventListener("wheel", onWheel, { passive: true, once: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true, once: true });
+
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [sampleWatchAnimationReady]);
 
   return (
     <div
@@ -3248,18 +3279,20 @@ function PreviewUploadStage({
                 key={sample.id}
                 type="button"
                 onClick={() => onSelectSampleWatch(sample)}
-                className="sample-watch-card rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white"
-                style={{
+                className={`sample-watch-card rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white ${sampleWatchAnimationReady ? "sample-watch-card-ready" : ""}`}
+                style={sampleWatchAnimationReady ? {
                   animationDelay: `${sampleWatchAnimationDelays[sample.id]}ms`,
                   ["--sample-watch-delay" as string]: `${sampleWatchAnimationDelays[sample.id]}ms`
-                }}
+                } : undefined}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={sample.src}
                   alt={`${sample.label} watch head`}
                   className="sample-watch-card-image mx-auto h-24 w-auto object-contain sm:h-[6.75rem]"
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
                 />
                 <p className="mt-1 text-[11px] font-semibold leading-tight text-ink sm:text-xs">
                   {sample.label}
