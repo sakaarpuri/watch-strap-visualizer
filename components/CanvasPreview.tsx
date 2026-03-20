@@ -681,27 +681,12 @@ function LugGuideOverlay({
   const bottomY = toScreen(guides.bottomY);
   const topWidth = guides.topWidth * sceneZoom;
   const bottomWidth = guides.bottomWidth * sceneZoom;
-  const confident = guides.confidence >= 0.72;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[5] overflow-hidden rounded-xl">
-      <GuideLine
-        label={confident ? "Top lug fit" : "Top lug guide"}
-        centerX={centerX}
-        y={topY}
-        width={topWidth}
-        tone="cyan"
-        blink={blink}
-      />
-      <GuideLine
-        label={confident ? "Bottom lug fit" : "Bottom lug guide"}
-        centerX={centerX}
-        y={bottomY}
-        width={bottomWidth}
-        tone="cyan"
-        blink={blink}
-      />
-      {!confident ? (
+      <GuideLine centerX={centerX} y={topY} width={topWidth} tone="cyan" blink={blink} />
+      <GuideLine centerX={centerX} y={bottomY} width={bottomWidth} tone="cyan" blink={blink} />
+      {guides.confidence < 0.72 ? (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-amber-200 bg-white/92 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
           Auto-fit is reading estimated lug positions.
         </div>
@@ -711,77 +696,51 @@ function LugGuideOverlay({
 }
 
 function GuideLine({
-  label,
   centerX,
   y,
   width,
   tone,
   blink
 }: {
-  label: string;
   centerX: number;
   y: number;
   width: number;
   tone: "cyan" | "fuchsia";
   blink: boolean;
 }) {
-  const colorClasses =
-    tone === "cyan"
-      ? "border-cyan-300 bg-cyan-400/12 text-cyan-700"
-      : "border-fuchsia-300 bg-fuchsia-400/12 text-fuchsia-700";
+  const stroke = tone === "cyan" ? "#67e8f9" : "#f0abfc";
   const lineWidth = Math.max(32, width);
   const lineLeft = centerX - lineWidth / 2;
   const lineRight = lineLeft + lineWidth;
 
   return (
-    <>
-      <svg
-        className="absolute inset-0 h-full w-full overflow-visible"
-        viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <line
-          x1={lineLeft}
-          y1={y}
-          x2={lineRight}
-          y2={y}
-          stroke={tone === "cyan" ? "#67e8f9" : "#f0abfc"}
-          strokeWidth="3.5"
-          strokeLinecap="round"
+    <svg
+      className="absolute inset-0 h-full w-full overflow-visible"
+      viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <line
+        x1={lineLeft}
+        y1={y}
+        x2={lineRight}
+        y2={y}
+        stroke={stroke}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+      />
+      {[lineLeft, lineRight].map((x, index) => (
+        <circle
+          key={`${x}-${y}-${index}`}
+          cx={x}
+          cy={y}
+          r="8.5"
+          fill="white"
+          stroke={stroke}
+          strokeWidth="2.6"
+          className={blink ? "watch-lug-handle-blink-stroke" : undefined}
         />
-      </svg>
-      <div
-        className={`absolute rounded-full border px-2.5 py-1 text-[10px] font-semibold shadow-[0_8px_18px_rgba(15,23,42,0.14)] ${colorClasses}`}
-        style={{
-          left: `${centerX + lineWidth / 2 + 10}px`,
-          top: `${y - 11}px`
-        }}
-      >
-        {label}
-      </div>
-      <div
-        className={`absolute rounded-full border bg-white ${colorClasses} ${blink ? "watch-lug-handle-blink" : ""}`}
-        style={{
-          left: `${lineLeft}px`,
-          top: `${y}px`,
-          width: "18px",
-          height: "18px",
-          transform: "translate(-50%, -50%)"
-        }}
-      >
-      </div>
-      <div
-        className={`absolute rounded-full border bg-white ${colorClasses} ${blink ? "watch-lug-handle-blink" : ""}`}
-        style={{
-          left: `${lineRight}px`,
-          top: `${y}px`,
-          width: "18px",
-          height: "18px",
-          transform: "translate(-50%, -50%)"
-        }}
-      >
-      </div>
-    </>
+      ))}
+    </svg>
   );
 }

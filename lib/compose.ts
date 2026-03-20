@@ -584,7 +584,7 @@ const calculateBaselinePlacement = (
 ) => {
   const watchRect = getWatchRect(watch, watchScale);
   const targetStrapWidth = watchRect.w * targetWidthFactor;
-  const visualGap = Math.max(18, watchRect.h * 0.045) * gapFactor;
+  const visualGap = Math.max(8, watchRect.h * 0.022) * gapFactor;
   const metricsA = getImageMetrics(partAImage);
   const metricsB = getImageMetrics(partBImage);
 
@@ -888,8 +888,8 @@ export const calculateAutoPlacement = async (
   const anchorScaleB = clamp((safeTargetWidth / metricsB.topWidth) * 100, 30, 230);
   const scaleA = baseline.partA.scale + (anchorScaleA - baseline.partA.scale) * blend;
   const scaleB = baseline.partB.scale + (anchorScaleB - baseline.partB.scale) * blend;
-  const defaultVisualGap = Math.max(18, baselineWatchRect.h * 0.045) * gapFactor;
-  const visualGap = lugOverrides ? Math.max(4, defaultVisualGap * 0.18) : defaultVisualGap;
+  const defaultVisualGap = Math.max(8, baselineWatchRect.h * 0.022) * gapFactor;
+  const visualGap = lugOverrides ? Math.max(2, defaultVisualGap * 0.1) : defaultVisualGap;
   const anchorYPartA =
     lugTopEdge + (partAImage.height / 2 - metricsA.bottomY) * (scaleA / 100) - visualGap;
   const anchorYPartB =

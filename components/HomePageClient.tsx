@@ -2696,12 +2696,12 @@ export default function HomePageClient() {
         </section>
 
         {canOpenTools ? (
-          <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:self-start">
-            <div className="flex flex-col gap-2 xl:-ml-3">
+          <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:mt-[7.5rem] xl:self-start">
+            <div className="relative flex min-w-[18rem] flex-col gap-0 xl:pl-6">
               <button
                 type="button"
                 onClick={() => setShowFitBench((prev) => !prev)}
-                className={`inline-flex items-center self-start rounded-t-2xl border border-b-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
+                className={`absolute left-0 top-3 inline-flex -translate-x-full items-center rounded-l-2xl rounded-r-none border border-r-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
                   showFitBench
                     ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22]"
                     : "border-line bg-white/96 text-[#7c7165] hover:bg-white"
@@ -3698,9 +3698,8 @@ function WatchOnlyLugGuideCoachmark({ onDismiss }: { onDismiss: () => void }) {
         </button>
       </div>
       <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          <span>Top fit</span>
-          <span>Then pick a strap</span>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          Align the guides, then pick a strap
         </div>
         <div className="mt-2 space-y-3">
           <div className="flex items-center gap-2">
