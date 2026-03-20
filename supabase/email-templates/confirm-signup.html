@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirm your Watchstrapper account</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f7f1e7;color:#2f2418;font-family:Georgia,'Times New Roman',serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f1e7;padding:28px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fffdf9;border:1px solid #e7d9c5;border-radius:24px;overflow:hidden;box-shadow:0 20px 50px rgba(56,44,32,0.08);">
+            <tr>
+              <td style="padding:28px 32px 18px;background:linear-gradient(180deg,#fffaf3 0%,#f8ecdc 100%);border-bottom:1px solid #ecdcc5;">
+                <div style="font-size:13px;letter-spacing:0.28em;text-transform:uppercase;color:#7c6a57;font-family:Arial,Helvetica,sans-serif;font-weight:700;">Watchstrapper</div>
+                <h1 style="margin:16px 0 0;font-size:34px;line-height:1.08;font-weight:600;color:#2f2418;">Confirm your account</h1>
+                <p style="margin:14px 0 0;font-size:17px;line-height:1.7;color:#5d4f41;font-family:Arial,Helvetica,sans-serif;">
+                  See any strap on your watch before you buy.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <p style="margin:0 0 14px;font-size:16px;line-height:1.8;color:#5d4f41;font-family:Arial,Helvetica,sans-serif;">
+                  You're one click away from saving watches, straps, and finished looks to your Watchstrapper collection.
+                </p>
+                <p style="margin:0 0 28px;font-size:16px;line-height:1.8;color:#5d4f41;font-family:Arial,Helvetica,sans-serif;">
+                  Confirm your email to finish setting up your account.
+                </p>
+
+                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 28px;">
+                  <tr>
+                    <td align="center" bgcolor="#2d4567" style="border-radius:16px;">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:15px 28px;font-size:15px;font-weight:700;line-height:1;color:#fffdf9;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">
+                        Confirm my account
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="padding:18px 20px;border:1px solid #e7d9c5;border-radius:18px;background:#fcf6ee;">
+                  <p style="margin:0;font-size:13px;line-height:1.7;color:#7a6b5a;font-family:Arial,Helvetica,sans-serif;">
+                    If the button does not open, copy and paste this link into your browser:
+                  </p>
+                  <p style="margin:10px 0 0;word-break:break-all;font-size:13px;line-height:1.7;color:#5d4f41;font-family:Arial,Helvetica,sans-serif;">
+                    {{ .ConfirmationURL }}
+                  </p>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 32px 28px;">
+                <p style="margin:0;font-size:12px;line-height:1.7;color:#8a7a69;font-family:Arial,Helvetica,sans-serif;">
+                  This email was sent to {{ .Email }} because a Watchstrapper account was created with this address.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
