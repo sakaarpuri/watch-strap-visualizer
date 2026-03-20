@@ -2288,7 +2288,6 @@ export default function HomePageClient() {
                     disabled={!hasUserUpload}
                     loading={aiTools.cleanup.loading}
                     sampleImageSrc="/bench-details/extract-watch.jpg"
-                    note="Best on clean, front-on retailer or wrist shots with visible lugs."
                     onClick={() => void runCleanupFallback()}
                   />
                   {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
@@ -2547,7 +2546,6 @@ export default function HomePageClient() {
                   disabled={!hasUserUpload}
                   loading={aiTools.cleanup.loading}
                   sampleImageSrc="/bench-details/extract-watch.jpg"
-                  note="Best on clean, front-on retailer or wrist shots with visible lugs."
                   onClick={() => void runCleanupFallback()}
                 />
                 {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
@@ -3182,16 +3180,43 @@ function PreviewUploadStage({
         />
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted">Front-on, straight shots work best.</p>
-          <button
-            type="button"
-            onClick={onToggleUploadGuide}
-            className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
-            aria-expanded={showUploadGuide}
-            aria-controls="preview-upload-guide-panel"
-          >
-            Photo Tips
-            <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={onToggleUploadGuide}
+              className="neo-button inline-flex items-center gap-2 rounded-2xl border border-line px-3 py-2 text-sm font-semibold text-ink"
+              aria-expanded={showUploadGuide}
+              aria-controls="preview-upload-guide-panel"
+            >
+              Photo Tips
+              <span className="text-base leading-none">{showUploadGuide ? "←" : "→"}</span>
+            </button>
+            {showUploadGuide ? (
+              <div
+                id="preview-upload-guide-panel"
+                className="absolute right-0 top-[calc(100%+0.75rem)] z-20 w-[min(26rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-line bg-white/96 p-3 shadow-[0_20px_40px_rgba(56,44,32,0.14)] backdrop-blur"
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-base font-semibold text-ink">Photo Tips</p>
+                  <button
+                    type="button"
+                    onClick={onCloseUploadGuide}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-sm font-semibold text-ink hover:bg-[#fbf6ee]"
+                    aria-label="Close photo tips"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
+                  {UPLOAD_GUIDE_ITEMS.map((item) => (
+                    <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
+                      <UploadGuideCard item={item} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
         <div className="mt-4 rounded-2xl border border-line bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -3217,7 +3242,7 @@ function PreviewUploadStage({
                 <img
                   src={sample.src}
                   alt={`${sample.label} watch head`}
-                  className="sample-watch-card-image mx-auto h-16 w-auto object-contain sm:h-[4.5rem]"
+                  className="sample-watch-card-image mx-auto h-24 w-auto object-contain sm:h-[6.75rem]"
                   loading="lazy"
                 />
                 <p className="mt-1 text-[11px] font-semibold leading-tight text-ink sm:text-xs">
@@ -3227,29 +3252,6 @@ function PreviewUploadStage({
             ))}
           </div>
         </div>
-        {showUploadGuide ? (
-          <div
-            id="preview-upload-guide-panel"
-            className="mt-4 overflow-hidden rounded-2xl border border-line bg-white/70 p-3 transition-all duration-300"
-          >
-            <button
-              type="button"
-              onClick={onCloseUploadGuide}
-              className="mb-2 flex w-full items-center rounded-xl border border-transparent px-1 py-1 text-left hover:bg-white/30"
-              aria-expanded={showUploadGuide}
-              aria-controls="preview-upload-guide-panel"
-            >
-              <p className="text-base font-semibold text-ink">Photo Tips</p>
-            </button>
-            <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1">
-              {UPLOAD_GUIDE_ITEMS.map((item) => (
-                <div key={item.title} className="min-w-[150px] max-w-[160px] flex-1">
-                  <UploadGuideCard item={item} />
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
     </div>
   );
