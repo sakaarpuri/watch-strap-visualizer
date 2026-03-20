@@ -2498,10 +2498,10 @@ export default function HomePageClient() {
             </p>
             <div className="mt-5 flex justify-center md:justify-end">
               <Link
-                href="/contact"
+                href="mailto:hello@watchstrapper.com"
                 className="neo-button rounded-2xl border border-line px-5 py-3 text-sm font-semibold text-ink"
               >
-                Enquiries / Feedback
+                hello@watchstrapper.com
               </Link>
             </div>
           </div>
@@ -2687,10 +2687,10 @@ export default function HomePageClient() {
           </p>
           <div className="mt-5 flex justify-center md:justify-end">
             <Link
-              href="/contact"
+              href="mailto:hello@watchstrapper.com"
               className="neo-button rounded-2xl border border-line px-5 py-3 text-sm font-semibold text-ink"
             >
-              Enquiries / Feedback
+              hello@watchstrapper.com
             </Link>
           </div>
         </section>
