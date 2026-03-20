@@ -744,10 +744,7 @@ export default function HomePageClient() {
     filteredLibraryStraps[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
-  const activeLibraryStrap =
-    strapSourceMode === "library"
-      ? selectedLibraryStrap ?? filteredLibraryStraps[activeLibraryIndex] ?? null
-      : null;
+  const activeLibraryStrap = strapSourceMode === "library" ? selectedLibraryStrap : null;
   const activeSavedStrap = strapSourceMode === "saved" ? selectedSavedStrap : null;
   const activeStrapASrc =
     strapSourceMode === "uploaded" && uploadedStrapPartA
