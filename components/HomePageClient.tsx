@@ -3196,7 +3196,7 @@ function PreviewUploadStage({
         <div className="mt-4 rounded-2xl border border-line bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7c7165]">
+              <p className="sample-watch-heading text-xs font-semibold uppercase tracking-[0.16em] text-[#7c7165]">
                 Try a Sample Watch
               </p>
               <p className="mt-1 text-sm text-muted">
@@ -3205,18 +3205,19 @@ function PreviewUploadStage({
             </div>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {sampleWatches.map((sample) => (
+            {sampleWatches.map((sample, index) => (
               <button
                 key={sample.id}
                 type="button"
                 onClick={() => onSelectSampleWatch(sample)}
-                className="rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white"
+                className="sample-watch-card rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white"
+                style={{ animationDelay: `${120 + index * 110}ms`, ["--sample-watch-delay" as string]: `${120 + index * 110}ms` }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={sample.src}
                   alt={`${sample.label} watch head`}
-                  className="mx-auto h-16 w-auto object-contain sm:h-[4.5rem]"
+                  className="sample-watch-card-image mx-auto h-16 w-auto object-contain sm:h-[4.5rem]"
                   loading="lazy"
                 />
                 <p className="mt-1 text-[11px] font-semibold leading-tight text-ink sm:text-xs">
@@ -3282,7 +3283,7 @@ function MaterialInset({
 function MaterialsStrip() {
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      <MaterialInset src="/bench-details/leather-grain.jpg" label="Leather grain" fit="cover" />
+      <MaterialInset src="/bench-details/leather-grain.webp" label="Leather grain" fit="cover" />
       <MaterialInset src="/bench-details/hardware-tone.jpg" label="Hardware tone" fit="cover" />
     </div>
   );
