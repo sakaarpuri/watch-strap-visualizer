@@ -1732,9 +1732,6 @@ export default function HomePageClient() {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7c7165]">
                       Style Mood
                     </p>
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-[#8d7e70]">
-                      {styleFilter === "All styles" ? "All visible straps" : `${styleFilter} focus`}
-                    </p>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <button
@@ -2281,9 +2278,6 @@ export default function HomePageClient() {
                       Narrow the drawer by fashion style, not just material.
                     </p>
                   </div>
-                  <p className="text-xs uppercase tracking-[0.14em] text-[#7c7165]">
-                    {styleFilter === "All styles" ? "All visible straps" : `${styleFilter} focus`}
-                  </p>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   <button
@@ -2702,12 +2696,12 @@ export default function HomePageClient() {
         </section>
 
         {canOpenTools ? (
-          <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:pt-14">
-            <div className="flex flex-col gap-2">
+          <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:self-start">
+            <div className="flex flex-col gap-2 xl:-ml-3">
               <button
                 type="button"
                 onClick={() => setShowFitBench((prev) => !prev)}
-                className={`inline-flex items-center self-end rounded-t-2xl border border-b-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
+                className={`inline-flex items-center self-start rounded-t-2xl border border-b-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
                   showFitBench
                     ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22]"
                     : "border-line bg-white/96 text-[#7c7165] hover:bg-white"
