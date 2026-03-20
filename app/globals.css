@@ -332,13 +332,13 @@ body {
 
 .sample-watch-card {
   opacity: 0;
-  animation: sample-watch-card-settle 720ms cubic-bezier(0.2, 0.88, 0.2, 1) forwards;
+  animation: sample-watch-card-settle 980ms cubic-bezier(0.2, 0.88, 0.2, 1) forwards;
   will-change: transform, opacity;
 }
 
 .sample-watch-card-image {
   transform-origin: center center;
-  animation: sample-watch-image-settle 720ms cubic-bezier(0.2, 0.88, 0.2, 1) forwards;
+  animation: sample-watch-image-settle 980ms cubic-bezier(0.2, 0.88, 0.2, 1) forwards;
   animation-delay: var(--sample-watch-delay, 0ms);
 }
 
@@ -665,10 +665,10 @@ body {
 
 @keyframes sample-watch-image-settle {
   0% {
-    transform: scale(1.22);
+    transform: scale(1.42);
   }
   65% {
-    transform: scale(0.985);
+    transform: scale(0.975);
   }
   100% {
     transform: scale(1);
