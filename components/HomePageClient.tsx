@@ -3413,7 +3413,7 @@ function StrapDrawerButton({
       className={`drawer-card relative flex w-full flex-col items-start gap-2 rounded-[1.25rem] border px-2 py-2 text-left transition ${
         active
           ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
-          : "border-line bg-white/70 text-ink hover:bg-white"
+          : "border-line bg-white/70 text-ink"
       }`}
       style={{
         zIndex: stackIndex + 1
@@ -3436,7 +3436,7 @@ function StrapDrawerButton({
         </button>
       ) : null}
       <div
-        className={`drawer-card-media grid h-[124px] w-full grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
+        className={`drawer-card-media grid h-[138px] w-full grid-cols-2 items-center gap-0 overflow-hidden rounded-[1rem] border px-0 ${
           active ? "border-[#d7c1a3] bg-white" : "border-[#ddd3c5] bg-white"
         }`}
       >
@@ -3444,15 +3444,17 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full translate-x-[8px] translate-y-[13px] scale-[2.72] object-contain"
-          loading="lazy"
-        />
+          className="h-full w-full translate-x-[11px] translate-y-[16px] scale-[2.68] object-contain"
+          loading={stackIndex < 6 ? "eager" : "lazy"}
+          fetchPriority={stackIndex < 3 ? "high" : "auto"}
+          />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full -translate-x-[8px] translate-y-[13px] scale-[2.72] object-contain"
-          loading="lazy"
+          className="h-full w-full -translate-x-[11px] translate-y-[16px] scale-[2.68] object-contain"
+          loading={stackIndex < 6 ? "eager" : "lazy"}
+          fetchPriority={stackIndex < 3 ? "high" : "auto"}
         />
       </div>
       <div className="drawer-card-copy min-w-0 w-full py-1 pr-8">
