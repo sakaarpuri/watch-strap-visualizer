@@ -616,7 +616,6 @@ export default function HomePageClient() {
   const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
   const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
   const [mockupReadyHighlight, setMockupReadyHighlight] = useState(false);
-  const [animateDrawerReveal, setAnimateDrawerReveal] = useState(false);
   const [animateStrapSettle, setAnimateStrapSettle] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -648,7 +647,6 @@ export default function HomePageClient() {
   const previousDialScaleRef = useRef(dialScale);
   const mockupReadyTimeoutRef = useRef<number | null>(null);
   const strapSettleTimeoutRef = useRef<number | null>(null);
-  const drawerRevealTimeoutRef = useRef<number | null>(null);
   const firstRenderedStrapRef = useRef(false);
 
   const clearMockupReadyHighlight = () => {
@@ -801,20 +799,6 @@ export default function HomePageClient() {
         : "";
   const canOpenTools = hasUserUpload && !cropSourceUrl;
 
-  const triggerDrawerReveal = () => {
-    setAnimateDrawerReveal(false);
-    window.requestAnimationFrame(() => {
-      setAnimateDrawerReveal(true);
-      if (drawerRevealTimeoutRef.current) {
-        window.clearTimeout(drawerRevealTimeoutRef.current);
-      }
-      drawerRevealTimeoutRef.current = window.setTimeout(() => {
-        setAnimateDrawerReveal(false);
-        drawerRevealTimeoutRef.current = null;
-      }, 700);
-    });
-  };
-
   useEffect(() => {
     latestPartARef.current = partA;
     latestPartBRef.current = partB;
@@ -929,17 +913,6 @@ export default function HomePageClient() {
   }, [highlightPreviewWindow]);
 
   useEffect(() => {
-    triggerDrawerReveal();
-    return undefined;
-  }, []);
-
-  useEffect(() => {
-    if (strapSourceMode !== "library") return;
-    triggerDrawerReveal();
-    return undefined;
-  }, [category, strapSourceMode, strapDrawerView]);
-
-  useEffect(() => {
     setStrapIndex(0);
     if (selectedLibraryStrap && !filteredLibraryStraps.some((strap) => strap.id === selectedLibraryStrap.id)) {
       setSelectedLibraryStrap(null);
@@ -953,21 +926,12 @@ export default function HomePageClient() {
   }, [resolvedLibraryIndex, strapIndex]);
 
   useEffect(() => {
-    if (!hasUserUpload || strapSourceMode !== "library") return;
-    triggerDrawerReveal();
-    return undefined;
-  }, [hasUserUpload, strapSourceMode]);
-
-  useEffect(() => {
     return () => {
       if (mockupReadyTimeoutRef.current) {
         window.clearTimeout(mockupReadyTimeoutRef.current);
       }
       if (strapSettleTimeoutRef.current) {
         window.clearTimeout(strapSettleTimeoutRef.current);
-      }
-      if (drawerRevealTimeoutRef.current) {
-        window.clearTimeout(drawerRevealTimeoutRef.current);
       }
     };
   }, []);
@@ -1865,8 +1829,6 @@ export default function HomePageClient() {
                           showCategory={false}
                           isFavorite={favoriteLookup.has(`library:${strap.id}`)}
                           onToggleFavorite={() => void handleFavoriteToggle(item)}
-                          animateIn={animateDrawerReveal}
-                          animationDelayMs={index * 45}
                           stackIndex={index}
                           totalItems={libraryDrawerItems.length}
                         />
@@ -1971,8 +1933,6 @@ export default function HomePageClient() {
                             }}
                             isFavorite={favoriteLookup.has(`${item.sourceType}:${item.id}`)}
                             onToggleFavorite={() => void handleFavoriteToggle(item)}
-                            animateIn={animateDrawerReveal}
-                            animationDelayMs={index * 45}
                             stackIndex={index}
                             totalItems={activeDrawerItems.length}
                           />
@@ -3442,11 +3402,9 @@ function StrapDrawerButton({
   onClick,
   isFavorite = false,
   onToggleFavorite,
-  animateIn = false,
-  animationDelayMs = 0,
   stackIndex = 0,
   totalItems = 1
-}: StrapThumbProps & { animateIn?: boolean; animationDelayMs?: number; stackIndex?: number; totalItems?: number }) {
+}: StrapThumbProps & { stackIndex?: number; totalItems?: number }) {
   return (
     <button
       type="button"
@@ -3456,9 +3414,8 @@ function StrapDrawerButton({
         active
           ? "border-[#d7c1a3] bg-[#fbf6ee] text-ink shadow-[0_10px_24px_rgba(155,106,47,0.08)]"
           : "border-line bg-white/70 text-ink hover:bg-white"
-      } ${animateIn ? "drawer-reveal-item" : ""}`}
+      }`}
       style={{
-        ...(animateIn ? { animationDelay: `${animationDelayMs}ms` } : {}),
         zIndex: stackIndex + 1
       }}
       aria-pressed={active}
@@ -3487,14 +3444,14 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full translate-x-[0px] translate-y-[9px] scale-[2.62] object-contain"
+          className="h-full w-full translate-x-[8px] translate-y-[13px] scale-[2.72] object-contain"
           loading="lazy"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full translate-x-[0px] translate-y-[9px] scale-[2.62] object-contain"
+          className="h-full w-full -translate-x-[8px] translate-y-[13px] scale-[2.72] object-contain"
           loading="lazy"
         />
       </div>
