@@ -3207,7 +3207,7 @@ function PreviewUploadStage({
             {showUploadGuide ? (
               <div
                 id="preview-upload-guide-panel"
-                className="absolute right-0 top-[calc(100%+0.75rem)] z-20 w-[min(26rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-line bg-white/96 p-3 shadow-[0_20px_40px_rgba(56,44,32,0.14)] backdrop-blur"
+                className="absolute right-0 top-[calc(100%+0.75rem)] z-20 w-[min(26rem,calc(100vw-3rem))] overflow-hidden rounded-2xl border border-line bg-[rgba(255,252,247,0.985)] p-3 shadow-[0_20px_40px_rgba(56,44,32,0.14)] backdrop-blur-[2px]"
               >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-base font-semibold text-ink">Photo Tips</p>
