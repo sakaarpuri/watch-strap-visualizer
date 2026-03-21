@@ -37,8 +37,10 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
   const [cropY, setCropY] = useState((VIEWPORT_SIZE - DEFAULT_CROP_SIZE) / 2);
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [statusText, setStatusText] = useState("Drag the image and resize the crop box to frame the watch.");
+  const [viewportScale, setViewportScale] = useState(1);
   const dragRef = useRef<DragMode | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setZoom(1);
@@ -80,6 +82,17 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
   }, []);
 
   useEffect(() => {
+    const el = outerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      setViewportScale(Math.min(1, w / VIEWPORT_SIZE));
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
     setCropX((prev) => clamp(prev, 0, VIEWPORT_SIZE - cropSize));
     setCropY((prev) => clamp(prev, 0, VIEWPORT_SIZE - cropSize));
   }, [cropSize]);
@@ -117,8 +130,8 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
     const drag = dragRef.current;
     if (!drag || !layout) return;
 
-    const deltaX = event.clientX - drag.startX;
-    const deltaY = event.clientY - drag.startY;
+    const deltaX = (event.clientX - drag.startX) / viewportScale;
+    const deltaY = (event.clientY - drag.startY) / viewportScale;
 
     if (drag.type === "image") {
       setOffsetX(clamp(drag.offsetX + deltaX, -layout.limitX, layout.limitX));
@@ -252,14 +265,25 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,540px),1fr] xl:items-center">
         <div className="mx-auto w-full max-w-[540px]">
           <div
+            ref={outerRef}
+            className="relative mx-auto aspect-square w-full max-w-[480px] overflow-hidden rounded-[28px]"
+          >
+          <div
             ref={viewportRef}
-            className="relative mx-auto aspect-square w-full max-w-[480px] overflow-hidden rounded-[28px] border border-slate-300 bg-canvas/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_40px_rgba(15,23,42,0.14)]"
+            className="absolute top-0 left-0 border border-slate-300 bg-canvas/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_20px_40px_rgba(15,23,42,0.14)]"
             onPointerDown={beginImageDrag}
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}
             onPointerCancel={endDrag}
             role="application"
             aria-label="Crop tool. Drag image or resize the crop box to frame the watch."
+            style={{
+              width: VIEWPORT_SIZE,
+              height: VIEWPORT_SIZE,
+              transformOrigin: "top left",
+              transform: `scale(${viewportScale})`,
+              borderRadius: "28px"
+            }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -329,6 +353,7 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
                 />
               ))}
             </div>
+          </div>
           </div>
         </div>
 

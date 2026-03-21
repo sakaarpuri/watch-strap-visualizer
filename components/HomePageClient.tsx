@@ -616,6 +616,8 @@ export default function HomePageClient() {
   const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
   const [mockupReadyHighlight, setMockupReadyHighlight] = useState(false);
   const [animateStrapSettle, setAnimateStrapSettle] = useState(false);
+  const [mobileExpandedCategories, setMobileExpandedCategories] = useState<Set<string>>(new Set());
+  const [pinchTooltipVisible, setPinchTooltipVisible] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showMyWatchesDialog, setShowMyWatchesDialog] = useState(false);
@@ -647,6 +649,8 @@ export default function HomePageClient() {
   const mockupReadyTimeoutRef = useRef<number | null>(null);
   const strapSettleTimeoutRef = useRef<number | null>(null);
   const firstRenderedStrapRef = useRef(false);
+  const pinchRef = useRef<{ startDist: number; startGap: number } | null>(null);
+  const pinchTooltipTimerRef = useRef<number | null>(null);
 
   const clearMockupReadyHighlight = () => {
     setMockupReadyHighlight(false);
@@ -1304,6 +1308,24 @@ export default function HomePageClient() {
     setFitState("adjusted");
   };
 
+  const toggleMobileCategory = (cat: string) => {
+    setMobileExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) {
+        next.delete(cat);
+      } else {
+        next.add(cat);
+      }
+      return next;
+    });
+  };
+
+  const showPinchTooltip = () => {
+    setPinchTooltipVisible(true);
+    if (pinchTooltipTimerRef.current) window.clearTimeout(pinchTooltipTimerRef.current);
+    pinchTooltipTimerRef.current = window.setTimeout(() => setPinchTooltipVisible(false), 2000);
+  };
+
   const setToolLoading = (tool: AiToolKey, loading: boolean, error: string | null = null) => {
     setAiTools((prev) => ({
       ...prev,
@@ -1575,7 +1597,7 @@ export default function HomePageClient() {
 
   return (
       <main className="mx-auto max-w-[92rem] px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
-      <header className="relative mb-10 text-center sm:mb-12">
+      <header className="relative mb-10 sm:mb-12">
         <div className="absolute right-0 top-0 flex items-center gap-2">
           {saveFeedback ? (
             <span className="rounded-full border border-[#d7c1a3] bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#7c5b2e]">
@@ -1604,9 +1626,17 @@ export default function HomePageClient() {
             </button>
           ) : null}
         </div>
-        <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
-          Watchstrapper
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
+            Watchstrapper
+          </p>
+          <a
+            href="#"
+            className="rounded-full border border-line bg-white/85 px-4 py-2 text-sm font-semibold text-ink shadow-[0_1px_3px_rgba(15,23,42,0.07)] transition hover:bg-white"
+          >
+            Sign in
+          </a>
+        </div>
         <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[1.4rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[2.2rem]">
           See any strap on your watch before you buy.
         </h1>
@@ -1768,7 +1798,8 @@ export default function HomePageClient() {
                     })}
                   </div>
                 </div>
-                <div className="strap-browser-shell mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                {/* Desktop list — hidden on mobile */}
+                <div className="hidden xl:block strap-browser-shell mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
                     {styleFilter === "All styles"
                       ? category === "All categories"
@@ -1829,6 +1860,75 @@ export default function HomePageClient() {
                       </p>
                     ) : null}
                   </div>
+                </div>
+
+                {/* Mobile accordion — hidden on xl+ */}
+                <div className="xl:hidden mt-3 space-y-2">
+                  {(["Leather", "Rubber", "Fabric", "Metal"] as const).map((cat) => {
+                    const isExpanded = mobileExpandedCategories.has(cat);
+                    const catStraps = getStrapsForCategory(cat);
+                    return (
+                      <div key={cat} className="overflow-hidden rounded-[1.25rem] border border-line bg-canvas/72">
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between px-3 py-2.5"
+                          onClick={() => toggleMobileCategory(cat)}
+                          aria-expanded={isExpanded}
+                        >
+                          <span className="text-sm font-semibold text-ink">{cat}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-xs text-slate-700">
+                              {catStraps.length}
+                            </span>
+                            <svg
+                              className={`h-4 w-4 text-muted transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </button>
+                        {isExpanded ? (
+                          <div className="px-2 pb-3">
+                            <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1" style={{ scrollSnapType: "x mandatory" }}>
+                              {catStraps.map((strap) => {
+                                const active = strapSourceMode === "library" && selectedLibraryStrap?.id === strap.id;
+                                return (
+                                  <div key={strap.id} className="min-w-[calc(100%-2rem)] snap-start">
+                                    <StrapDrawerButton
+                                      strap={strap}
+                                      active={active}
+                                      showCategory={false}
+                                      onClick={() => {
+                                        const catList = getStrapsForCategory(cat);
+                                        const catIdx = catList.findIndex((s) => s.id === strap.id);
+                                        setCategory(cat);
+                                        setStrapIndex(catIdx);
+                                        setSelectedLibraryStrap(strap);
+                                        setStrapSourceMode("library");
+                                        setShowFitBench(false);
+                                        setFitState("auto");
+                                        if (hasUserUpload) {
+                                          setHighlightPreviewWindow(true);
+                                          triggerStrapSettle();
+                                          window.setTimeout(() => {
+                                            previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                          }, 80);
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             ) : strapDrawerView === "saved" || strapDrawerView === "favorites" ? (
@@ -2149,6 +2249,13 @@ export default function HomePageClient() {
                   : "relative"
               }`}
             >
+              {pinchTooltipVisible ? (
+                <div className="pointer-events-none absolute inset-x-4 top-4 z-10 flex justify-center">
+                  <div className="rounded-full border border-[#d7c1a3] bg-white/95 px-4 py-2 text-sm font-semibold text-slate-700 shadow-[0_8px_20px_rgba(15,23,42,0.12)] backdrop-blur transition-opacity duration-500">
+                    Drag to adjust strap fit around the lug
+                  </div>
+                </div>
+              ) : null}
               {cropSourceUrl && originalWatchFile ? (
                 <CropEditor
                   file={originalWatchFile}
@@ -2157,7 +2264,25 @@ export default function HomePageClient() {
                   onClose={() => setCropSourceUrl(null)}
                 />
               ) : canRender ? (
-                <div className={`${highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""} ${animateStrapSettle ? "strap-settle-in" : ""}`}>
+                <div
+                  className={`${highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""} ${animateStrapSettle ? "strap-settle-in" : ""}`}
+                  onTouchStart={(e) => {
+                    if (e.touches.length === 2 && partA && partB && !lockView) {
+                      const dx = e.touches[0].clientX - e.touches[1].clientX;
+                      const dy = e.touches[0].clientY - e.touches[1].clientY;
+                      pinchRef.current = { startDist: Math.hypot(dx, dy), startGap: strapGap };
+                      showPinchTooltip();
+                    }
+                  }}
+                  onTouchMove={(e) => {
+                    if (e.touches.length !== 2 || !pinchRef.current || !partA || !partB || lockView) return;
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const ratio = Math.hypot(dx, dy) / pinchRef.current.startDist;
+                    setGapHalf(clamp(pinchRef.current.startGap * ratio, 250, 900));
+                  }}
+                  onTouchEnd={() => { pinchRef.current = null; }}
+                >
                   <CanvasPreview
                     ref={canvasRef}
                     watchSrc={watchSrc}
