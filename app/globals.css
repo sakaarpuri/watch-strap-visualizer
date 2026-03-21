@@ -84,6 +84,33 @@ body {
   transform: scale(1.03);
 }
 
+/* Mobile: expand touch target to 44px without changing visual appearance */
+@media (max-width: 768px) {
+  .range-slider {
+    height: 18px;
+  }
+
+  /* 44×44 touch target: 22px visible content + 11px transparent border all sides */
+  .range-slider::-webkit-slider-thumb {
+    width: 44px;
+    height: 44px;
+    border: 11px solid transparent;
+    border-radius: 50%;
+    background-clip: content-box;
+    box-shadow:
+      0 10px 18px rgba(15, 23, 42, 0.26),
+      inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  }
+
+  .range-slider::-moz-range-thumb {
+    width: 44px;
+    height: 44px;
+    border: 11px solid transparent;
+    border-radius: 50%;
+    background-clip: content-box;
+  }
+}
+
 .text-ink {
   color: var(--ink) !important;
 }
