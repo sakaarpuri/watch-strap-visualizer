@@ -1606,7 +1606,7 @@ export default function HomePageClient() {
       <main className="mx-auto max-w-[92rem] px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
       <header className="mb-10 sm:mb-12">
         <div className="flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
+          <p className="font-serif text-[2rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
             Watchstrapper
           </p>
           <div className="flex shrink-0 items-center gap-2">
