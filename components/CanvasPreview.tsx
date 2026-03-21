@@ -5,7 +5,6 @@ import {
   forwardRef,
   PointerEvent,
   KeyboardEvent,
-  TouchEvent,
   ReactNode,
   useEffect,
   useImperativeHandle,
@@ -112,7 +111,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const [cursor, setCursor] = useState<CSSProperties["cursor"]>("grab");
     const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
     const [shouldBlinkGuides, setShouldBlinkGuides] = useState(false);
-    const [swipeHinted, setSwipeHinted] = useState(false);
     const [strapTransition, setStrapTransition] = useState<{
       direction: 1 | -1;
       previousSrc: string;
@@ -144,8 +142,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       startScaleA: number;
       startScaleB: number;
     } | null>(null);
-    const touchSwipeRef = useRef<{ startX: number; startY: number } | null>(null);
-
     useEffect(() => {
       let active = true;
 
@@ -182,10 +178,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       const timeout = window.setTimeout(() => setStrapTransition(null), 240);
       return () => window.clearTimeout(timeout);
     }, [strapTransition]);
-
-    useEffect(() => {
-      if (showCycleControls) setSwipeHinted(false);
-    }, [showCycleControls]);
 
     useEffect(() => {
       if (!showLugGuides) return undefined;
@@ -476,7 +468,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     };
 
     const triggerCycle = (direction: 1 | -1) => {
-      setSwipeHinted(true);
       setIsTicking(true);
       window.setTimeout(() => setIsTicking(false), 90);
       const previousSrc = strapCanvasRef.current?.toDataURL("image/png");
@@ -497,26 +488,6 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       }
     };
 
-    const handleTouchStartCapture = (event: TouchEvent<HTMLDivElement>) => {
-      if (!showCycleControls || event.touches.length !== 1) return;
-      const touch = event.touches[0];
-      touchSwipeRef.current = { startX: touch.clientX, startY: touch.clientY };
-    };
-
-    const handleTouchEndCapture = (event: TouchEvent<HTMLDivElement>) => {
-      if (!showCycleControls || !touchSwipeRef.current) return;
-      const touch = event.changedTouches[0];
-      if (!touch) {
-        touchSwipeRef.current = null;
-        return;
-      }
-      const deltaX = touch.clientX - touchSwipeRef.current.startX;
-      const deltaY = touch.clientY - touchSwipeRef.current.startY;
-      touchSwipeRef.current = null;
-      if (Math.abs(deltaX) < 56 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
-      triggerCycle(deltaX < 0 ? 1 : -1);
-    };
-
     return (
       <div
         className={`rounded-2xl border p-2.5 transition sm:p-3 ${
@@ -532,32 +503,31 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
         <div className={controls ? "grid gap-3 xl:grid-cols-[minmax(0,1fr),220px]" : ""}>
           <div className="relative">
             {showCycleControls ? (
-              <button
-                type="button"
-                onClick={() => triggerCycle(-1)}
-                onKeyDown={handleCycleKeyDown}
-                disabled={locked}
-                className="absolute left-2 top-1/2 z-10 -translate-y-1/2 hidden sm:block rounded-full border border-cyan-200/80 bg-gradient-to-b from-white/95 to-cyan-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(59,130,246,.2)] hover:from-white hover:to-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Previous strap"
-              >
-                ←
-              </button>
+              <>
+                {/* Mobile: large circular tap target */}
+                <button
+                  type="button"
+                  onClick={() => triggerCycle(-1)}
+                  disabled={locked}
+                  className="sm:hidden absolute left-2 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-white/65 text-xl text-slate-700 shadow-lg backdrop-blur-sm transition-transform active:scale-95 disabled:opacity-40"
+                  aria-label="Previous strap"
+                >
+                  ←
+                </button>
+                {/* Desktop: original button */}
+                <button
+                  type="button"
+                  onClick={() => triggerCycle(-1)}
+                  onKeyDown={handleCycleKeyDown}
+                  disabled={locked}
+                  className="hidden sm:block absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-cyan-200/80 bg-gradient-to-b from-white/95 to-cyan-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(59,130,246,.2)] hover:from-white hover:to-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Previous strap"
+                >
+                  ←
+                </button>
+              </>
             ) : null}
-            <div
-              className="relative aspect-square w-full overflow-hidden rounded-xl border border-line bg-canvas"
-              onTouchStartCapture={handleTouchStartCapture}
-              onTouchEndCapture={handleTouchEndCapture}
-            >
-              {showCycleControls && !swipeHinted ? (
-                <>
-                  <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-2 sm:hidden transition-opacity duration-500">
-                    <div className="rounded-full bg-black/20 px-2 py-3 text-white/80 backdrop-blur-sm text-base leading-none">‹</div>
-                  </div>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-2 sm:hidden transition-opacity duration-500">
-                    <div className="rounded-full bg-black/20 px-2 py-3 text-white/80 backdrop-blur-sm text-base leading-none">›</div>
-                  </div>
-                </>
-              ) : null}
+            <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-line bg-canvas">
               <canvas
                 ref={watchCanvasRef}
                 className="absolute inset-0 h-full w-full bg-canvas"
@@ -598,16 +568,29 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
               <LugGuideOverlay guides={effectiveLugGuides} sceneZoom={sceneZoom} blink={shouldBlinkGuides} />
             ) : null}
             {showCycleControls ? (
-              <button
-                type="button"
-                onClick={() => triggerCycle(1)}
-                onKeyDown={handleCycleKeyDown}
-                disabled={locked}
-                className="absolute right-2 top-1/2 z-10 -translate-y-1/2 hidden sm:block rounded-full border border-fuchsia-200/80 bg-gradient-to-b from-white/95 to-fuchsia-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(217,70,239,.2)] hover:from-white hover:to-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Next strap"
-              >
-                →
-              </button>
+              <>
+                {/* Mobile: large circular tap target */}
+                <button
+                  type="button"
+                  onClick={() => triggerCycle(1)}
+                  disabled={locked}
+                  className="sm:hidden absolute right-2 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-white/65 text-xl text-slate-700 shadow-lg backdrop-blur-sm transition-transform active:scale-95 disabled:opacity-40"
+                  aria-label="Next strap"
+                >
+                  →
+                </button>
+                {/* Desktop: original button */}
+                <button
+                  type="button"
+                  onClick={() => triggerCycle(1)}
+                  onKeyDown={handleCycleKeyDown}
+                  disabled={locked}
+                  className="hidden sm:block absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full border border-fuchsia-200/80 bg-gradient-to-b from-white/95 to-fuchsia-50/85 px-3 py-2 text-lg text-slate-700 shadow-[0_10px_20px_rgba(217,70,239,.2)] hover:from-white hover:to-fuchsia-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Next strap"
+                >
+                  →
+                </button>
+              </>
             ) : null}
           </div>
           {controls ? <div className="self-start">{controls}</div> : null}

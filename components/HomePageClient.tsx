@@ -617,6 +617,7 @@ export default function HomePageClient() {
   const [mockupReadyHighlight, setMockupReadyHighlight] = useState(false);
   const [animateStrapSettle, setAnimateStrapSettle] = useState(false);
   const [mobileExpandedCategories, setMobileExpandedCategories] = useState<Set<string>>(new Set(["Leather"]));
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [pinchTooltipVisible, setPinchTooltipVisible] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -1927,29 +1928,6 @@ export default function HomePageClient() {
                     <ErrorText message={aiTools.cleanup.error} />
                   </div>
                 ) : null}
-                {canOpenTools && showFitBench ? (
-                  <div className="mt-4">
-                    <FitBenchPanel
-                      canRender={canRender}
-                      fitConfidence={fitConfidence}
-                      showLugGuides={showLugGuides}
-                      onToggleLugGuides={handleGuideToggle}
-                      onResetFit={() => void autoAlignStraps()}
-                      isAutoAligning={isAutoAligning}
-                      strapGap={strapGap}
-                      setGapHalf={setGapHalf}
-                      preserveSettings={preserveSettings}
-                      setPreserveSettings={setPreserveSettings}
-                      strapSizeUi={strapSizeUi}
-                      setStrapScale={setStrapScale}
-                      dialScale={dialScale}
-                      setDialScaleValue={setDialScaleValue}
-                      sceneZoom={sceneZoom}
-                      setSceneZoomValue={setSceneZoomValue}
-                      reCropCurrentWatch={reCropCurrentWatch}
-                    />
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </div>
@@ -2246,7 +2224,61 @@ export default function HomePageClient() {
 
             {strapDrawerView === "library" ? (
               <>
-                <div className="mt-4 flex flex-wrap gap-1.5">
+                {/* Mobile: collapsible filter pill */}
+                <div className="mt-4 sm:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setFiltersExpanded((prev) => !prev)}
+                    className="flex w-full items-center justify-between rounded-full border border-line bg-canvas px-3.5 py-2 text-sm font-medium text-ink"
+                  >
+                    <span>
+                      {category}
+                      <span className="ml-2 rounded-full bg-slate-200/70 px-2 py-0.5 text-xs text-slate-700">
+                        {getStrapsForCategory(category).length}
+                      </span>
+                    </span>
+                    <span className={`ml-2 text-xs transition-transform duration-200 ${filtersExpanded ? "rotate-180" : ""}`}>▾</span>
+                  </button>
+                  {filtersExpanded ? (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {STRAP_CATEGORIES.map((option) => {
+                        const active = option === category;
+                        const count = getStrapsForCategory(option).length;
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => {
+                              autoSelectFirstStrapRef.current = true;
+                              setCategory(option);
+                              setStrapIndex(0);
+                              setSelectedLibraryStrap(null);
+                              setSelectedSavedStrap(null);
+                              setStrapSourceMode("library");
+                              setShowFitBench(false);
+                              setFitState("auto");
+                              setFiltersExpanded(false);
+                            }}
+                            className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                              active
+                                ? "atelier-pill-active"
+                                : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                            }`}
+                            aria-pressed={active}
+                          >
+                            {option}
+                            <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Desktop: full horizontal filter bar */}
+                <div className="mt-4 hidden flex-wrap gap-1.5 sm:flex">
                   {STRAP_CATEGORIES.map((option) => {
                     const active = option === category;
                     const count = getStrapsForCategory(option).length;
@@ -3012,6 +3044,56 @@ export default function HomePageClient() {
           </p>
         )}
       </ModalShell>
+
+      {/* Mobile Fit Bench bottom sheet — xl:hidden */}
+      {canOpenTools ? (
+        <>
+          {showFitBench ? (
+            <div
+              className="xl:hidden fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
+              onClick={() => setShowFitBench(false)}
+            />
+          ) : null}
+          <div
+            className={`xl:hidden fixed inset-x-0 bottom-0 z-50 transition-transform duration-300 ease-out ${
+              showFitBench ? "translate-y-0" : "translate-y-full"
+            }`}
+          >
+            <div className="mx-auto max-w-lg rounded-t-3xl border-t border-line bg-white/96 px-5 pb-8 pt-4 shadow-[0_-8px_30px_rgba(15,23,42,0.14)] backdrop-blur-md">
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300" />
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">Fit Bench</p>
+                <button
+                  type="button"
+                  onClick={() => setShowFitBench(false)}
+                  className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                >
+                  Close
+                </button>
+              </div>
+              <FitBenchPanel
+                canRender={canRender}
+                fitConfidence={fitConfidence}
+                showLugGuides={showLugGuides}
+                onToggleLugGuides={handleGuideToggle}
+                onResetFit={() => void autoAlignStraps()}
+                isAutoAligning={isAutoAligning}
+                strapGap={strapGap}
+                setGapHalf={setGapHalf}
+                preserveSettings={preserveSettings}
+                setPreserveSettings={setPreserveSettings}
+                strapSizeUi={strapSizeUi}
+                setStrapScale={setStrapScale}
+                dialScale={dialScale}
+                setDialScaleValue={setDialScaleValue}
+                sceneZoom={sceneZoom}
+                setSceneZoomValue={setSceneZoomValue}
+                reCropCurrentWatch={reCropCurrentWatch}
+              />
+            </div>
+          </div>
+        </>
+      ) : null}
     </main>
   );
 }
