@@ -2050,84 +2050,90 @@ export default function HomePageClient() {
             </div>
             {strapSourceMode === "library" ? (
               <div
-                className="glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 opacity-40 grayscale pointer-events-none select-none"
+                className="glass-card relative rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 pointer-events-none select-none overflow-hidden"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Similar Straps Available For Buying Elsewhere
-                    </p>
-                    {lockView ? (
-                      <p className="mt-1 text-sm text-muted">
-                        We may earn affiliate commission from one of the listed purchase links.
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-sm text-muted">
-                        Lock the view to see matching buying options for the strap on the bench.
-                      </p>
-                    )}
-                  </div>
-                  <span className="rounded-full border border-line bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                {/* Coming soon pill — full opacity, sits on top */}
+                <div className="absolute right-4 top-4 z-10">
+                  <span className="rounded-full bg-[#c8a87a] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-sm">
                     Coming soon
                   </span>
                 </div>
-                {lockView ? (
-                  similarProductsLoading ? (
-                    <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
-                  ) : similarProducts.length ? (
-                    <div className="mt-4 space-y-3">
-                      {similarProducts.map((product) => (
-                        <a
-                          key={product.id}
-                          href={product.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-4 rounded-2xl border border-[#d4cec4] bg-white/80 p-3 transition hover:bg-white/88"
-                        >
-                          <div className="w-36 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={product.imageSrc}
-                              alt={product.title}
-                              className="h-36 w-full object-contain p-2.5"
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                              {product.store}
-                            </p>
-                          </div>
-                          <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
-                            View Product
-                          </span>
-                        </a>
-                      ))}
+                {/* Faded content */}
+                <div className="opacity-40 grayscale">
+                  <div className="flex items-start justify-between gap-3 pr-24">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                      Similar Straps Available For Buying Elsewhere
+                      </p>
+                      {lockView ? (
+                        <p className="mt-1 text-sm text-muted">
+                          We may earn affiliate commission from one of the listed purchase links.
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-sm text-muted">
+                          Lock the view to see matching buying options for the strap on the bench.
+                        </p>
+                      )}
                     </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted">
-                      No close store match yet for this locked strap.
-                    </p>
-                  )
-                ) : (
-                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/42 p-4 grayscale-[0.18]">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <MaterialInset
-                        src="/strap-selection-kie/cognac-grain-leather-buckle.png"
-                        label="Leather strap sample"
-                        fit="contain"
-                      />
-                      <MaterialInset
-                        src="/strap-selection-kie/black-rubber-buckle.png"
-                        label="Rubber strap sample"
-                        fit="contain"
-                      />
-                    </div>
-                    <p className="mt-3 text-sm text-slate-500">
-                      Shopping links stay tucked away until the fit is locked in.
-                    </p>
                   </div>
-                )}
+                  {lockView ? (
+                    similarProductsLoading ? (
+                      <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+                    ) : similarProducts.length ? (
+                      <div className="mt-4 space-y-3">
+                        {similarProducts.map((product) => (
+                          <a
+                            key={product.id}
+                            href={product.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-4 rounded-2xl border border-[#d4cec4] bg-white/80 p-3 transition hover:bg-white/88"
+                          >
+                            <div className="w-36 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={product.imageSrc}
+                                alt={product.title}
+                                className="h-36 w-full object-contain p-2.5"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
+                              <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
+                                {product.store}
+                              </p>
+                            </div>
+                            <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
+                              View Product
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm text-muted">
+                        No close store match yet for this locked strap.
+                      </p>
+                    )
+                  ) : (
+                    <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/42 p-4 grayscale-[0.18]">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <MaterialInset
+                          src="/strap-selection-kie/cognac-grain-leather-buckle.png"
+                          label="Leather strap sample"
+                          fit="contain"
+                        />
+                        <MaterialInset
+                          src="/strap-selection-kie/black-rubber-buckle.png"
+                          label="Rubber strap sample"
+                          fit="contain"
+                        />
+                      </div>
+                      <p className="mt-3 text-sm text-slate-500">
+                        Shopping links stay tucked away until the fit is locked in.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : null}
             {inlineMockupUrl ? (
@@ -2709,84 +2715,90 @@ export default function HomePageClient() {
           </div>
           {strapSourceMode === "library" ? (
             <div
-              className="glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 opacity-40 grayscale pointer-events-none select-none"
+              className="glass-card relative rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 pointer-events-none select-none overflow-hidden"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Similar Straps Available For Buying Elsewhere
-                  </p>
-                  {lockView ? (
-                    <p className="mt-1 text-sm text-muted">
-                      We may earn affiliate commission from one of the listed purchase links.
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted">
-                      Lock the view to see matching buying options for the strap on the bench.
-                    </p>
-                  )}
-                </div>
-                <span className="rounded-full border border-line bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+              {/* Coming soon pill — full opacity, sits on top */}
+              <div className="absolute right-4 top-4 z-10">
+                <span className="rounded-full bg-[#c8a87a] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-sm">
                   Coming soon
                 </span>
               </div>
-              {lockView ? (
-                similarProductsLoading ? (
-                  <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
-                ) : similarProducts.length ? (
-                  <div className="mt-4 space-y-3">
-                    {similarProducts.map((product) => (
-                      <a
-                        key={product.id}
-                        href={product.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-4 rounded-2xl border border-[#d4cec4] bg-white/80 p-3 transition hover:bg-white/88"
-                      >
-                        <div className="w-36 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={product.imageSrc}
-                            alt={product.title}
-                            className="h-36 w-full object-contain p-2.5"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                            {product.store}
-                          </p>
-                        </div>
-                        <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
-                          View Product
-                        </span>
-                      </a>
-                    ))}
+              {/* Faded content */}
+              <div className="opacity-40 grayscale">
+                <div className="flex items-start justify-between gap-3 pr-24">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Similar Straps Available For Buying Elsewhere
+                    </p>
+                    {lockView ? (
+                      <p className="mt-1 text-sm text-muted">
+                        We may earn affiliate commission from one of the listed purchase links.
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted">
+                        Lock the view to see matching buying options for the strap on the bench.
+                      </p>
+                    )}
                   </div>
-                ) : (
-                  <p className="mt-3 text-sm text-muted">
-                    No close store match yet for this locked strap.
-                  </p>
-                )
-              ) : (
-                <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/42 p-4 grayscale-[0.18]">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <MaterialInset
-                      src="/strap-selection-kie/cognac-grain-leather-buckle.png"
-                      label="Leather strap sample"
-                      fit="contain"
-                    />
-                    <MaterialInset
-                      src="/strap-selection-kie/black-rubber-buckle.png"
-                      label="Rubber strap sample"
-                      fit="contain"
-                    />
-                  </div>
-                  <p className="mt-3 text-sm text-slate-500">
-                    Shopping links stay tucked away until the fit is locked in.
-                  </p>
                 </div>
-              )}
+                {lockView ? (
+                  similarProductsLoading ? (
+                    <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+                  ) : similarProducts.length ? (
+                    <div className="mt-4 space-y-3">
+                      {similarProducts.map((product) => (
+                        <a
+                          key={product.id}
+                          href={product.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-4 rounded-2xl border border-[#d4cec4] bg-white/80 p-3 transition hover:bg-white/88"
+                        >
+                          <div className="w-36 shrink-0 overflow-hidden rounded-[1rem] border border-[#d4cec4] bg-slate-50">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={product.imageSrc}
+                              alt={product.title}
+                              className="h-36 w-full object-contain p-2.5"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
+                            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
+                              {product.store}
+                            </p>
+                          </div>
+                          <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
+                            View Product
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted">
+                      No close store match yet for this locked strap.
+                    </p>
+                  )
+                ) : (
+                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/42 p-4 grayscale-[0.18]">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <MaterialInset
+                        src="/strap-selection-kie/cognac-grain-leather-buckle.png"
+                        label="Leather strap sample"
+                        fit="contain"
+                      />
+                      <MaterialInset
+                        src="/strap-selection-kie/black-rubber-buckle.png"
+                        label="Rubber strap sample"
+                        fit="contain"
+                      />
+                    </div>
+                    <p className="mt-3 text-sm text-slate-500">
+                      Shopping links stay tucked away until the fit is locked in.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           ) : null}
           {inlineMockupUrl ? (
