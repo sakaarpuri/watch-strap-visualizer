@@ -229,7 +229,7 @@ export default function CropEditor({ file, sourceUrl, onApply, onClose }: CropEd
   const cropBottom = VIEWPORT_SIZE - cropY - cropSize;
 
   return (
-    <div className="glass-card rounded-2xl p-5 sm:p-6">
+    <div className="rounded-2xl p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-lg font-semibold text-ink">Crop Photo</p>
