@@ -3065,7 +3065,7 @@ export default function HomePageClient() {
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className="mx-auto max-w-lg rounded-t-3xl border-t border-line bg-white/96 px-5 pb-8 pt-4 shadow-[0_-8px_30px_rgba(15,23,42,0.14)] backdrop-blur-md"
+              className="mx-auto max-w-lg rounded-t-3xl border-t border-line bg-white/96 px-5 pb-8 pt-4 shadow-[0_-8px_30px_rgba(15,23,42,0.14)] backdrop-blur-md max-h-[55vh] overflow-y-auto"
               style={{ overscrollBehavior: "contain" }}
             >
               <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300" />
