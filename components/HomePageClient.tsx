@@ -3431,7 +3431,7 @@ function PreviewUploadStage({
                   decoding="async"
                   fetchPriority="high"
                 />
-                <p className="mt-1 text-[11px] font-semibold leading-tight text-ink sm:text-xs">
+                <p className="mt-1 w-full truncate text-[10px] font-semibold leading-tight text-ink sm:text-xs">
                   {sample.label}
                 </p>
               </button>
