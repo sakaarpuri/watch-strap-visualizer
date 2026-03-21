@@ -112,6 +112,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     const [cursor, setCursor] = useState<CSSProperties["cursor"]>("grab");
     const [lugGuides, setLugGuides] = useState<PreviewLugGuides | null>(null);
     const [shouldBlinkGuides, setShouldBlinkGuides] = useState(false);
+    const [swipeHinted, setSwipeHinted] = useState(false);
     const [strapTransition, setStrapTransition] = useState<{
       direction: 1 | -1;
       previousSrc: string;
@@ -181,6 +182,10 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
       const timeout = window.setTimeout(() => setStrapTransition(null), 240);
       return () => window.clearTimeout(timeout);
     }, [strapTransition]);
+
+    useEffect(() => {
+      if (showCycleControls) setSwipeHinted(false);
+    }, [showCycleControls]);
 
     useEffect(() => {
       if (!showLugGuides) return undefined;
@@ -471,6 +476,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
     };
 
     const triggerCycle = (direction: 1 | -1) => {
+      setSwipeHinted(true);
       setIsTicking(true);
       window.setTimeout(() => setIsTicking(false), 90);
       const previousSrc = strapCanvasRef.current?.toDataURL("image/png");
@@ -542,6 +548,16 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
               onTouchStartCapture={handleTouchStartCapture}
               onTouchEndCapture={handleTouchEndCapture}
             >
+              {showCycleControls && !swipeHinted ? (
+                <>
+                  <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-2 sm:hidden transition-opacity duration-500">
+                    <div className="rounded-full bg-black/20 px-2 py-3 text-white/80 backdrop-blur-sm text-base leading-none">‹</div>
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-2 sm:hidden transition-opacity duration-500">
+                    <div className="rounded-full bg-black/20 px-2 py-3 text-white/80 backdrop-blur-sm text-base leading-none">›</div>
+                  </div>
+                </>
+              ) : null}
               <canvas
                 ref={watchCanvasRef}
                 className="absolute inset-0 h-full w-full bg-canvas"

@@ -651,6 +651,7 @@ export default function HomePageClient() {
   const firstRenderedStrapRef = useRef(false);
   const pinchRef = useRef<{ startDist: number; startGap: number } | null>(null);
   const pinchTooltipTimerRef = useRef<number | null>(null);
+  const autoSelectFirstStrapRef = useRef(false);
 
   const clearMockupReadyHighlight = () => {
     setMockupReadyHighlight(false);
@@ -910,7 +911,12 @@ export default function HomePageClient() {
 
   useEffect(() => {
     setStrapIndex(0);
-    if (selectedLibraryStrap && !filteredLibraryStraps.some((strap) => strap.id === selectedLibraryStrap.id)) {
+    if (autoSelectFirstStrapRef.current) {
+      autoSelectFirstStrapRef.current = false;
+      if (filteredLibraryStraps.length > 0) {
+        setSelectedLibraryStrap(filteredLibraryStraps[0]);
+      }
+    } else if (selectedLibraryStrap && !filteredLibraryStraps.some((strap) => strap.id === selectedLibraryStrap.id)) {
       setSelectedLibraryStrap(null);
     }
   }, [filteredLibraryStraps, selectedLibraryStrap]);
@@ -1626,17 +1632,9 @@ export default function HomePageClient() {
             </button>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
-            Watchstrapper
-          </p>
-          <a
-            href="#"
-            className="rounded-full border border-line bg-white/85 px-4 py-2 text-sm font-semibold text-ink shadow-[0_1px_3px_rgba(15,23,42,0.07)] transition hover:bg-white"
-          >
-            Sign in
-          </a>
-        </div>
+        <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
+          Watchstrapper
+        </p>
         <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[1.4rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[2.2rem]">
           See any strap on your watch before you buy.
         </h1>
@@ -2257,6 +2255,7 @@ export default function HomePageClient() {
                         key={option}
                         type="button"
                         onClick={() => {
+                          autoSelectFirstStrapRef.current = true;
                           setCategory(option);
                           setStrapIndex(0);
                           setSelectedLibraryStrap(null);
