@@ -1673,486 +1673,9 @@ export default function HomePageClient() {
             : "xl:grid-cols-[18.5rem_minmax(0,1fr)]"
         }`}
       >
-        <aside className="order-2 space-y-3 xl:order-1 xl:pt-14">
-          <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
-                  Strap Drawer
-                </p>
-                <p className="mt-2 text-[1.55rem] font-serif leading-none text-[#2b241d]">
-                  Browse the strap box
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 inline-flex flex-wrap rounded-full border border-line bg-canvas p-1">
-              {[
-                { view: "library" as const, label: "Library" },
-                { view: "saved" as const, label: "My Straps", disabled: !user },
-                { view: "favorites" as const, label: "Favorites", disabled: !user },
-                { view: "uploaded" as const, label: "Your Strap" }
-              ].map((option) => {
-                const active = strapDrawerView === option.view;
-                return (
-                  <button
-                    key={option.view}
-                    type="button"
-                    onClick={() => {
-                      if (option.disabled) {
-                        setAuthMode("sign-in");
-                        setAuthError("Sign in to view your saved straps and favorites.");
-                        setShowAuthDialog(true);
-                        return;
-                      }
-                      setStrapDrawerView(option.view);
-                      if (option.view === "uploaded") {
-                        setStrapSourceMode("uploaded");
-                      }
-                    }}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      active
-                        ? "atelier-pill-active"
-                        : "text-ink hover:bg-white"
-                    } ${option.disabled ? "opacity-60" : ""}`}
-                    aria-pressed={active}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {strapDrawerView === "library" ? (
-              <>
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {STRAP_CATEGORIES.map((option) => {
-                    const active = option === category;
-                    const count = getStrapsForCategory(option).length;
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => {
-                          setCategory(option);
-                          setStrapIndex(0);
-                          setSelectedLibraryStrap(null);
-                          setSelectedSavedStrap(null);
-                          setStrapSourceMode("library");
-                          setShowFitBench(false);
-                          setFitState("auto");
-                        }}
-                        data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
-                        className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
-                          active
-                            ? "atelier-pill-active"
-                            : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
-                        }`}
-                        aria-pressed={active}
-                      >
-                        {option}
-                        <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="mt-3 xl:hidden">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7c7165]">
-                      Style Mood
-                    </p>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setStyleFilter("All styles")}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                        styleFilter === "All styles"
-                          ? "atelier-pill-active"
-                          : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
-                      }`}
-                      aria-pressed={styleFilter === "All styles"}
-                    >
-                      All styles
-                    </button>
-                    {STRAP_STYLE_TAGS.map((tag) => {
-                      const count = strapsInCategory.filter((strap) => strap.styleTags.includes(tag)).length;
-                      if (!count) return null;
-                      const active = styleFilter === tag;
-                      return (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => setStyleFilter(tag)}
-                          className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition ${
-                            active
-                              ? "atelier-pill-active"
-                              : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
-                          }`}
-                          aria-pressed={active}
-                        >
-                          {tag}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                {/* Desktop list — hidden on mobile */}
-                <div className="hidden xl:block strap-browser-shell mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
-                    {styleFilter === "All styles"
-                      ? category === "All categories"
-                        ? "Full Strap Drawer"
-                        : `Inside ${category}`
-                      : `${styleFilter} straps`}
-                  </p>
-                  <div className="strap-browser-stack mt-3 max-h-[42rem] overflow-y-auto pr-1">
-                    {libraryDrawerItems.map((item, index) => {
-                      const strap = item.libraryStrap as StrapVariant;
-                      const active = strapSourceMode === "library" && selectedLibraryStrap?.id === strap.id;
-                      return (
-                        <StrapDrawerButton
-                          key={strap.id}
-                          onClick={() => {
-                            if (!hasUserUpload) {
-                              setPendingStrapSelection({ sourceType: "library", strap, index });
-                              setSelectedLibraryStrap(null);
-                              setSelectedSavedStrap(null);
-                              setStrapSourceMode("library");
-                              setShowFitBench(false);
-                              setFitState("auto");
-                              setHighlightPreviewWindow(true);
-                              return;
-                            }
-                            setPendingStrapSelection(null);
-                            setStrapIndex(index);
-                            setSelectedLibraryStrap(strap);
-                            setSelectedSavedStrap(null);
-                            setStrapSourceMode("library");
-                            setShowFitBench(false);
-                            setFitState("auto");
-                            if (hasUserUpload) {
-                              setHighlightPreviewWindow(true);
-                              triggerStrapSettle();
-                              window.setTimeout(() => {
-                                previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                              }, 80);
-                            }
-                          }}
-                          strap={strap}
-                          active={
-                            !hasUserUpload && pendingStrapSelection?.sourceType === "library"
-                              ? pendingStrapSelection.strap.id === strap.id
-                              : active
-                          }
-                          showCategory={false}
-                          isFavorite={favoriteLookup.has(`library:${strap.id}`)}
-                          onToggleFavorite={() => void handleFavoriteToggle(item)}
-                          stackIndex={index}
-                          totalItems={libraryDrawerItems.length}
-                        />
-                      );
-                    })}
-                    {!libraryDrawerItems.length ? (
-                      <p className="rounded-2xl border border-dashed border-line bg-white/60 px-4 py-6 text-sm text-muted">
-                        No straps in this category match the current style filter yet.
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* Mobile accordion — hidden on xl+ */}
-                <div className="xl:hidden mt-3 space-y-2">
-                  {(["Leather", "Rubber", "Fabric", "Metal"] as const).map((cat) => {
-                    const isExpanded = mobileExpandedCategories.has(cat);
-                    const catStraps = getStrapsForCategory(cat);
-                    return (
-                      <div key={cat} className="overflow-hidden rounded-[1.25rem] border border-line bg-canvas/72">
-                        <button
-                          type="button"
-                          className="flex w-full items-center justify-between px-3 py-2.5"
-                          onClick={() => toggleMobileCategory(cat)}
-                          aria-expanded={isExpanded}
-                        >
-                          <span className="text-sm font-semibold text-ink">{cat}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-xs text-slate-700">
-                              {catStraps.length}
-                            </span>
-                            <svg
-                              className={`h-4 w-4 text-muted transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </button>
-                        {isExpanded ? (
-                          <div className="px-2 pb-3">
-                            <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1" style={{ scrollSnapType: "x mandatory" }}>
-                              {catStraps.map((strap) => {
-                                const active = strapSourceMode === "library" && selectedLibraryStrap?.id === strap.id;
-                                return (
-                                  <div key={strap.id} className="min-w-[calc(100%-2rem)] snap-start">
-                                    <StrapDrawerButton
-                                      strap={strap}
-                                      active={active}
-                                      showCategory={false}
-                                      onClick={() => {
-                                        const catList = getStrapsForCategory(cat);
-                                        const catIdx = catList.findIndex((s) => s.id === strap.id);
-                                        setCategory(cat);
-                                        setStrapIndex(catIdx);
-                                        setSelectedLibraryStrap(strap);
-                                        setStrapSourceMode("library");
-                                        setShowFitBench(false);
-                                        setFitState("auto");
-                                        if (hasUserUpload) {
-                                          setHighlightPreviewWindow(true);
-                                          triggerStrapSettle();
-                                          window.setTimeout(() => {
-                                            previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                                          }, 80);
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : strapDrawerView === "saved" || strapDrawerView === "favorites" ? (
-              <div className="mt-4 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
-                    {strapDrawerView === "saved" ? "My Straps" : "Favorite Straps"}
-                  </p>
-                  {!user ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthMode("sign-in");
-                        setShowAuthDialog(true);
-                      }}
-                      className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-                    >
-                      Sign in
-                    </button>
-                  ) : null}
-                </div>
-                {activeDrawerItems.length ? (
-                  <div className="mt-3 space-y-3">
-                    {activeDrawerItems.map((item, index) => {
-                      const saved = item.savedStrap;
-                      const library = item.libraryStrap;
-                      return (
-                        <div key={item.key} className="space-y-2">
-                          <StrapDrawerButton
-                            strap={{
-                              id: item.id,
-                              label: item.label,
-                              category: item.category,
-                              styleTags: library?.styleTags ?? [],
-                              strapASrc: item.strapASrc,
-                              strapBSrc: item.strapBSrc,
-                              tint: library?.tint ?? { name: "Original", color: "#000000", alpha: 0 },
-                              shopping: library?.shopping ?? {
-                                material: "leather",
-                                styleFamily: "classic",
-                                colorFamily: "brown",
-                                hardwareFinish: "silver",
-                                keywords: []
-                              },
-                              joinShape: library?.joinShape
-                            }}
-                            active={
-                              !hasUserUpload && pendingStrapSelection
-                                ? pendingStrapSelection.sourceType === item.sourceType &&
-                                  (item.sourceType === "saved"
-                                    ? pendingStrapSelection.strap.id === saved?.id
-                                    : pendingStrapSelection.strap.id === library?.id)
-                                : item.sourceType === "saved"
-                                  ? strapSourceMode === "saved" && selectedSavedStrap?.id === saved?.id
-                                  : strapSourceMode === "library" && selectedLibraryStrap?.id === library?.id
-                            }
-                            showCategory={false}
-                            onClick={() => {
-                              if (!hasUserUpload) {
-                                if (item.sourceType === "saved" && saved) {
-                                  setPendingStrapSelection({ sourceType: "saved", strap: saved });
-                                  setStrapSourceMode("saved");
-                                }
-                                if (item.sourceType === "library" && library) {
-                                  setPendingStrapSelection({ sourceType: "library", strap: library, index });
-                                  setStrapSourceMode("library");
-                                }
-                                setSelectedLibraryStrap(null);
-                                setSelectedSavedStrap(null);
-                                setShowFitBench(false);
-                                setFitState("auto");
-                                setHighlightPreviewWindow(true);
-                                return;
-                              }
-                              setPendingStrapSelection(null);
-                              if (item.sourceType === "saved" && saved) {
-                                setSelectedSavedStrap(saved);
-                                setSelectedLibraryStrap(null);
-                                setStrapSourceMode("saved");
-                              }
-                              if (item.sourceType === "library" && library) {
-                                setSelectedLibraryStrap(library);
-                                setSelectedSavedStrap(null);
-                                setStrapSourceMode("library");
-                              }
-                              setShowFitBench(false);
-                              setFitState("auto");
-                              if (hasUserUpload) {
-                                triggerStrapSettle();
-                              }
-                            }}
-                            isFavorite={favoriteLookup.has(`${item.sourceType}:${item.id}`)}
-                            onToggleFavorite={() => void handleFavoriteToggle(item)}
-                            stackIndex={index}
-                            totalItems={activeDrawerItems.length}
-                          />
-                          {item.sourceType === "saved" && saved ? (
-                            <div className="flex flex-wrap gap-2 pl-2">
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  const nextLabel = window.prompt("Rename this saved strap.", saved.label)?.trim();
-                                  if (!nextLabel || nextLabel === saved.label) return;
-                                  try {
-                                    await renameStrap(saved.id, nextLabel);
-                                  } catch (error) {
-                                    setAuthError(error instanceof Error ? error.message : "We couldn't rename that strap.");
-                                  }
-                                }}
-                                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-                              >
-                                Rename
-                              </button>
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  if (!window.confirm(`Delete ${saved.label} from My Straps?`)) return;
-                                  try {
-                                    await deleteStrap(saved);
-                                  } catch (error) {
-                                    setAuthError(error instanceof Error ? error.message : "We couldn't delete that strap.");
-                                  }
-                                }}
-                                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm text-muted">
-                    {user
-                      ? strapDrawerView === "saved"
-                        ? "Save a split strap to build your own drawer."
-                        : "Favorite straps you love and they will collect here."
-                      : "Sign in to use your saved strap collection."}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="mt-4 space-y-4">
-                <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                  <p className="text-sm uppercase tracking-[0.12em] text-muted">Your Strap Sheet</p>
-                  <p className="mt-2 text-sm text-muted">
-                    Upload one straight pair image: buckle side on top, tail side below.
-                  </p>
-                  <input
-                    ref={strapUploadInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(event) => {
-                      const nextFile = event.target.files?.[0];
-                      if (!nextFile) return;
-                      onUploadStrapSheet(nextFile);
-                      event.currentTarget.value = "";
-                    }}
-                  />
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => strapUploadInputRef.current?.click()}
-                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
-                    >
-                      {hasUploadedStrap ? "Replace Strap Sheet" : "Upload Strap Sheet"}
-                    </button>
-                    {uploadedStrapSheetUrl ? (
-                      <button
-                        type="button"
-                        onClick={() => setStrapSplitSourceUrl(uploadedStrapSheetUrl)}
-                        className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
-                      >
-                        Re-open Split Tool
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => void handleSaveStrapToCollection()}
-                      disabled={!hasUploadedStrap}
-                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
-                    >
-                      Save Strap to Collection
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
-                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Current Upload
-                  </p>
-                  {hasUploadedStrap ? (
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      {[
-                        { title: "Part A", src: uploadedStrapPartA?.url },
-                        { title: "Part B", src: uploadedStrapPartB?.url }
-                      ].map((item) => (
-                        <div key={item.title} className="rounded-2xl border border-line bg-white/80 p-3">
-                          <p className="text-sm font-semibold text-ink">{item.title}</p>
-                          <div className="mt-2 flex h-36 items-center justify-center rounded-xl border border-line bg-slate-50">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={item.src} alt={item.title} className="h-full w-full object-contain p-2" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted">
-                      No strap loaded yet. Upload a product-style pair image and we’ll split it into the preview.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-          </div>
-        </aside>
-
         <section
           ref={previewSectionRef}
-          className={`relative order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
+          className={`relative min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
         >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -2673,6 +2196,415 @@ export default function HomePageClient() {
             </div>
           </div>
         </section>
+
+        <aside className="space-y-3 xl:order-1 xl:pt-14">
+          <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
+                  Strap Drawer
+                </p>
+                <p className="mt-2 text-[1.55rem] font-serif leading-none text-[#2b241d]">
+                  Browse the strap box
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 inline-flex flex-wrap rounded-full border border-line bg-canvas p-1">
+              {[
+                { view: "library" as const, label: "Library" },
+                { view: "saved" as const, label: "My Straps", disabled: !user },
+                { view: "favorites" as const, label: "Favorites", disabled: !user },
+                { view: "uploaded" as const, label: "Your Strap" }
+              ].map((option) => {
+                const active = strapDrawerView === option.view;
+                return (
+                  <button
+                    key={option.view}
+                    type="button"
+                    onClick={() => {
+                      if (option.disabled) {
+                        setAuthMode("sign-in");
+                        setAuthError("Sign in to view your saved straps and favorites.");
+                        setShowAuthDialog(true);
+                        return;
+                      }
+                      setStrapDrawerView(option.view);
+                      if (option.view === "uploaded") {
+                        setStrapSourceMode("uploaded");
+                      }
+                    }}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      active
+                        ? "atelier-pill-active"
+                        : "text-ink hover:bg-white"
+                    } ${option.disabled ? "opacity-60" : ""}`}
+                    aria-pressed={active}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {strapDrawerView === "library" ? (
+              <>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {STRAP_CATEGORIES.map((option) => {
+                    const active = option === category;
+                    const count = getStrapsForCategory(option).length;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => {
+                          setCategory(option);
+                          setStrapIndex(0);
+                          setSelectedLibraryStrap(null);
+                          setSelectedSavedStrap(null);
+                          setStrapSourceMode("library");
+                          setShowFitBench(false);
+                          setFitState("auto");
+                        }}
+                        data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
+                        className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                          active
+                            ? "atelier-pill-active"
+                            : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                        }`}
+                        aria-pressed={active}
+                      >
+                        {option}
+                        <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${active ? "bg-white/20 text-white" : "bg-slate-200/70 text-slate-700"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 xl:hidden">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7c7165]">
+                      Style Mood
+                    </p>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setStyleFilter("All styles")}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        styleFilter === "All styles"
+                          ? "atelier-pill-active"
+                          : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                      }`}
+                      aria-pressed={styleFilter === "All styles"}
+                    >
+                      All styles
+                    </button>
+                    {STRAP_STYLE_TAGS.map((tag) => {
+                      const count = strapsInCategory.filter((strap) => strap.styleTags.includes(tag)).length;
+                      if (!count) return null;
+                      const active = styleFilter === tag;
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => setStyleFilter(tag)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition ${
+                            active
+                              ? "atelier-pill-active"
+                              : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                          }`}
+                          aria-pressed={active}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Desktop list — hidden on mobile */}
+                <div className="strap-browser-shell mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
+                    {styleFilter === "All styles"
+                      ? category === "All categories"
+                        ? "Full Strap Drawer"
+                        : `Inside ${category}`
+                      : `${styleFilter} straps`}
+                  </p>
+                  <div className="strap-browser-stack mt-3 max-h-[42rem] overflow-y-auto pr-1">
+                    {libraryDrawerItems.map((item, index) => {
+                      const strap = item.libraryStrap as StrapVariant;
+                      const active = strapSourceMode === "library" && selectedLibraryStrap?.id === strap.id;
+                      return (
+                        <StrapDrawerButton
+                          key={strap.id}
+                          onClick={() => {
+                            if (!hasUserUpload) {
+                              setPendingStrapSelection({ sourceType: "library", strap, index });
+                              setSelectedLibraryStrap(null);
+                              setSelectedSavedStrap(null);
+                              setStrapSourceMode("library");
+                              setShowFitBench(false);
+                              setFitState("auto");
+                              setHighlightPreviewWindow(true);
+                              return;
+                            }
+                            setPendingStrapSelection(null);
+                            setStrapIndex(index);
+                            setSelectedLibraryStrap(strap);
+                            setSelectedSavedStrap(null);
+                            setStrapSourceMode("library");
+                            setShowFitBench(false);
+                            setFitState("auto");
+                            if (hasUserUpload) {
+                              setHighlightPreviewWindow(true);
+                              triggerStrapSettle();
+                              window.setTimeout(() => {
+                                previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }, 80);
+                            }
+                          }}
+                          strap={strap}
+                          active={
+                            !hasUserUpload && pendingStrapSelection?.sourceType === "library"
+                              ? pendingStrapSelection.strap.id === strap.id
+                              : active
+                          }
+                          showCategory={false}
+                          isFavorite={favoriteLookup.has(`library:${strap.id}`)}
+                          onToggleFavorite={() => void handleFavoriteToggle(item)}
+                          stackIndex={index}
+                          totalItems={libraryDrawerItems.length}
+                        />
+                      );
+                    })}
+                    {!libraryDrawerItems.length ? (
+                      <p className="rounded-2xl border border-dashed border-line bg-white/60 px-4 py-6 text-sm text-muted">
+                        No straps in this category match the current style filter yet.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+              </>
+            ) : strapDrawerView === "saved" || strapDrawerView === "favorites" ? (
+              <div className="mt-4 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
+                    {strapDrawerView === "saved" ? "My Straps" : "Favorite Straps"}
+                  </p>
+                  {!user ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode("sign-in");
+                        setShowAuthDialog(true);
+                      }}
+                      className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                    >
+                      Sign in
+                    </button>
+                  ) : null}
+                </div>
+                {activeDrawerItems.length ? (
+                  <div className="mt-3 space-y-3">
+                    {activeDrawerItems.map((item, index) => {
+                      const saved = item.savedStrap;
+                      const library = item.libraryStrap;
+                      return (
+                        <div key={item.key} className="space-y-2">
+                          <StrapDrawerButton
+                            strap={{
+                              id: item.id,
+                              label: item.label,
+                              category: item.category,
+                              styleTags: library?.styleTags ?? [],
+                              strapASrc: item.strapASrc,
+                              strapBSrc: item.strapBSrc,
+                              tint: library?.tint ?? { name: "Original", color: "#000000", alpha: 0 },
+                              shopping: library?.shopping ?? {
+                                material: "leather",
+                                styleFamily: "classic",
+                                colorFamily: "brown",
+                                hardwareFinish: "silver",
+                                keywords: []
+                              },
+                              joinShape: library?.joinShape
+                            }}
+                            active={
+                              !hasUserUpload && pendingStrapSelection
+                                ? pendingStrapSelection.sourceType === item.sourceType &&
+                                  (item.sourceType === "saved"
+                                    ? pendingStrapSelection.strap.id === saved?.id
+                                    : pendingStrapSelection.strap.id === library?.id)
+                                : item.sourceType === "saved"
+                                  ? strapSourceMode === "saved" && selectedSavedStrap?.id === saved?.id
+                                  : strapSourceMode === "library" && selectedLibraryStrap?.id === library?.id
+                            }
+                            showCategory={false}
+                            onClick={() => {
+                              if (!hasUserUpload) {
+                                if (item.sourceType === "saved" && saved) {
+                                  setPendingStrapSelection({ sourceType: "saved", strap: saved });
+                                  setStrapSourceMode("saved");
+                                }
+                                if (item.sourceType === "library" && library) {
+                                  setPendingStrapSelection({ sourceType: "library", strap: library, index });
+                                  setStrapSourceMode("library");
+                                }
+                                setSelectedLibraryStrap(null);
+                                setSelectedSavedStrap(null);
+                                setShowFitBench(false);
+                                setFitState("auto");
+                                setHighlightPreviewWindow(true);
+                                return;
+                              }
+                              setPendingStrapSelection(null);
+                              if (item.sourceType === "saved" && saved) {
+                                setSelectedSavedStrap(saved);
+                                setSelectedLibraryStrap(null);
+                                setStrapSourceMode("saved");
+                              }
+                              if (item.sourceType === "library" && library) {
+                                setSelectedLibraryStrap(library);
+                                setSelectedSavedStrap(null);
+                                setStrapSourceMode("library");
+                              }
+                              setShowFitBench(false);
+                              setFitState("auto");
+                              if (hasUserUpload) {
+                                triggerStrapSettle();
+                              }
+                            }}
+                            isFavorite={favoriteLookup.has(`${item.sourceType}:${item.id}`)}
+                            onToggleFavorite={() => void handleFavoriteToggle(item)}
+                            stackIndex={index}
+                            totalItems={activeDrawerItems.length}
+                          />
+                          {item.sourceType === "saved" && saved ? (
+                            <div className="flex flex-wrap gap-2 pl-2">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const nextLabel = window.prompt("Rename this saved strap.", saved.label)?.trim();
+                                  if (!nextLabel || nextLabel === saved.label) return;
+                                  try {
+                                    await renameStrap(saved.id, nextLabel);
+                                  } catch (error) {
+                                    setAuthError(error instanceof Error ? error.message : "We couldn't rename that strap.");
+                                  }
+                                }}
+                                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                              >
+                                Rename
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!window.confirm(`Delete ${saved.label} from My Straps?`)) return;
+                                  try {
+                                    await deleteStrap(saved);
+                                  } catch (error) {
+                                    setAuthError(error instanceof Error ? error.message : "We couldn't delete that strap.");
+                                  }
+                                }}
+                                className="neo-button rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted">
+                    {user
+                      ? strapDrawerView === "saved"
+                        ? "Save a split strap to build your own drawer."
+                        : "Favorite straps you love and they will collect here."
+                      : "Sign in to use your saved strap collection."}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="mt-4 space-y-4">
+                <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-sm uppercase tracking-[0.12em] text-muted">Your Strap Sheet</p>
+                  <p className="mt-2 text-sm text-muted">
+                    Upload one straight pair image: buckle side on top, tail side below.
+                  </p>
+                  <input
+                    ref={strapUploadInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      const nextFile = event.target.files?.[0];
+                      if (!nextFile) return;
+                      onUploadStrapSheet(nextFile);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => strapUploadInputRef.current?.click()}
+                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                    >
+                      {hasUploadedStrap ? "Replace Strap Sheet" : "Upload Strap Sheet"}
+                    </button>
+                    {uploadedStrapSheetUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setStrapSplitSourceUrl(uploadedStrapSheetUrl)}
+                        className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                      >
+                        Re-open Split Tool
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveStrapToCollection()}
+                      disabled={!hasUploadedStrap}
+                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
+                    >
+                      Save Strap to Collection
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    Current Upload
+                  </p>
+                  {hasUploadedStrap ? (
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        { title: "Part A", src: uploadedStrapPartA?.url },
+                        { title: "Part B", src: uploadedStrapPartB?.url }
+                      ].map((item) => (
+                        <div key={item.title} className="rounded-2xl border border-line bg-white/80 p-3">
+                          <p className="text-sm font-semibold text-ink">{item.title}</p>
+                          <div className="mt-2 flex h-36 items-center justify-center rounded-xl border border-line bg-slate-50">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.src} alt={item.title} className="h-full w-full object-contain p-2" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted">
+                      No strap loaded yet. Upload a product-style pair image and we’ll split it into the preview.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </aside>
 
         <section className="order-3 min-w-0 space-y-4 xl:hidden">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
