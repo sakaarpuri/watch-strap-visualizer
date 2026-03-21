@@ -1832,6 +1832,54 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Mobile bottom sheet — fixed overlay below xl breakpoint */}
+        {showFitBench && canRender ? (
+          <>
+            {/* Backdrop: blocks touch/click pass-through to canvas */}
+            <div
+              className="fixed inset-0 z-40 xl:hidden"
+              onClick={(e) => { e.stopPropagation(); setShowFitBench(false); }}
+              onTouchStart={(e) => e.stopPropagation()}
+            />
+            {/* Sheet panel */}
+            <div
+              className="fixed inset-x-0 bottom-0 z-50 xl:hidden"
+              style={{ overscrollBehavior: "contain" }}
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <FitBenchPanel
+                canRender={canRender}
+                showFitBench={showFitBench}
+                onToggleFitBench={() => setShowFitBench((prev) => !prev)}
+                fitConfidence={fitConfidence}
+                showLugGuides={showLugGuides}
+                onToggleLugGuides={() => setShowLugGuides((prev) => !prev)}
+                onResetFit={() => void autoAlignStraps()}
+                isAutoAligning={isAutoAligning}
+                strapGap={strapGap}
+                setGapHalf={setGapHalf}
+                lockView={lockView}
+                showControlCoachmark={showControlCoachmark}
+                strapSizeUi={strapSizeUi}
+                setStrapScale={setStrapScale}
+                dismissControlCoachmark={dismissControlCoachmark}
+                dialScale={dialScale}
+                setDialScaleValue={setDialScaleValue}
+                sceneZoom={sceneZoom}
+                setSceneZoomValue={setSceneZoomValue}
+                onToggleLockView={toggleLockView}
+                preserveSettings={preserveSettings}
+                setPreserveSettings={setPreserveSettings}
+                reCropCurrentWatch={reCropCurrentWatch}
+                onChangeWatch={() => changeWatchInputRef.current?.click()}
+                hasUserUpload={hasUserUpload}
+              />
+            </div>
+          </>
+        ) : null}
+
+        {/* Desktop aside — normal flow at xl and above */}
         <aside className="order-3 xl:order-3">
           <FitBenchPanel
             canRender={canRender}
