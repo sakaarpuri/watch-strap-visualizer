@@ -1604,38 +1604,40 @@ export default function HomePageClient() {
 
   return (
       <main className="mx-auto max-w-[92rem] px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
-      <header className="relative mb-10 sm:mb-12">
-        <div className="absolute right-0 top-0 flex items-center gap-2">
-          {saveFeedback ? (
-            <span className="rounded-full border border-[#d7c1a3] bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#7c5b2e]">
-              {saveFeedback}
-            </span>
-          ) : null}
-          {user ? (
-            <button
-              type="button"
-              onClick={() => setShowSettingsDialog(true)}
-              className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
-            >
-              {profile?.full_name?.trim() || user.email || "Account"}
-            </button>
-          ) : accountConfigured ? (
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode("sign-in");
-                setAuthError(null);
-                setShowAuthDialog(true);
-              }}
-              className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
-            >
-              Sign in
-            </button>
-          ) : null}
+      <header className="mb-10 sm:mb-12">
+        <div className="flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
+            Watchstrapper
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            {saveFeedback ? (
+              <span className="rounded-full border border-[#d7c1a3] bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#7c5b2e]">
+                {saveFeedback}
+              </span>
+            ) : null}
+            {user ? (
+              <button
+                type="button"
+                onClick={() => setShowSettingsDialog(true)}
+                className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+              >
+                {profile?.full_name?.trim() || user.email || "Account"}
+              </button>
+            ) : accountConfigured ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("sign-in");
+                  setAuthError(null);
+                  setShowAuthDialog(true);
+                }}
+                className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+              >
+                Sign in
+              </button>
+            ) : null}
+          </div>
         </div>
-        <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
-          Watchstrapper
-        </p>
         <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[1.4rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[2.2rem]">
           See any strap on your watch before you buy.
         </h1>
@@ -3052,14 +3054,20 @@ export default function HomePageClient() {
             <div
               className="xl:hidden fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
               onClick={() => setShowFitBench(false)}
+              onTouchStart={(e) => e.stopPropagation()}
             />
           ) : null}
           <div
             className={`xl:hidden fixed inset-x-0 bottom-0 z-50 transition-transform duration-300 ease-out ${
               showFitBench ? "translate-y-0" : "translate-y-full"
             }`}
+            onTouchStart={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto max-w-lg rounded-t-3xl border-t border-line bg-white/96 px-5 pb-8 pt-4 shadow-[0_-8px_30px_rgba(15,23,42,0.14)] backdrop-blur-md">
+            <div
+              className="mx-auto max-w-lg rounded-t-3xl border-t border-line bg-white/96 px-5 pb-8 pt-4 shadow-[0_-8px_30px_rgba(15,23,42,0.14)] backdrop-blur-md"
+              style={{ overscrollBehavior: "contain" }}
+            >
               <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300" />
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">Fit Bench</p>
@@ -3072,6 +3080,7 @@ export default function HomePageClient() {
                 </button>
               </div>
               <FitBenchPanel
+                compact
                 canRender={canRender}
                 fitConfidence={fitConfidence}
                 showLugGuides={showLugGuides}
@@ -4021,7 +4030,8 @@ function FitBenchPanel({
   setSceneZoomValue,
   preserveSettings,
   setPreserveSettings,
-  reCropCurrentWatch
+  reCropCurrentWatch,
+  compact = false
 }: {
   canRender: boolean;
   fitConfidence: number;
@@ -4040,21 +4050,24 @@ function FitBenchPanel({
   preserveSettings: boolean;
   setPreserveSettings: (value: boolean | ((prev: boolean) => boolean)) => void;
   reCropCurrentWatch: () => void;
+  compact?: boolean;
 }) {
   return (
-    <div className="atelier-bench-panel rounded-[1.75rem] border border-[#e3d3bd] p-4 shadow-[0_18px_34px_rgba(56,44,32,0.08)]">
+    <div className={`atelier-bench-panel rounded-[1.75rem] border border-[#e3d3bd] shadow-[0_18px_34px_rgba(56,44,32,0.08)] ${compact ? "p-3" : "p-4"}`}>
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
           Tools
         </p>
-        <p className="mt-1.5 max-w-[28rem] text-xs leading-5 text-[#5f5143]">
-          {fitConfidence >= 0.65
-            ? "Auto-fit is already close. Use these controls only if you want to refine the look."
-            : "Adjust spacing, scale, and framing before you lock or save the pairing."}
-        </p>
+        {!compact ? (
+          <p className="mt-1.5 max-w-[28rem] text-xs leading-5 text-[#5f5143]">
+            {fitConfidence >= 0.65
+              ? "Auto-fit is already close. Use these controls only if you want to refine the look."
+              : "Adjust spacing, scale, and framing before you lock or save the pairing."}
+          </p>
+        ) : null}
       </div>
 
-      <div className="mt-4 grid gap-2 md:grid-cols-2">
+      <div className={`grid md:grid-cols-2 ${compact ? "mt-2 gap-1.5" : "mt-4 gap-2"}`}>
         <SliderControl
           label="Strap Gap"
           min={250}
@@ -4064,6 +4077,7 @@ function FitBenchPanel({
           onChange={setGapHalf}
           disabled={!canRender}
           hint="Closer ↔ Wider"
+          compact={compact}
         />
         <SliderControl
           label="Strap Size"
@@ -4074,6 +4088,7 @@ function FitBenchPanel({
           onChange={(uiVal) => setStrapScale(uiToStrapScale(uiVal))}
           disabled={!canRender}
           hint="Slimmer ↔ Fuller"
+          compact={compact}
         />
         <SliderControl
           label="Dial Size"
@@ -4084,6 +4099,7 @@ function FitBenchPanel({
           onChange={setDialScaleValue}
           disabled={!canRender}
           hint="Smaller ↔ Larger"
+          compact={compact}
         />
         <SliderControl
           label="View Zoom"
@@ -4094,6 +4110,7 @@ function FitBenchPanel({
           onChange={setSceneZoomValue}
           disabled={!canRender}
           hint="Whole watch ↔ Detail"
+          compact={compact}
         />
       </div>
 
@@ -4156,6 +4173,7 @@ interface SliderControlProps {
   hint?: string;
   disabled?: boolean;
   highlighted?: boolean;
+  compact?: boolean;
 }
 
 function SliderControl({
@@ -4168,7 +4186,8 @@ function SliderControl({
   displayValue,
   hint,
   disabled,
-  highlighted = false
+  highlighted = false,
+  compact = false
 }: SliderControlProps) {
   const lastSnapRef = useRef<number>(snapToStep(value, min, step));
 
@@ -4186,9 +4205,9 @@ function SliderControl({
   };
 
   return (
-    <div className={`neo-control rounded-[1.05rem] px-3 py-2.5 transition ${highlighted ? "ring-2 ring-[#ead8c0]/90 shadow-[0_0_0_1px_rgba(215,193,163,0.32),0_10px_22px_rgba(155,106,47,0.08)]" : ""}`}>
+    <div className={`neo-control rounded-[1.05rem] transition ${compact ? "px-2.5 py-2" : "px-3 py-2.5"} ${highlighted ? "ring-2 ring-[#ead8c0]/90 shadow-[0_0_0_1px_rgba(215,193,163,0.32),0_10px_22px_rgba(155,106,47,0.08)]" : ""}`}>
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-[13px] font-semibold text-ink">{label}</span>
+        <span className={`font-semibold text-ink ${compact ? "text-xs" : "text-[13px]"}`}>{label}</span>
         {displayValue ? <span className="text-xs text-muted">{displayValue}</span> : null}
       </div>
       <input
@@ -4203,12 +4222,12 @@ function SliderControl({
         disabled={disabled}
         aria-label={label}
       />
-      <div className="range-ticks mt-1.5" aria-hidden="true">
+      <div className={`range-ticks ${compact ? "mt-1" : "mt-1.5"}`} aria-hidden="true">
         {Array.from({ length: 9 }).map((_, index) => (
           <span key={index} />
         ))}
       </div>
-      {hint ? <p className="mt-1.5 text-[10px] font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
+      {hint && !compact ? <p className="mt-1.5 text-[10px] font-medium tracking-[0.02em] text-muted">{hint}</p> : null}
     </div>
   );
 }
