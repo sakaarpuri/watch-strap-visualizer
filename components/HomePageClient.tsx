@@ -2050,11 +2050,7 @@ export default function HomePageClient() {
             </div>
             {strapSourceMode === "library" ? (
               <div
-                className={`glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 transition ${
-                  lockView
-                    ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_24px_rgba(56,44,32,0.08)]"
-                    : "opacity-78 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] grayscale-[0.14]"
-                }`}
+                className="glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 opacity-40 grayscale pointer-events-none select-none"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -2713,11 +2709,7 @@ export default function HomePageClient() {
           </div>
           {strapSourceMode === "library" ? (
             <div
-              className={`glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 transition ${
-                lockView
-                  ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_24px_rgba(56,44,32,0.08)]"
-                  : "opacity-78 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] grayscale-[0.14]"
-              }`}
+              className="glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 opacity-40 grayscale pointer-events-none select-none"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
