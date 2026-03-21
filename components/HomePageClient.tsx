@@ -618,6 +618,7 @@ export default function HomePageClient() {
   const [animateStrapSettle, setAnimateStrapSettle] = useState(false);
   const [mobileExpandedCategories, setMobileExpandedCategories] = useState<Set<string>>(new Set(["Leather"]));
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [styleMoodExpanded, setStyleMoodExpanded] = useState(false);
   const [pinchTooltipVisible, setPinchTooltipVisible] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -1028,7 +1029,7 @@ export default function HomePageClient() {
     setShowLugGuides(true);
     setHighlightPreviewWindow(true);
     window.setTimeout(() => {
-      previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }, 80);
   };
 
@@ -1918,7 +1919,7 @@ export default function HomePageClient() {
                         setShowFitBench(opening);
                         if (opening) {
                           window.setTimeout(() => {
-                            previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            window.scrollTo({ top: 0, behavior: "smooth" });
                           }, 80);
                         }
                       }}
@@ -2323,45 +2324,55 @@ export default function HomePageClient() {
                   })}
                 </div>
                 <div className="mt-3 xl:hidden">
-                  <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStyleMoodExpanded(prev => !prev)}
+                    className="flex w-full items-center justify-between py-1"
+                  >
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7c7165]">
                       Style Mood
+                      {styleFilter !== "All styles" ? (
+                        <span className="ml-2 normal-case font-normal text-[#a07a4a]">· {styleFilter}</span>
+                      ) : null}
                     </p>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setStyleFilter("All styles")}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                        styleFilter === "All styles"
-                          ? "atelier-pill-active"
-                          : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
-                      }`}
-                      aria-pressed={styleFilter === "All styles"}
-                    >
-                      All styles
-                    </button>
-                    {STRAP_STYLE_TAGS.map((tag) => {
-                      const count = strapsInCategory.filter((strap) => strap.styleTags.includes(tag)).length;
-                      if (!count) return null;
-                      const active = styleFilter === tag;
-                      return (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => setStyleFilter(tag)}
-                          className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition ${
-                            active
-                              ? "atelier-pill-active"
-                              : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
-                          }`}
-                          aria-pressed={active}
-                        >
-                          {tag}
-                        </button>
-                      );
-                    })}
-                  </div>
+                    <span className={`text-xs text-muted transition-transform duration-200 ${styleMoodExpanded ? "rotate-180" : ""}`}>▾</span>
+                  </button>
+                  {styleMoodExpanded ? (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setStyleFilter("All styles")}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                          styleFilter === "All styles"
+                            ? "atelier-pill-active"
+                            : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                        }`}
+                        aria-pressed={styleFilter === "All styles"}
+                      >
+                        All styles
+                      </button>
+                      {STRAP_STYLE_TAGS.map((tag) => {
+                        const count = strapsInCategory.filter((strap) => strap.styleTags.includes(tag)).length;
+                        if (!count) return null;
+                        const active = styleFilter === tag;
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => setStyleFilter(tag)}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition ${
+                              active
+                                ? "atelier-pill-active"
+                                : "border-line bg-canvas text-ink hover:border-[#d7c1a3] hover:bg-white"
+                            }`}
+                            aria-pressed={active}
+                          >
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
                 {/* Desktop list — hidden on mobile */}
                 <div className="strap-browser-shell mt-3 rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
@@ -2401,7 +2412,7 @@ export default function HomePageClient() {
                               setHighlightPreviewWindow(true);
                               triggerStrapSettle();
                               window.setTimeout(() => {
-                                previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                window.scrollTo({ top: 0, behavior: "smooth" });
                               }, 80);
                             }
                           }}
