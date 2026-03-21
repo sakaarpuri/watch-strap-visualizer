@@ -1637,13 +1637,13 @@ export default function HomePageClient() {
       />
 
       <section
-        className={`mt-10 grid gap-5 xl:mt-20 xl:items-start ${
+        className={`mt-10 grid gap-3 xl:mt-20 xl:gap-5 xl:items-start ${
           hasUserUpload
             ? "xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem]"
             : "xl:grid-cols-[18.5rem_minmax(0,1fr)]"
         }`}
       >
-        <aside className="order-2 space-y-3 xl:order-1 xl:pt-14">
+        <aside className="order-1 space-y-3 xl:order-1 xl:pt-14">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -2052,7 +2052,7 @@ export default function HomePageClient() {
 
         <section
           ref={previewSectionRef}
-          className={`relative order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
+          className={`relative order-2 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
         >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
