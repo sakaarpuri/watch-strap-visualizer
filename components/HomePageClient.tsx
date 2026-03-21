@@ -2141,70 +2141,112 @@ export default function HomePageClient() {
             </div>
           ) : null}
 
-          <div
-            className={
-              cropSourceUrl || canRender || canShowWatchOnlyPreview
-                ? "relative glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4"
-                : "relative"
-            }
-          >
-            {cropSourceUrl && originalWatchFile ? (
-              <CropEditor
-                file={originalWatchFile}
-                sourceUrl={cropSourceUrl}
-                onApply={applyCroppedDial}
-                onClose={() => setCropSourceUrl(null)}
-              />
-            ) : canRender ? (
-              <div className={`${highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""} ${animateStrapSettle ? "strap-settle-in" : ""}`}>
-                <CanvasPreview
-                  ref={canvasRef}
+          <div className="relative xl:flex xl:items-start xl:gap-0">
+            <div
+              className={`min-w-0 flex-1 ${
+                cropSourceUrl || canRender || canShowWatchOnlyPreview
+                  ? "relative glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4"
+                  : "relative"
+              }`}
+            >
+              {cropSourceUrl && originalWatchFile ? (
+                <CropEditor
+                  file={originalWatchFile}
+                  sourceUrl={cropSourceUrl}
+                  onApply={applyCroppedDial}
+                  onClose={() => setCropSourceUrl(null)}
+                />
+              ) : canRender ? (
+                <div className={`${highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""} ${animateStrapSettle ? "strap-settle-in" : ""}`}>
+                  <CanvasPreview
+                    ref={canvasRef}
+                    watchSrc={watchSrc}
+                    strapASrc={activeStrapASrc as string}
+                    strapBSrc={activeStrapBSrc as string}
+                    partA={partA as PartTransform}
+                    partB={partB as PartTransform}
+                    style={currentStrap.tint}
+                    joinShape={activeJoinShape}
+                    watchScale={dialScale}
+                    sceneZoom={sceneZoom}
+                    locked={lockView}
+                    showLugGuides={canShowLiveLugGuides}
+                    lugGuideOverrides={lugGuideOverrides}
+                    onLugGuidesChange={handleLugGuidesChange}
+                    showCycleControls={strapDrawerView === "library" && strapSourceMode === "library" && filteredLibraryStraps.length > 1}
+                    onDragPartsChange={(nextA, nextB) => {
+                      setPartA(nextA);
+                      setPartB(nextB);
+                      setFitState("adjusted");
+                    }}
+                    onCycleStrap={onCycleStrap}
+                  />
+                </div>
+              ) : canShowWatchOnlyPreview ? (
+                <WatchOnlyPreview
                   watchSrc={watchSrc}
-                  strapASrc={activeStrapASrc as string}
-                  strapBSrc={activeStrapBSrc as string}
-                  partA={partA as PartTransform}
-                  partB={partB as PartTransform}
-                  style={currentStrap.tint}
-                  joinShape={activeJoinShape}
                   watchScale={dialScale}
-                  sceneZoom={sceneZoom}
-                  locked={lockView}
-                  showLugGuides={canShowLiveLugGuides}
+                  highlighted={highlightPreviewWindow}
+                  showLugGuides={showLugGuides}
+                  onToggleLugGuides={handleGuideToggle}
                   lugGuideOverrides={lugGuideOverrides}
                   onLugGuidesChange={handleLugGuidesChange}
-                  showCycleControls={strapDrawerView === "library" && strapSourceMode === "library" && filteredLibraryStraps.length > 1}
-                  onDragPartsChange={(nextA, nextB) => {
-                    setPartA(nextA);
-                    setPartB(nextB);
-                    setFitState("adjusted");
-                  }}
-                  onCycleStrap={onCycleStrap}
+                  showGuideOnboarding={showLugGuideOnboarding}
+                  onDismissGuideOnboarding={dismissLugGuideOnboarding}
+                  pendingStrapLabel={hasPendingPreUploadStrap ? pendingStrapSelection?.strap.label ?? null : null}
                 />
-              </div>
-            ) : canShowWatchOnlyPreview ? (
-              <WatchOnlyPreview
-                watchSrc={watchSrc}
-                watchScale={dialScale}
-                highlighted={highlightPreviewWindow}
-                showLugGuides={showLugGuides}
-                onToggleLugGuides={handleGuideToggle}
-                lugGuideOverrides={lugGuideOverrides}
-                onLugGuidesChange={handleLugGuidesChange}
-                showGuideOnboarding={showLugGuideOnboarding}
-                onDismissGuideOnboarding={dismissLugGuideOnboarding}
-                pendingStrapLabel={hasPendingPreUploadStrap ? pendingStrapSelection?.strap.label ?? null : null}
-              />
-            ) : (
-              <PreviewUploadStage
-                previewUrl={watchPreviewSrc}
-                showUploadGuide={showUploadGuide}
-                onToggleUploadGuide={() => setShowUploadGuide((prev) => !prev)}
-                onCloseUploadGuide={() => setShowUploadGuide(false)}
-                onFileSelect={onUploadDial}
-                sampleWatches={SAMPLE_WATCH_HEADS}
-                onSelectSampleWatch={handleSelectSampleWatch}
-              />
-            )}
+              ) : (
+                <PreviewUploadStage
+                  previewUrl={watchPreviewSrc}
+                  showUploadGuide={showUploadGuide}
+                  onToggleUploadGuide={() => setShowUploadGuide((prev) => !prev)}
+                  onCloseUploadGuide={() => setShowUploadGuide(false)}
+                  onFileSelect={onUploadDial}
+                  sampleWatches={SAMPLE_WATCH_HEADS}
+                  onSelectSampleWatch={handleSelectSampleWatch}
+                />
+              )}
+            </div>
+
+            {canOpenTools ? (
+              <aside className="hidden xl:block xl:w-[18rem] xl:flex-none xl:pl-6">
+                <div className="relative flex min-w-[18rem] flex-col gap-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowFitBench((prev) => !prev)}
+                    className={`absolute left-0 top-3 inline-flex -translate-x-full items-center rounded-l-2xl rounded-r-none border border-r-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
+                      showFitBench
+                        ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22]"
+                        : "border-line bg-white/96 text-[#7c7165] hover:bg-white"
+                    }`}
+                    aria-expanded={showFitBench}
+                  >
+                    Tools
+                  </button>
+                  {showFitBench ? (
+                    <FitBenchPanel
+                      canRender={canRender}
+                      fitConfidence={fitConfidence}
+                      showLugGuides={showLugGuides}
+                      onToggleLugGuides={handleGuideToggle}
+                      onResetFit={() => void autoAlignStraps()}
+                      isAutoAligning={isAutoAligning}
+                      strapGap={strapGap}
+                      setGapHalf={setGapHalf}
+                      preserveSettings={preserveSettings}
+                      setPreserveSettings={setPreserveSettings}
+                      strapSizeUi={strapSizeUi}
+                      setStrapScale={setStrapScale}
+                      dialScale={dialScale}
+                      setDialScaleValue={setDialScaleValue}
+                      sceneZoom={sceneZoom}
+                      setSceneZoomValue={setSceneZoomValue}
+                      reCropCurrentWatch={reCropCurrentWatch}
+                    />
+                  ) : null}
+                </div>
+              </aside>
+            ) : null}
           </div>
 
           <div className="xl:hidden">
@@ -2694,46 +2736,6 @@ export default function HomePageClient() {
             </Link>
           </div>
         </section>
-
-        {canOpenTools ? (
-          <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:mt-[7.5rem] xl:self-start">
-            <div className="relative flex min-w-[18rem] flex-col gap-0 xl:pl-6">
-              <button
-                type="button"
-                onClick={() => setShowFitBench((prev) => !prev)}
-                className={`absolute left-0 top-3 inline-flex -translate-x-full items-center rounded-l-2xl rounded-r-none border border-r-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
-                  showFitBench
-                    ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22]"
-                    : "border-line bg-white/96 text-[#7c7165] hover:bg-white"
-                }`}
-                aria-expanded={showFitBench}
-              >
-                Tools
-              </button>
-              {showFitBench ? (
-                <FitBenchPanel
-                  canRender={canRender}
-                  fitConfidence={fitConfidence}
-                  showLugGuides={showLugGuides}
-                  onToggleLugGuides={handleGuideToggle}
-                  onResetFit={() => void autoAlignStraps()}
-                  isAutoAligning={isAutoAligning}
-                  strapGap={strapGap}
-                  setGapHalf={setGapHalf}
-                  preserveSettings={preserveSettings}
-                  setPreserveSettings={setPreserveSettings}
-                  strapSizeUi={strapSizeUi}
-                  setStrapScale={setStrapScale}
-                  dialScale={dialScale}
-                  setDialScaleValue={setDialScaleValue}
-                  sceneZoom={sceneZoom}
-                  setSceneZoomValue={setSceneZoomValue}
-                  reCropCurrentWatch={reCropCurrentWatch}
-                />
-              ) : null}
-            </div>
-          </aside>
-        ) : null}
 
       </section>
       <ModalShell open={showAuthDialog} onClose={() => setShowAuthDialog(false)} title={authMode === "sign-up" ? "Create your account" : "Sign in"}>
