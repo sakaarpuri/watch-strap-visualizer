@@ -3373,6 +3373,13 @@ function StrapDrawerButton({
   stackIndex = 0,
   totalItems = 1
 }: StrapThumbProps & { stackIndex?: number; totalItems?: number }) {
+  const isMetal = strap.category === "Metal" || strap.category === "Women" && strap.id.includes("metal");
+  const buckleTransform = isMetal
+    ? "translate-x-[4px] translate-y-[8px] scale-[1.84]"
+    : "translate-x-[6px] translate-y-[24px] scale-[2.26]";
+  const tailTransform = isMetal
+    ? "-translate-x-[4px] translate-y-[8px] scale-[1.84]"
+    : "-translate-x-[6px] translate-y-[24px] scale-[2.26]";
   return (
     <button
       type="button"
@@ -3412,7 +3419,7 @@ function StrapDrawerButton({
         <img
           src={strap.strapASrc}
           alt={`${strap.label} buckle side`}
-          className="h-full w-full translate-x-[6px] translate-y-[24px] scale-[2.26] object-contain"
+          className={`h-full w-full object-contain ${buckleTransform}`}
           loading={stackIndex < 6 ? "eager" : "lazy"}
           fetchPriority={stackIndex < 3 ? "high" : "auto"}
           />
@@ -3420,7 +3427,7 @@ function StrapDrawerButton({
         <img
           src={strap.strapBSrc}
           alt={`${strap.label} tail side`}
-          className="h-full w-full -translate-x-[6px] translate-y-[24px] scale-[2.26] object-contain"
+          className={`h-full w-full object-contain ${tailTransform}`}
           loading={stackIndex < 6 ? "eager" : "lazy"}
           fetchPriority={stackIndex < 3 ? "high" : "auto"}
         />
