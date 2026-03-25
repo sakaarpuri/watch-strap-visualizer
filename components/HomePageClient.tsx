@@ -2057,8 +2057,8 @@ export default function HomePageClient() {
           ref={previewSectionRef}
           className={`relative order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
         >
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+          <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start xl:gap-x-8">
+            <div className="max-w-[38rem]">
               {previewStageTitle ? (
                 <p className="text-[12px] font-semibold uppercase tracking-[0.24em] text-[#7c7165]">
                   {previewStageTitle.replace(/^\d+\.\s*/, "")}
@@ -2070,11 +2070,11 @@ export default function HomePageClient() {
                 </p>
               ) : null}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:w-[33rem] xl:justify-self-end">
               <button
                 type="button"
                 onClick={() => changeWatchInputRef.current?.click()}
-                className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                className="neo-button min-h-[3.6rem] rounded-[1.45rem] px-5 py-3 text-base font-semibold text-ink"
               >
                 {hasUserUpload ? "Upload New Watch" : "Upload Watch"}
               </button>
@@ -2082,7 +2082,7 @@ export default function HomePageClient() {
                 <button
                   type="button"
                   onClick={() => setShowSampleWatchesDialog(true)}
-                  className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                  className="neo-button min-h-[3.6rem] rounded-[1.45rem] px-5 py-3 text-base font-semibold text-ink"
                 >
                   Try Another Sample
                 </button>
@@ -2093,7 +2093,7 @@ export default function HomePageClient() {
                   if (!requireSignedIn("Sign in to reuse your prepared watch collection.")) return;
                   setShowMyWatchesDialog(true);
                 }}
-                className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                className="neo-button min-h-[3.6rem] rounded-[1.45rem] px-5 py-3 text-base font-semibold text-ink"
               >
                 My Watches
               </button>
@@ -2103,7 +2103,7 @@ export default function HomePageClient() {
                   if (!requireSignedIn("Sign in to review your saved looks.")) return;
                   setShowSavedLooksDialog(true);
                 }}
-                className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                className="neo-button min-h-[3.6rem] rounded-[1.45rem] px-5 py-3 text-base font-semibold text-ink"
               >
                 Saved Looks
               </button>
@@ -2111,12 +2111,12 @@ export default function HomePageClient() {
           </div>
 
           {(hasUserUpload && !cropSourceUrl) || canRender ? (
-            <div className="flex flex-wrap gap-2 rounded-[1.35rem] border border-line bg-white/62 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+            <div className="flex flex-wrap items-center gap-2 rounded-[1.45rem] border border-line bg-white/62 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
               {hasUserUpload && !cropSourceUrl ? (
                 <button
                   type="button"
                   onClick={() => void handleSaveWatchToCollection()}
-                  className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                  className="neo-button min-h-[3.45rem] rounded-[1.35rem] px-5 py-3 text-base font-semibold text-ink"
                 >
                   Save Watch to Collection
                 </button>
@@ -2126,7 +2126,7 @@ export default function HomePageClient() {
                   <button
                     type="button"
                     onClick={toggleLockView}
-                    className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${
+                    className={`min-h-[3.45rem] rounded-[1.35rem] border px-5 py-3 text-base font-semibold transition ${
                       lockView
                         ? "atelier-accent-soft"
                         : "border-line bg-white/78 text-ink hover:bg-white"
@@ -2137,14 +2137,14 @@ export default function HomePageClient() {
                   <button
                     type="button"
                     onClick={() => void onSavePreviewImage()}
-                    className="atelier-accent-solid rounded-2xl border px-5 py-2.5 text-sm font-semibold transition hover:opacity-95"
+                    className="neo-button min-h-[3.45rem] rounded-[1.35rem] px-5 py-3 text-base font-semibold text-ink"
                   >
                     Save Image
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleSaveLook()}
-                    className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                    className="neo-button min-h-[3.45rem] rounded-[1.35rem] px-5 py-3 text-base font-semibold text-ink"
                   >
                     Save to Looks
                   </button>
