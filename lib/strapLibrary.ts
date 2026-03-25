@@ -509,7 +509,8 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       category: "Leather",
       strapASrc: `${SEL}/indian-paisley-leather-buckle.png`,
       strapBSrc: `${SEL}/indian-paisley-leather-tail.png`,
-      tint: ORIG_TINT
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.3
     },
     {
       id: "leather-indian-mughal",
@@ -517,7 +518,8 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       category: "Leather",
       strapASrc: `${SEL}/indian-mughal-leather-buckle.png`,
       strapBSrc: `${SEL}/indian-mughal-leather-tail.png`,
-      tint: ORIG_TINT
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.3
     },
     {
       id: "leather-indian-block-print",
@@ -525,7 +527,8 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       category: "Leather",
       strapASrc: `${SEL}/indian-block-print-leather-buckle.png`,
       strapBSrc: `${SEL}/indian-block-print-leather-tail.png`,
-      tint: ORIG_TINT
+      tint: ORIG_TINT,
+      autoFitWidthFactor: 0.3
     }
   ],
   Rubber: [
