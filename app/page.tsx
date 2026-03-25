@@ -923,7 +923,6 @@ export default function Home() {
       const shouldPreserve = Boolean(
         latestPartA &&
           latestPartB &&
-          !lugGuideOverrides &&
           (preserveSettingsRef.current || lockViewRef.current)
       );
       const aligned = await calculateAutoPlacement(
