@@ -513,9 +513,7 @@ const CanvasPreview = forwardRef<CanvasPreviewRef, CanvasPreviewProps>(
 
     return (
       <div
-        className={`rounded-2xl border p-2.5 transition sm:p-3 ${
-          isTicking ? "border-slate-500" : "border-white/70"
-        }`}
+        className="rounded-2xl p-2.5 transition sm:p-3"
         style={{
           background:
             "linear-gradient(150deg, color-mix(in srgb, var(--canvas-bg) 62%, white 38%), color-mix(in srgb, var(--canvas-bg) 84%, white 16%))",

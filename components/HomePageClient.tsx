@@ -620,6 +620,7 @@ export default function HomePageClient() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showMyWatchesDialog, setShowMyWatchesDialog] = useState(false);
   const [showSavedLooksDialog, setShowSavedLooksDialog] = useState(false);
+  const [showSampleWatchesDialog, setShowSampleWatchesDialog] = useState(false);
   const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [authError, setAuthError] = useState<string | null>(null);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
@@ -743,6 +744,8 @@ export default function HomePageClient() {
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
   const activeLibraryStrap = strapSourceMode === "library" ? selectedLibraryStrap : null;
   const activeSavedStrap = strapSourceMode === "saved" ? selectedSavedStrap : null;
+  const currentSampleWatch =
+    originalWatchSrc ? SAMPLE_WATCH_HEADS.find((sample) => sample.src === originalWatchSrc) ?? null : null;
   const activeStrapASrc =
     strapSourceMode === "uploaded" && uploadedStrapPartA
       ? uploadedStrapPartA.url
@@ -2075,6 +2078,15 @@ export default function HomePageClient() {
               >
                 {hasUserUpload ? "Upload New Watch" : "Upload Watch"}
               </button>
+              {currentSampleWatch ? (
+                <button
+                  type="button"
+                  onClick={() => setShowSampleWatchesDialog(true)}
+                  className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+                >
+                  Try Another Sample
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => {
@@ -2205,6 +2217,48 @@ export default function HomePageClient() {
                 onSelectSampleWatch={handleSelectSampleWatch}
               />
             )}
+            {canOpenTools ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowFitBench(true)}
+                  className={`pointer-events-auto absolute top-5 right-[-1px] z-20 hidden h-11 items-center rounded-l-none rounded-r-[1.1rem] border border-l-0 px-4 text-[11px] font-semibold uppercase tracking-[0.22em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] backdrop-blur-sm transition xl:inline-flex ${
+                    showFitBench
+                      ? "opacity-0 pointer-events-none"
+                      : "translate-x-[calc(100%-1px)] border-[#e3d3bd] bg-[#fffdf9] text-[#6f6559] hover:border-[#d9c2a3] hover:bg-[#fff8ef]"
+                  }`}
+                  aria-expanded={showFitBench}
+                >
+                  Tools
+                </button>
+                {showFitBench ? (
+                  <aside className="pointer-events-none absolute right-[-1px] top-5 z-10 hidden translate-x-[calc(100%-1px)] xl:block">
+                    <div className="pointer-events-auto w-[18rem]">
+                      <FitBenchPanel
+                        canRender={canRender}
+                        fitConfidence={fitConfidence}
+                        showLugGuides={showLugGuides}
+                        onToggleLugGuides={handleGuideToggle}
+                        onResetFit={() => void autoAlignStraps()}
+                        isAutoAligning={isAutoAligning}
+                        strapGap={strapGap}
+                        setGapHalf={setGapHalf}
+                        preserveSettings={preserveSettings}
+                        setPreserveSettings={setPreserveSettings}
+                        strapSizeUi={strapSizeUi}
+                        setStrapScale={setStrapScale}
+                        dialScale={dialScale}
+                        setDialScaleValue={setDialScaleValue}
+                        sceneZoom={sceneZoom}
+                        setSceneZoomValue={setSceneZoomValue}
+                        reCropCurrentWatch={reCropCurrentWatch}
+                        onToggleVisibility={() => setShowFitBench((prev) => !prev)}
+                      />
+                    </div>
+                  </aside>
+                ) : null}
+              </>
+            ) : null}
           </div>
 
           <div className="xl:hidden">
@@ -2695,45 +2749,7 @@ export default function HomePageClient() {
           </div>
         </section>
 
-        {canOpenTools ? (
-          <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:mt-[7.5rem] xl:self-start">
-            <div className="relative flex min-w-[18rem] flex-col gap-0 xl:pl-6">
-              <button
-                type="button"
-                onClick={() => setShowFitBench((prev) => !prev)}
-                className={`absolute left-0 top-3 inline-flex -translate-x-full items-center rounded-l-2xl rounded-r-none border border-r-0 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] transition ${
-                  showFitBench
-                    ? "border-[#d9c3a7] bg-[#f5e4ca] text-[#6e4b22]"
-                    : "border-line bg-white/96 text-[#7c7165] hover:bg-white"
-                }`}
-                aria-expanded={showFitBench}
-              >
-                Tools
-              </button>
-              {showFitBench ? (
-                <FitBenchPanel
-                  canRender={canRender}
-                  fitConfidence={fitConfidence}
-                  showLugGuides={showLugGuides}
-                  onToggleLugGuides={handleGuideToggle}
-                  onResetFit={() => void autoAlignStraps()}
-                  isAutoAligning={isAutoAligning}
-                  strapGap={strapGap}
-                  setGapHalf={setGapHalf}
-                  preserveSettings={preserveSettings}
-                  setPreserveSettings={setPreserveSettings}
-                  strapSizeUi={strapSizeUi}
-                  setStrapScale={setStrapScale}
-                  dialScale={dialScale}
-                  setDialScaleValue={setDialScaleValue}
-                  sceneZoom={sceneZoom}
-                  setSceneZoomValue={setSceneZoomValue}
-                  reCropCurrentWatch={reCropCurrentWatch}
-                />
-              ) : null}
-            </div>
-          </aside>
-        ) : null}
+        {canOpenTools ? <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:self-start" /> : null}
 
       </section>
       <ModalShell open={showAuthDialog} onClose={() => setShowAuthDialog(false)} title={authMode === "sign-up" ? "Create your account" : "Sign in"}>
@@ -2953,6 +2969,34 @@ export default function HomePageClient() {
             Save a finished preview to build a gallery of favorite watch-and-strap pairings.
           </p>
         )}
+      </ModalShell>
+
+      <ModalShell
+        open={showSampleWatchesDialog}
+        onClose={() => setShowSampleWatchesDialog(false)}
+        title="Try Another Sample"
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          {SAMPLE_WATCH_HEADS.map((sample) => (
+            <button
+              key={sample.id}
+              type="button"
+              onClick={async () => {
+                setShowSampleWatchesDialog(false);
+                await handleSelectSampleWatch(sample);
+              }}
+              className="neo-button flex items-center gap-3 rounded-[1.2rem] p-3 text-left"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-[1rem] border border-line bg-white/85 p-2">
+                <img src={sample.src} alt={sample.label} className="h-full w-full object-contain" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-ink">{sample.label}</p>
+                <p className="mt-1 text-xs text-muted">Load this sample watch into the preview.</p>
+              </div>
+            </button>
+          ))}
+        </div>
       </ModalShell>
     </main>
   );
@@ -3881,7 +3925,8 @@ function FitBenchPanel({
   setSceneZoomValue,
   preserveSettings,
   setPreserveSettings,
-  reCropCurrentWatch
+  reCropCurrentWatch,
+  onToggleVisibility
 }: {
   canRender: boolean;
   fitConfidence: number;
@@ -3900,19 +3945,31 @@ function FitBenchPanel({
   preserveSettings: boolean;
   setPreserveSettings: (value: boolean | ((prev: boolean) => boolean)) => void;
   reCropCurrentWatch: () => void;
+  onToggleVisibility?: () => void;
 }) {
   return (
-    <div className="atelier-bench-panel rounded-[1.75rem] border border-[#e3d3bd] p-4 shadow-[0_18px_34px_rgba(56,44,32,0.08)]">
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
-          Tools
-        </p>
-        <p className="mt-1.5 max-w-[28rem] text-xs leading-5 text-[#5f5143]">
+    <div className={`atelier-bench-panel border border-[#e3d3bd] bg-[#fffdf9] shadow-[0_18px_34px_rgba(56,44,32,0.08)] ${onToggleVisibility ? "overflow-hidden rounded-l-none rounded-r-[1.5rem] border-l-0" : "rounded-[1.75rem] p-4"}`}>
+      {onToggleVisibility ? (
+        <button
+          type="button"
+          onClick={onToggleVisibility}
+          className="flex w-full items-center justify-between border-b border-[#e7d8c4] bg-[#fff7ec] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6c5b49]"
+        >
+          <span>Tools</span>
+          <span className="text-sm leading-none text-[#8a7458]">×</span>
+        </button>
+      ) : null}
+      <div className={onToggleVisibility ? "p-4" : ""}>
+        {!onToggleVisibility ? (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7c7165]">
+            Tools
+          </p>
+        ) : null}
+        <p className={`${onToggleVisibility ? "" : "mt-1.5"} max-w-[28rem] text-xs leading-5 text-[#5f5143]`}>
           {fitConfidence >= 0.65
             ? "Auto-fit is already close. Use these controls only if you want to refine the look."
             : "Adjust spacing, scale, and framing before you lock or save the pairing."}
         </p>
-      </div>
 
       <div className="mt-4 grid gap-2 md:grid-cols-2">
         <SliderControl
@@ -4000,6 +4057,7 @@ function FitBenchPanel({
             }`}
           />
         </button>
+      </div>
       </div>
     </div>
   );
