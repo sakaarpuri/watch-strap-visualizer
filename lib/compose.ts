@@ -224,8 +224,6 @@ interface StrapMetrics {
   bottomY: number;
   topWidth: number;
   bottomWidth: number;
-  topCenterX: number;
-  bottomCenterX: number;
 }
 
 interface ObjectMaskBounds {
@@ -278,16 +276,14 @@ const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetr
       topY: 0,
       bottomY: Math.max(0, image.height - 1),
       topWidth: image.width,
-      bottomWidth: image.width,
-      topCenterX: image.width / 2,
-      bottomCenterX: image.width / 2
+      bottomWidth: image.width
     };
   }
 
   ctx.drawImage(image, 0, 0);
   const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const alphaAt = (x: number, y: number) => data[(y * width + x) * 4 + 3];
-  const rowBounds = (y: number) => {
+  const rowWidth = (y: number) => {
     let minX = width;
     let maxX = -1;
     for (let x = 0; x < width; x += 1) {
@@ -296,29 +292,21 @@ const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetr
         maxX = Math.max(maxX, x);
       }
     }
-    if (maxX >= minX) {
-      return {
-        width: maxX - minX + 1,
-        centerX: (minX + maxX) / 2
-      };
-    }
-    return null;
+    return maxX >= minX ? maxX - minX + 1 : 0;
   };
 
   let topY = 0;
-  while (topY < height && !rowBounds(topY)) topY += 1;
+  while (topY < height && rowWidth(topY) === 0) topY += 1;
 
   let bottomY = height - 1;
-  while (bottomY >= 0 && !rowBounds(bottomY)) bottomY -= 1;
+  while (bottomY >= 0 && rowWidth(bottomY) === 0) bottomY -= 1;
 
   if (topY >= height || bottomY < 0 || bottomY <= topY) {
     return {
       topY: 0,
       bottomY: Math.max(0, image.height - 1),
       topWidth: image.width,
-      bottomWidth: image.width,
-      topCenterX: image.width / 2,
-      bottomCenterX: image.width / 2
+      bottomWidth: image.width
     };
   }
 
@@ -326,23 +314,15 @@ const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetr
   const sampleFractions = [0.05, 0.08, 0.12, 0.16, 0.2];
   const sampledTopWidths: number[] = [];
   const sampledBottomWidths: number[] = [];
-  const sampledTopCenters: number[] = [];
-  const sampledBottomCenters: number[] = [];
 
   for (const fraction of sampleFractions) {
     const depth = Math.round(opaqueHeight * fraction);
     const topSampleY = Math.min(bottomY, topY + depth);
     const bottomSampleY = Math.max(topY, bottomY - depth);
-    const topSample = rowBounds(topSampleY);
-    const bottomSample = rowBounds(bottomSampleY);
-    if (topSample) {
-      sampledTopWidths.push(topSample.width);
-      sampledTopCenters.push(topSample.centerX);
-    }
-    if (bottomSample) {
-      sampledBottomWidths.push(bottomSample.width);
-      sampledBottomCenters.push(bottomSample.centerX);
-    }
+    const topSampleWidth = rowWidth(topSampleY);
+    const bottomSampleWidth = rowWidth(bottomSampleY);
+    if (topSampleWidth > 0) sampledTopWidths.push(topSampleWidth);
+    if (bottomSampleWidth > 0) sampledBottomWidths.push(bottomSampleWidth);
   }
 
   const average = (values: number[]) =>
@@ -352,9 +332,7 @@ const getImageMetrics = (image: HTMLImageElement | HTMLCanvasElement): StrapMetr
     topY,
     bottomY,
     topWidth: average(sampledTopWidths),
-    bottomWidth: average(sampledBottomWidths),
-    topCenterX: sampledTopCenters.length ? average(sampledTopCenters) : image.width / 2,
-    bottomCenterX: sampledBottomCenters.length ? average(sampledBottomCenters) : image.width / 2
+    bottomWidth: average(sampledBottomWidths)
   };
 };
 
@@ -617,12 +595,10 @@ const calculateBaselinePlacement = (
   const bottomEdge = watchRect.y + watchRect.h - CANVAS_SIZE / 2;
   const visibleBottomOffsetA = (partAImage.height / 2 - metricsA.bottomY) * (scaleA / 100);
   const visibleTopOffsetB = (metricsB.topY - partBImage.height / 2) * (scaleB / 100);
-  const centeredJoinOffsetA = (partAImage.width / 2 - metricsA.bottomCenterX) * (scaleA / 100);
-  const centeredJoinOffsetB = (partBImage.width / 2 - metricsB.topCenterX) * (scaleB / 100);
 
   const partA: PartTransform = {
     scale: scaleA,
-    x: centeredJoinOffsetA,
+    x: 0,
     y: topEdge + visibleBottomOffsetA - visualGap,
     rotation: 0,
     opacity: 1
@@ -630,7 +606,7 @@ const calculateBaselinePlacement = (
 
   const partB: PartTransform = {
     scale: scaleB,
-    x: centeredJoinOffsetB,
+    x: 0,
     y: bottomEdge - visibleTopOffsetB + visualGap,
     rotation: 0,
     opacity: 1
@@ -886,6 +862,11 @@ export const calculateAutoPlacement = async (
   const baselineWatchRect = getWatchRect(watch, watchScale);
   const lugTopEdge = effectiveTopY - CANVAS_SIZE / 2;
   const lugBottomEdge = effectiveBottomY - CANVAS_SIZE / 2;
+  const centerOffsetX = clamp(
+    effectiveCenterX - CANVAS_SIZE / 2,
+    -baselineWatchRect.w * 0.04,
+    baselineWatchRect.w * 0.04
+  );
   const blend = lugOverrides ? 1 : clamp((fittedWatch.geometry.confidence - 0.55) / 0.3, 0, 1);
   const metricsA = getImageMetrics(partAImage);
   const metricsB = getImageMetrics(partBImage);
@@ -909,24 +890,20 @@ export const calculateAutoPlacement = async (
   const scaleB = baseline.partB.scale + (anchorScaleB - baseline.partB.scale) * blend;
   const defaultVisualGap = Math.max(8, baselineWatchRect.h * 0.022) * gapFactor;
   const visualGap = lugOverrides ? Math.max(2, defaultVisualGap * 0.1) : defaultVisualGap;
-  const anchorXPartA =
-    effectiveCenterX - CANVAS_SIZE / 2 + (partAImage.width / 2 - metricsA.bottomCenterX) * (scaleA / 100);
-  const anchorXPartB =
-    effectiveCenterX - CANVAS_SIZE / 2 + (partBImage.width / 2 - metricsB.topCenterX) * (scaleB / 100);
   const anchorYPartA =
     lugTopEdge + (partAImage.height / 2 - metricsA.bottomY) * (scaleA / 100) - visualGap;
   const anchorYPartB =
     lugBottomEdge - (metricsB.topY - partBImage.height / 2) * (scaleB / 100) + visualGap;
   const partA: PartTransform = {
     scale: scaleA,
-    x: baseline.partA.x + (anchorXPartA - baseline.partA.x) * blend,
+    x: baseline.partA.x + centerOffsetX * blend,
     y: baseline.partA.y + (anchorYPartA - baseline.partA.y) * blend,
     rotation: 0,
     opacity: 1
   };
   const partB: PartTransform = {
     scale: scaleB,
-    x: baseline.partB.x + (anchorXPartB - baseline.partB.x) * blend,
+    x: baseline.partB.x + centerOffsetX * blend,
     y: baseline.partB.y + (anchorYPartB - baseline.partB.y) * blend,
     rotation: 0,
     opacity: 1

@@ -509,8 +509,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       category: "Leather",
       strapASrc: `${SEL}/indian-paisley-leather-buckle.png`,
       strapBSrc: `${SEL}/indian-paisley-leather-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34
+      tint: ORIG_TINT
     },
     {
       id: "leather-indian-mughal",
@@ -518,8 +517,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       category: "Leather",
       strapASrc: `${SEL}/indian-mughal-leather-buckle.png`,
       strapBSrc: `${SEL}/indian-mughal-leather-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34
+      tint: ORIG_TINT
     },
     {
       id: "leather-indian-block-print",
@@ -527,8 +525,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       category: "Leather",
       strapASrc: `${SEL}/indian-block-print-leather-buckle.png`,
       strapBSrc: `${SEL}/indian-block-print-leather-tail.png`,
-      tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34
+      tint: ORIG_TINT
     }
   ],
   Rubber: [
@@ -741,7 +738,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/steel-bracelet-buckle.png`,
       strapBSrc: `${SEL}/steel-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     },
     {
@@ -751,7 +748,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/steel-link-bracelet-buckle.png`,
       strapBSrc: `${SEL}/steel-link-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     },
     {
@@ -761,7 +758,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/black-pvd-bracelet-buckle.png`,
       strapBSrc: `${SEL}/black-pvd-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     },
     {
@@ -771,7 +768,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/gold-silver-bracelet-buckle.png`,
       strapBSrc: `${SEL}/gold-silver-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     },
     {
@@ -781,7 +778,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/gold-bracelet-buckle.png`,
       strapBSrc: `${SEL}/gold-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     }
   ],
@@ -859,7 +856,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/gold-silver-bracelet-buckle.png`,
       strapBSrc: `${SEL}/gold-silver-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     },
     {
@@ -869,7 +866,7 @@ const RAW_STRAP_LIBRARY: Record<Exclude<StrapCategory, "All categories">, RawStr
       strapASrc: `${SEL}/gold-bracelet-buckle.png`,
       strapBSrc: `${SEL}/gold-bracelet-tail.png`,
       tint: ORIG_TINT,
-      autoFitWidthFactor: 0.34,
+      autoFitWidthFactor: 0.3,
       joinShape: "curved"
     }
   ]
