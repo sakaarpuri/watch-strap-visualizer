@@ -116,7 +116,7 @@ const applyCenterToPair = (
   };
 };
 
-type AiToolKey = "cleanup" | "rescue" | "final" | "strapPrep";
+type AiToolKey = "cleanup" | "rescue" | "final";
 type StrapSourceMode = "library" | "uploaded" | "saved";
 type StrapDrawerView = "library" | "saved" | "favorites" | "uploaded";
 type FitState = "auto" | "adjusted" | "locked";
@@ -171,8 +171,7 @@ interface AuthFormState {
 const defaultToolState = (): Record<AiToolKey, AiToolState> => ({
   cleanup: { loading: false, error: null },
   rescue: { loading: false, error: null },
-  final: { loading: false, error: null },
-  strapPrep: { loading: false, error: null }
+  final: { loading: false, error: null }
 });
 
 const CONTROL_COACHMARK_STORAGE_KEY = "watchstrapper-gap-size-coachmark-seen";
@@ -1424,35 +1423,6 @@ export default function HomePageClient({
     }
   };
 
-  const runStrapSheetPrep = async () => {
-    if (!uploadedStrapSheetFile) return;
-    setToolLoading("strapPrep", true);
-    try {
-      setAiStage("strapPrep", "Prepare Strap Sheet", "Uploading");
-      const preparedFile = await prepareAiInput(uploadedStrapSheetFile, {
-        maxSide: 1400,
-        quality: 0.88
-      });
-      const formData = new FormData();
-      formData.append("image", preparedFile);
-      setAiStage("strapPrep", "Prepare Strap Sheet", "Cleaning background");
-      const imageUrl = await postToolForm("/api/kie/cleanup", formData);
-      setAiStage("strapPrep", "Prepare Strap Sheet", "Opening split tool");
-      const nextFile = await fileFromSrc(imageUrl, `${uploadedStrapSheetFile.name.replace(/\.[^.]+$/, "") || "strap-sheet"}-prepped.png`);
-      const nextUrl = URL.createObjectURL(nextFile);
-      setUploadedStrapSheetFile(nextFile);
-      setUploadedStrapSheetUrl(nextUrl);
-      setStrapSplitSourceUrl(nextUrl);
-      setUploadedStrapPartA(null);
-      setUploadedStrapPartB(null);
-      setStrapSourceMode("uploaded");
-      setStrapDrawerView("uploaded");
-      setToolLoading("strapPrep", false);
-    } catch (error) {
-      setToolLoading("strapPrep", false, formatAiError(error));
-    }
-  };
-
   const runRescueMode = async () => {
     if (!uploadedWatchFile) return;
     setToolLoading("rescue", true);
@@ -2127,14 +2097,6 @@ export default function HomePageClient({
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => void runStrapSheetPrep()}
-                      disabled={!uploadedStrapSheetFile || aiTools.strapPrep.loading}
-                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
-                    >
-                      {aiTools.strapPrep.loading ? "Preparing..." : "Prepare Strap Sheet with AI"}
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => void handleSaveStrapToCollection()}
                       disabled={!hasUploadedStrap}
                       className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
@@ -2142,14 +2104,6 @@ export default function HomePageClient({
                       Save Strap to Collection
                     </button>
                   </div>
-                  <p className="mt-3 text-sm text-muted">
-                    AI prep helps when the source photo has a noisy background or weak edge separation before you open the split tool.
-                  </p>
-                  {aiTools.strapPrep.error ? (
-                    <div className="mt-3">
-                      <ErrorText message={aiTools.strapPrep.error} />
-                    </div>
-                  ) : null}
                 </div>
 
                 <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
