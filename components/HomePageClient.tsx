@@ -1280,7 +1280,17 @@ export default function HomePageClient({
   useEffect(() => {
     void autoAlignStraps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSrc, activeStrapASrc, activeStrapBSrc, activeAutoFitWidthFactor, activeAutoGapFactor, dialScale, lugGuideOverrides]);
+  }, [
+    watchSrc,
+    activeStrapASrc,
+    activeStrapBSrc,
+    activeAutoFitWidthFactor,
+    activeAutoGapFactor,
+    dialScale,
+    lugGuideOverrides,
+    pendingStrapSelection,
+    pendingUploadedStrapSelection
+  ]);
 
   useEffect(() => {
     if (strapSourceMode !== "library" || !activeLibraryStrap) return;
