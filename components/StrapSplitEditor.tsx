@@ -9,6 +9,8 @@ interface SplitPreview {
   url: string;
 }
 
+type SplitAxis = "horizontal" | "vertical";
+
 interface StrapSplitEditorProps {
   file: File;
   sourceUrl: string;
@@ -37,11 +39,17 @@ const colorDistance = (
   b: { r: number; g: number; b: number }
 ) => Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
 
-const makeTransparentPairCuts = async (
-  file: File,
-  splitRatio: number,
-  gapRatio: number
-): Promise<{ partA: SplitPreview; partB: SplitPreview }> => {
+interface ForegroundComponent {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  area: number;
+  centerX: number;
+  centerY: number;
+}
+
+const prepareTransparentCanvas = async (file: File) => {
   const bitmap = await createImageBitmap(file);
   const canvas = document.createElement("canvas");
   canvas.width = bitmap.width;
@@ -118,13 +126,133 @@ const makeTransparentPairCuts = async (
     data[index * 4 + 3] = 0;
   }
 
-  const findBounds = (fromY: number, toY: number) => {
+  ctx.putImageData(imageData, 0, 0);
+  return { canvas, width, height, data };
+};
+
+const getForegroundComponents = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  alphaThreshold = 14
+): ForegroundComponent[] => {
+  const total = width * height;
+  const visited = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  const components: ForegroundComponent[] = [];
+
+  for (let index = 0; index < total; index += 1) {
+    if (visited[index]) continue;
+    const alpha = data[index * 4 + 3];
+    if (alpha <= alphaThreshold) continue;
+    visited[index] = 1;
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = index;
     let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+    let area = 0;
+    let sumX = 0;
+    let sumY = 0;
+
+    while (head < tail) {
+      const current = queue[head++];
+      const x = current % width;
+      const y = Math.floor(current / width);
+      area += 1;
+      sumX += x;
+      sumY += y;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+
+      const neighbors = [
+        x > 0 ? current - 1 : -1,
+        x < width - 1 ? current + 1 : -1,
+        y > 0 ? current - width : -1,
+        y < height - 1 ? current + width : -1
+      ];
+
+      for (const next of neighbors) {
+        if (next < 0 || visited[next]) continue;
+        const nextAlpha = data[next * 4 + 3];
+        if (nextAlpha <= alphaThreshold) continue;
+        visited[next] = 1;
+        queue[tail++] = next;
+      }
+    }
+
+    if (area >= 600) {
+      components.push({
+        minX,
+        minY,
+        maxX,
+        maxY,
+        area,
+        centerX: sumX / area,
+        centerY: sumY / area
+      });
+    }
+  }
+
+  return components.sort((a, b) => b.area - a.area);
+};
+
+const detectSplitLayout = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number
+): { axis: SplitAxis; splitRatio: number; gapRatio: number } => {
+  const components = getForegroundComponents(data, width, height).slice(0, 2);
+  if (components.length < 2) {
+    return { axis: "horizontal", splitRatio: 0.5, gapRatio: 0.08 };
+  }
+
+  const [first, second] = components;
+  const axis: SplitAxis =
+    Math.abs(first.centerX - second.centerX) >= Math.abs(first.centerY - second.centerY)
+      ? "vertical"
+      : "horizontal";
+
+  if (axis === "vertical") {
+    const [left, right] = [first, second].sort((a, b) => a.centerX - b.centerX);
+    const splitPx = (left.maxX + right.minX) * 0.5;
+    const gapPx = Math.max(0, right.minX - left.maxX - 1);
+    return {
+      axis,
+      splitRatio: clamp(splitPx / width, 0.2, 0.8),
+      gapRatio: clamp(gapPx / width, 0.02, 0.18)
+    };
+  }
+
+  const [top, bottom] = [first, second].sort((a, b) => a.centerY - b.centerY);
+  const splitPx = (top.maxY + bottom.minY) * 0.5;
+  const gapPx = Math.max(0, bottom.minY - top.maxY - 1);
+  return {
+    axis,
+    splitRatio: clamp(splitPx / height, 0.2, 0.8),
+    gapRatio: clamp(gapPx / height, 0.02, 0.18)
+  };
+};
+
+const makeTransparentPairCuts = async (
+  file: File,
+  splitRatio: number,
+  gapRatio: number,
+  splitAxis: SplitAxis
+): Promise<{ partA: SplitPreview; partB: SplitPreview }> => {
+  const { canvas, width, height, data } = await prepareTransparentCanvas(file);
+
+  const findBounds = (fromX: number, toX: number, fromY: number, toY: number) => {
+    let minX = toX;
     let minY = toY;
     let maxX = -1;
-    let maxY = fromY;
+    let maxY = -1;
     for (let y = fromY; y < toY; y += 1) {
-      for (let x = 0; x < width; x += 1) {
+      for (let x = fromX; x < toX; x += 1) {
         const alpha = data[(y * width + x) * 4 + 3];
         if (alpha > 14) {
           minX = Math.min(minX, x);
@@ -144,19 +272,6 @@ const makeTransparentPairCuts = async (
     };
   };
 
-  const splitY = Math.round(height * splitRatio);
-  const halfGap = Math.round(height * gapRatio * 0.5);
-  const topBottom = clamp(splitY - halfGap, 1, height - 2);
-  const bottomTop = clamp(splitY + halfGap, topBottom + 1, height - 1);
-
-  ctx.putImageData(imageData, 0, 0);
-
-  const topBounds = findBounds(0, topBottom);
-  const bottomBounds = findBounds(bottomTop, height);
-  if (!topBounds || !bottomBounds) {
-    throw new Error("Could not isolate both strap halves. Try a cleaner pair image.");
-  }
-
   const toPreview = async (bounds: { x: number; y: number; w: number; h: number }, filename: string) => {
     const out = document.createElement("canvas");
     out.width = bounds.w;
@@ -174,6 +289,31 @@ const makeTransparentPairCuts = async (
   };
 
   const stem = file.name.replace(/\.[^.]+$/, "") || "uploaded-strap";
+  if (splitAxis === "vertical") {
+    const splitX = Math.round(width * splitRatio);
+    const halfGap = Math.round(width * gapRatio * 0.5);
+    const leftRight = clamp(splitX - halfGap, 1, width - 2);
+    const rightLeft = clamp(splitX + halfGap, leftRight + 1, width - 1);
+    const leftBounds = findBounds(0, leftRight, 0, height);
+    const rightBounds = findBounds(rightLeft, width, 0, height);
+    if (!leftBounds || !rightBounds) {
+      throw new Error("Could not isolate both strap halves. Try a cleaner pair image.");
+    }
+    return {
+      partA: await toPreview(leftBounds, `${stem}-part-a.png`),
+      partB: await toPreview(rightBounds, `${stem}-part-b.png`)
+    };
+  }
+
+  const splitY = Math.round(height * splitRatio);
+  const halfGap = Math.round(height * gapRatio * 0.5);
+  const topBottom = clamp(splitY - halfGap, 1, height - 2);
+  const bottomTop = clamp(splitY + halfGap, topBottom + 1, height - 1);
+  const topBounds = findBounds(0, width, 0, topBottom);
+  const bottomBounds = findBounds(0, width, bottomTop, height);
+  if (!topBounds || !bottomBounds) {
+    throw new Error("Could not isolate both strap halves. Try a cleaner pair image.");
+  }
   return {
     partA: await toPreview(topBounds, `${stem}-part-a.png`),
     partB: await toPreview(bottomBounds, `${stem}-part-b.png`)
@@ -186,6 +326,7 @@ export default function StrapSplitEditor({
   onApply,
   onClose
 }: StrapSplitEditorProps) {
+  const [splitAxis, setSplitAxis] = useState<SplitAxis>("horizontal");
   const [splitRatio, setSplitRatio] = useState(0.5);
   const [gapRatio, setGapRatio] = useState(0.08);
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
@@ -194,16 +335,34 @@ export default function StrapSplitEditor({
   const previewUrlsRef = useRef<string[]>([]);
 
   useEffect(() => {
-    setSplitRatio(0.5);
-    setGapRatio(0.08);
-  }, [sourceUrl]);
+    let active = true;
+    const detectLayout = async () => {
+      try {
+        const { width, height, data } = await prepareTransparentCanvas(file);
+        if (!active) return;
+        const layout = detectSplitLayout(data, width, height);
+        setSplitAxis(layout.axis);
+        setSplitRatio(layout.splitRatio);
+        setGapRatio(layout.gapRatio);
+      } catch {
+        if (!active) return;
+        setSplitAxis("horizontal");
+        setSplitRatio(0.5);
+        setGapRatio(0.08);
+      }
+    };
+    void detectLayout();
+    return () => {
+      active = false;
+    };
+  }, [file, sourceUrl]);
 
   useEffect(() => {
     let active = true;
     const updatePreview = async () => {
       setBusy(true);
       try {
-        const nextPreview = await makeTransparentPairCuts(file, splitRatio, gapRatio);
+        const nextPreview = await makeTransparentPairCuts(file, splitRatio, gapRatio, splitAxis);
         if (!active) {
           URL.revokeObjectURL(nextPreview.partA.url);
           URL.revokeObjectURL(nextPreview.partB.url);
@@ -225,7 +384,7 @@ export default function StrapSplitEditor({
     return () => {
       active = false;
     };
-  }, [file, splitRatio, gapRatio]);
+  }, [file, splitRatio, gapRatio, splitAxis]);
 
   useEffect(
     () => () => {
@@ -236,13 +395,23 @@ export default function StrapSplitEditor({
 
   const overlay = useMemo(() => {
     if (!naturalSize) return null;
+    if (splitAxis === "vertical") {
+      const splitX = naturalSize.width * splitRatio;
+      const halfGap = naturalSize.width * gapRatio * 0.5;
+      return {
+        axis: splitAxis,
+        leftWidth: clamp(((splitX - halfGap) / naturalSize.width) * 100, 0, 100),
+        rightStart: clamp(((splitX + halfGap) / naturalSize.width) * 100, 0, 100)
+      };
+    }
     const splitY = naturalSize.height * splitRatio;
     const halfGap = naturalSize.height * gapRatio * 0.5;
     return {
+      axis: splitAxis,
       topHeight: clamp(((splitY - halfGap) / naturalSize.height) * 100, 0, 100),
       bottomStart: clamp(((splitY + halfGap) / naturalSize.height) * 100, 0, 100)
     };
-  }, [gapRatio, naturalSize, splitRatio]);
+  }, [gapRatio, naturalSize, splitAxis, splitRatio]);
 
   return (
     <div className="glass-card rounded-2xl p-4 sm:p-5">
@@ -250,7 +419,7 @@ export default function StrapSplitEditor({
         <div>
           <p className="text-base font-semibold text-ink">Split Your Strap</p>
           <p className="mt-1 text-sm text-muted">
-            Confirm the top buckle side and bottom tail side from one clean pair image.
+            Confirm the buckle half and tail half from one clean pair image.
           </p>
         </div>
         <button
@@ -279,20 +448,37 @@ export default function StrapSplitEditor({
                 }
               />
               {overlay ? (
-                <>
-                  <div
-                    className="pointer-events-none absolute left-2 right-2 top-2 rounded-xl border border-[#d7c1a3]/80 bg-[#fbf3e8]"
-                    style={{ height: `calc(${overlay.topHeight}% - 0.75rem)` }}
-                  />
-                  <div
-                    className="pointer-events-none absolute left-2 right-2 bottom-2 rounded-xl border border-fuchsia-300/80 bg-fuchsia-300/10"
-                    style={{ top: `calc(${overlay.bottomStart}% + 0.75rem)` }}
-                  />
-                  <div
-                    className="pointer-events-none absolute left-3 right-3 border-t-2 border-dashed border-slate-700/50"
-                    style={{ top: `${splitRatio * 100}%` }}
-                  />
-                </>
+                overlay.axis === "vertical" ? (
+                  <>
+                    <div
+                      className="pointer-events-none absolute bottom-2 left-2 top-2 rounded-xl border border-[#d7c1a3]/80 bg-[#fbf3e8]"
+                      style={{ width: `calc(${overlay.leftWidth}% - 0.75rem)` }}
+                    />
+                    <div
+                      className="pointer-events-none absolute bottom-2 right-2 top-2 rounded-xl border border-fuchsia-300/80 bg-fuchsia-300/10"
+                      style={{ left: `calc(${overlay.rightStart}% + 0.75rem)` }}
+                    />
+                    <div
+                      className="pointer-events-none absolute bottom-3 top-3 border-l-2 border-dashed border-slate-700/50"
+                      style={{ left: `${splitRatio * 100}%` }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div
+                      className="pointer-events-none absolute left-2 right-2 top-2 rounded-xl border border-[#d7c1a3]/80 bg-[#fbf3e8]"
+                      style={{ height: `calc(${overlay.topHeight}% - 0.75rem)` }}
+                    />
+                    <div
+                      className="pointer-events-none absolute left-2 right-2 bottom-2 rounded-xl border border-fuchsia-300/80 bg-fuchsia-300/10"
+                      style={{ top: `calc(${overlay.bottomStart}% + 0.75rem)` }}
+                    />
+                    <div
+                      className="pointer-events-none absolute left-3 right-3 border-t-2 border-dashed border-slate-700/50"
+                      style={{ top: `${splitRatio * 100}%` }}
+                    />
+                  </>
+                )
               ) : null}
             </div>
           </div>

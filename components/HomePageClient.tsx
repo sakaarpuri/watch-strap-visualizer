@@ -2047,7 +2047,7 @@ export default function HomePageClient({
                 <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm uppercase tracking-[0.12em] text-muted">Your Strap Sheet</p>
                   <p className="mt-2 text-sm text-muted">
-                    Upload one straight pair image: buckle side on top, tail side below.
+                    Upload one clean pair image: buckle half and tail half fully visible, either top-and-bottom or side-by-side.
                   </p>
                   <div className="mt-4 rounded-[1.1rem] border border-[#e1d6c8] bg-white/80 p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7a6a57]">
