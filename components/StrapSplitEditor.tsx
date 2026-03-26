@@ -80,7 +80,7 @@ const prepareTransparentCanvas = async (file: File) => {
     };
   });
   const background = averageColor(cornerSamples);
-  const backgroundThreshold = 70;
+  const backgroundThreshold = 92;
 
   const isBackground = (index: number) => {
     const offset = index * 4;
@@ -91,7 +91,7 @@ const prepareTransparentCanvas = async (file: File) => {
       g: data[offset + 1],
       b: data[offset + 2]
     };
-    const bright = Math.max(pixel.r, pixel.g, pixel.b) > 240;
+    const bright = Math.max(pixel.r, pixel.g, pixel.b) > 226;
     return colorDistance(pixel, background) <= backgroundThreshold || bright;
   };
 
@@ -263,16 +263,100 @@ const makeTransparentPairCuts = async (
       }
     }
     if (maxX < minX || maxY < minY) return null;
-    const pad = 8;
+    const pad = 4;
     return {
       x: clamp(minX - pad, 0, width - 1),
       y: clamp(minY - pad, 0, height - 1),
-      w: clamp(maxX - minX + 1 + pad * 2, 1, width),
-      h: clamp(maxY - minY + 1 + pad * 2, 1, height)
+      w: clamp(maxX - minX + 1 + pad * 2, 1, width - clamp(minX - pad, 0, width - 1)),
+      h: clamp(maxY - minY + 1 + pad * 2, 1, height - clamp(minY - pad, 0, height - 1))
     };
   };
 
-  const toPreview = async (bounds: { x: number; y: number; w: number; h: number }, filename: string) => {
+  const rotateCanvas180 = (source: HTMLCanvasElement) => {
+    const out = document.createElement("canvas");
+    out.width = source.width;
+    out.height = source.height;
+    const outCtx = out.getContext("2d");
+    if (!outCtx) throw new Error("Could not rotate strap preview.");
+    outCtx.clearRect(0, 0, out.width, out.height);
+    outCtx.translate(out.width / 2, out.height / 2);
+    outCtx.rotate(Math.PI);
+    outCtx.drawImage(source, -source.width / 2, -source.height / 2);
+    return out;
+  };
+
+  const trimCanvas = (source: HTMLCanvasElement) => {
+    const ctx = source.getContext("2d");
+    if (!ctx) return source;
+    const imageData = ctx.getImageData(0, 0, source.width, source.height);
+    const { data: pixels } = imageData;
+    let minX = source.width;
+    let minY = source.height;
+    let maxX = -1;
+    let maxY = -1;
+    for (let y = 0; y < source.height; y += 1) {
+      for (let x = 0; x < source.width; x += 1) {
+        const offset = (y * source.width + x) * 4;
+        const alpha = pixels[offset + 3];
+        const r = pixels[offset];
+        const g = pixels[offset + 1];
+        const b = pixels[offset + 2];
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const lowSaturation = max - min < 22;
+        if (alpha > 30 && !(lowSaturation && max > 242)) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+    if (maxX < minX || maxY < minY) return source;
+    const pad = 2;
+    const cropX = clamp(minX - pad, 0, source.width - 1);
+    const cropY = clamp(minY - pad, 0, source.height - 1);
+    const cropW = clamp(maxX - minX + 1 + pad * 2, 1, source.width - cropX);
+    const cropH = clamp(maxY - minY + 1 + pad * 2, 1, source.height - cropY);
+    const out = document.createElement("canvas");
+    out.width = cropW;
+    out.height = cropH;
+    const outCtx = out.getContext("2d");
+    if (!outCtx) return source;
+    outCtx.clearRect(0, 0, cropW, cropH);
+    outCtx.drawImage(source, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+    return out;
+  };
+
+  const getRowWidth = (source: HTMLCanvasElement, yRatio: number) => {
+    const ctx = source.getContext("2d");
+    if (!ctx) return 0;
+    const y = clamp(Math.round((source.height - 1) * yRatio), 0, source.height - 1);
+    const { data: row } = ctx.getImageData(0, y, source.width, 1);
+    let minX = source.width;
+    let maxX = -1;
+    for (let x = 0; x < source.width; x += 1) {
+      const offset = x * 4;
+      if (row[offset + 3] > 30) {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+      }
+    }
+    return maxX >= minX ? maxX - minX + 1 : 0;
+  };
+
+  const normalizeBottomHalf = (source: HTMLCanvasElement) => {
+    const trimmed = trimCanvas(source);
+    const topWidth = getRowWidth(trimmed, 0.16);
+    const bottomWidth = getRowWidth(trimmed, 0.84);
+    return topWidth + 4 < bottomWidth ? rotateCanvas180(trimmed) : trimmed;
+  };
+
+  const toPreview = async (
+    bounds: { x: number; y: number; w: number; h: number },
+    filename: string,
+    options?: { normalizeBottomHalf?: boolean }
+  ) => {
     const out = document.createElement("canvas");
     out.width = bounds.w;
     out.height = bounds.h;
@@ -280,7 +364,8 @@ const makeTransparentPairCuts = async (
     if (!outCtx) throw new Error("Could not create strap preview.");
     outCtx.clearRect(0, 0, out.width, out.height);
     outCtx.drawImage(canvas, bounds.x, bounds.y, bounds.w, bounds.h, 0, 0, bounds.w, bounds.h);
-    const blob = await new Promise<Blob | null>((resolve) => out.toBlob((next) => resolve(next), "image/png"));
+    const finalCanvas = options?.normalizeBottomHalf ? normalizeBottomHalf(out) : trimCanvas(out);
+    const blob = await new Promise<Blob | null>((resolve) => finalCanvas.toBlob((next) => resolve(next), "image/png"));
     if (!blob) throw new Error("Could not export strap half.");
     return {
       file: new File([blob], filename, { type: "image/png" }),
@@ -301,7 +386,7 @@ const makeTransparentPairCuts = async (
     }
     return {
       partA: await toPreview(leftBounds, `${stem}-part-a.png`),
-      partB: await toPreview(rightBounds, `${stem}-part-b.png`)
+      partB: await toPreview(rightBounds, `${stem}-part-b.png`, { normalizeBottomHalf: true })
     };
   }
 
@@ -316,7 +401,7 @@ const makeTransparentPairCuts = async (
   }
   return {
     partA: await toPreview(topBounds, `${stem}-part-a.png`),
-    partB: await toPreview(bottomBounds, `${stem}-part-b.png`)
+    partB: await toPreview(bottomBounds, `${stem}-part-b.png`, { normalizeBottomHalf: true })
   };
 };
 

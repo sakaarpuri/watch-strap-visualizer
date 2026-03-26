@@ -43,6 +43,7 @@ const DIAL_SCALE_MAX = 1.8;
 const DEFAULT_WATCH_PREVIEW_SCALE = 0.64;
 const DEFAULT_SCENE_ZOOM = 0.75;
 const DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.28;
+const DEFAULT_UPLOADED_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.4;
 const SHOW_SHOPPING_PREVIEW = false;
 const strapScaleToUi = (scale: number) => {
   const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
@@ -774,7 +775,7 @@ export default function HomePageClient({
       : activeLibraryStrap?.joinShape;
   const activeAutoFitWidthFactor =
     strapSourceMode === "uploaded" || strapSourceMode === "saved"
-      ? DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR
+      ? DEFAULT_UPLOADED_STRAP_AUTO_FIT_WIDTH_FACTOR
       : activeLibraryStrap?.autoFitWidthFactor ?? DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR;
   const activeAutoGapFactor =
     strapSourceMode === "uploaded" || strapSourceMode === "saved"
@@ -2054,36 +2055,36 @@ export default function HomePageClient({
                       <p className="text-xs text-muted">Retailer-style product shot</p>
                     </div>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-[1rem] border border-[#e5dbcd] bg-[#fbf8f3] p-3">
-                        <div className="relative h-52 overflow-hidden rounded-[0.9rem] border border-[#e5dbcd] bg-white sm:h-56">
+                      <div className="rounded-[1rem] p-0">
+                        <div className="relative h-64 overflow-hidden rounded-[0.9rem] bg-white sm:h-72">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/cognac-grain-leather-buckle.png"
                             alt="Top and bottom strap example buckle side"
-                            className="absolute left-1/2 top-3 h-[6.7rem] w-auto -translate-x-1/2 object-contain sm:h-[7.2rem]"
+                            className="absolute left-1/2 top-1 h-[8.8rem] w-auto -translate-x-1/2 object-contain sm:h-[10rem]"
                           />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/cognac-grain-leather-tail.png"
                             alt="Top and bottom strap example tail side"
-                            className="absolute left-1/2 bottom-3 h-[7.4rem] w-auto -translate-x-1/2 object-contain sm:h-[8rem]"
+                            className="absolute left-1/2 bottom-1 h-[9.8rem] w-auto -translate-x-1/2 object-contain sm:h-[11rem]"
                           />
                         </div>
                         <p className="mt-2 text-sm font-semibold text-ink">Top and bottom</p>
                       </div>
-                      <div className="rounded-[1rem] border border-[#e5dbcd] bg-[#fbf8f3] p-3">
-                        <div className="relative h-52 overflow-hidden rounded-[0.9rem] border border-[#e5dbcd] bg-white sm:h-56">
+                      <div className="rounded-[1rem] p-0">
+                        <div className="relative h-64 overflow-hidden rounded-[0.9rem] bg-white sm:h-72">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/indigo-block-nato-buckle.png"
                             alt="Side by side strap example buckle side"
-                            className="absolute left-[28%] top-1/2 h-[7.2rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[7.8rem]"
+                            className="absolute left-[28%] top-1/2 h-[9.6rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[10.8rem]"
                           />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/indigo-block-nato-tail.png"
                             alt="Side by side strap example tail side"
-                            className="absolute left-[72%] top-1/2 h-[7.6rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[8.2rem]"
+                            className="absolute left-[72%] top-1/2 h-[10rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[11.2rem]"
                           />
                         </div>
                         <p className="mt-2 text-sm font-semibold text-ink">Side by side</p>
