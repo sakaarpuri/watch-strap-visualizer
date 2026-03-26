@@ -690,10 +690,10 @@ export default function HomePageClient({
     }
   };
 
-  const strapsInCategory = useMemo(() => {
-    const straps = [...getStrapsForCategory(category)];
+  const sortStrapsForCategory = (nextCategory: StrapCategory) => {
+    const straps = [...getStrapsForCategory(nextCategory)];
     return straps.sort((a, b) => {
-      if (category === "All categories") {
+      if (nextCategory === "All categories") {
         const categoryDiff =
           ALL_CATEGORY_PRIORITY.indexOf(a.category) - ALL_CATEGORY_PRIORITY.indexOf(b.category);
         if (categoryDiff !== 0) return categoryDiff;
@@ -702,7 +702,9 @@ export default function HomePageClient({
       if (scoreDiff !== 0) return scoreDiff;
       return a.label.localeCompare(b.label);
     });
-  }, [category]);
+  };
+
+  const strapsInCategory = useMemo(() => sortStrapsForCategory(category), [category]);
   const filteredLibraryStraps = useMemo(() => {
     if (styleFilter === "All styles") return strapsInCategory;
     return strapsInCategory.filter((strap) => strap.styleTags.includes(styleFilter));
@@ -1307,6 +1309,31 @@ export default function HomePageClient({
     setSelectedLibraryStrap(nextStrap);
   };
 
+  const activateLibraryStrap = (strap: StrapVariant, index: number) => {
+    if (!hasUserUpload) {
+      setPendingStrapSelection({ sourceType: "library", strap, index });
+      setSelectedLibraryStrap(null);
+      setSelectedSavedStrap(null);
+      setStrapSourceMode("library");
+      setShowFitBench(false);
+      setFitState("auto");
+      setHighlightPreviewWindow(true);
+      return;
+    }
+    setPendingStrapSelection(null);
+    setStrapIndex(index);
+    setSelectedLibraryStrap(strap);
+    setSelectedSavedStrap(null);
+    setStrapSourceMode("library");
+    setShowFitBench(false);
+    setFitState("auto");
+    setHighlightPreviewWindow(true);
+    triggerStrapSettle();
+    window.setTimeout(() => {
+      previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  };
+
   const setGapHalf = (nextHalfGap: number) => {
     if (!partA || !partB) return;
     const nextPair = applyGapToPair(partA, partB, nextHalfGap);
@@ -1733,12 +1760,21 @@ export default function HomePageClient({
                         type="button"
                         onClick={() => {
                           setCategory(option);
-                          setStrapIndex(0);
-                          setSelectedLibraryStrap(null);
-                          setSelectedSavedStrap(null);
-                          setStrapSourceMode("library");
-                          setShowFitBench(false);
-                          setFitState("auto");
+                          const nextCategoryStraps = sortStrapsForCategory(option);
+                          const nextVisibleStraps =
+                            styleFilter === "All styles"
+                              ? nextCategoryStraps
+                              : nextCategoryStraps.filter((strap) => strap.styleTags.includes(styleFilter));
+                          if (!nextVisibleStraps.length) {
+                            setStrapIndex(0);
+                            setSelectedLibraryStrap(null);
+                            setSelectedSavedStrap(null);
+                            setStrapSourceMode("library");
+                            setShowFitBench(false);
+                            setFitState("auto");
+                            return;
+                          }
+                          activateLibraryStrap(nextVisibleStraps[0], 0);
                         }}
                         data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
                         className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
@@ -1813,30 +1849,7 @@ export default function HomePageClient({
                         <StrapDrawerButton
                           key={strap.id}
                           onClick={() => {
-                            if (!hasUserUpload) {
-                              setPendingStrapSelection({ sourceType: "library", strap, index });
-                              setSelectedLibraryStrap(null);
-                              setSelectedSavedStrap(null);
-                              setStrapSourceMode("library");
-                              setShowFitBench(false);
-                              setFitState("auto");
-                              setHighlightPreviewWindow(true);
-                              return;
-                            }
-                            setPendingStrapSelection(null);
-                            setStrapIndex(index);
-                            setSelectedLibraryStrap(strap);
-                            setSelectedSavedStrap(null);
-                            setStrapSourceMode("library");
-                            setShowFitBench(false);
-                            setFitState("auto");
-                            if (hasUserUpload) {
-                              setHighlightPreviewWindow(true);
-                              triggerStrapSettle();
-                              window.setTimeout(() => {
-                                previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                              }, 80);
-                            }
+                            activateLibraryStrap(strap, index);
                           }}
                           strap={strap}
                           active={
