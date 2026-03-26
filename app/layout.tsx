@@ -39,9 +39,6 @@ export default function RootLayout({
               <Link href="/straps/rubber" className="hover:text-[#3b3128]">
                 Rubber
               </Link>
-              <Link href="/straps/metal" className="hover:text-[#3b3128]">
-                Metal
-              </Link>
               <Link href="/contact" className="hover:text-[#3b3128]">
                 Contact
               </Link>

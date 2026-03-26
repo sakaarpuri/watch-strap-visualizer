@@ -887,8 +887,7 @@ export const STRAP_CATEGORIES: StrapCategory[] = [
   "All categories",
   "Leather",
   "Rubber",
-  "Fabric",
-  "Metal"
+  "Fabric"
 ];
 
 export const ALL_PUBLIC_STRAPS: StrapVariant[] = [
