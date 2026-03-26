@@ -2050,17 +2050,52 @@ export default function HomePageClient({
                     Upload one clean pair image: buckle half and tail half fully visible, either top-and-bottom or side-by-side.
                   </p>
                   <div className="mt-4 rounded-[1.1rem] border border-[#e1d6c8] bg-white/80 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7a6a57]">
-                      Best photo style
-                    </p>
-                    <ul className="mt-2 space-y-1.5 text-sm leading-5 text-muted">
-                      <li>Retailer-style product photo on a clean white or pale background.</li>
-                      <li>Shot straight-on from above, not angled or in perspective.</li>
-                      <li>Buckle half on top, tail half below, both fully visible end to end.</li>
-                      <li>No watch head attached, no hand holding it, and very light shadow only.</li>
-                    </ul>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7a6a57]">
+                        Best photo style
+                      </p>
+                      <p className="text-xs text-muted">Retailer-style product shot</p>
+                    </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-[1rem] border border-[#e5dbcd] bg-[#fbf8f3] p-3">
+                        <div className="relative h-44 overflow-hidden rounded-[0.9rem] border border-[#e5dbcd] bg-white">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/strap-selection-kie/cognac-grain-leather-buckle.png"
+                            alt="Top and bottom strap example buckle side"
+                            className="absolute left-1/2 top-3 h-[5.6rem] w-auto -translate-x-1/2 object-contain"
+                          />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/strap-selection-kie/cognac-grain-leather-tail.png"
+                            alt="Top and bottom strap example tail side"
+                            className="absolute left-1/2 bottom-3 h-[6.2rem] w-auto -translate-x-1/2 object-contain"
+                          />
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-ink">Top and bottom</p>
+                        <p className="mt-1 text-sm text-muted">Buckle half above, tail half below.</p>
+                      </div>
+                      <div className="rounded-[1rem] border border-[#e5dbcd] bg-[#fbf8f3] p-3">
+                        <div className="relative h-44 overflow-hidden rounded-[0.9rem] border border-[#e5dbcd] bg-white">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/strap-selection-kie/indigo-block-nato-buckle.png"
+                            alt="Side by side strap example buckle side"
+                            className="absolute left-[28%] top-1/2 h-[6.1rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain"
+                          />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/strap-selection-kie/indigo-block-nato-tail.png"
+                            alt="Side by side strap example tail side"
+                            className="absolute left-[72%] top-1/2 h-[6.4rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain"
+                          />
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-ink">Side by side</p>
+                        <p className="mt-1 text-sm text-muted">Both halves straight and fully visible.</p>
+                      </div>
+                    </div>
                     <p className="mt-3 text-sm text-muted">
-                      That is the most common internet product-photo style and the easiest format for this site to split and preview accurately.
+                      Clean white background, straight angle, no watch attached. Those are the easiest strap photos for the site to split correctly.
                     </p>
                   </div>
                   <input
