@@ -1,6 +1,8 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const alt = "Watchstrapper share preview";
 export const size = {
   width: 1200,
@@ -12,11 +14,23 @@ const cream = "#fff9f2";
 const line = "#eadcc8";
 const ink = "#3b3128";
 const muted = "#7a6a57";
-const navy = "#243b63";
-const sand = "#d7b287";
-const silver = "#cdd3db";
 
-export default function OpenGraphImage() {
+const toDataUrl = async (src: string) => {
+  const filePath = path.join(process.cwd(), "public", src.replace(/^\//, ""));
+  const image = await readFile(filePath);
+  const extension = path.extname(src).toLowerCase();
+  const mimeType =
+    extension === ".webp"
+      ? "image/webp"
+      : extension === ".jpg" || extension === ".jpeg"
+        ? "image/jpeg"
+        : "image/png";
+  return `data:${mimeType};base64,${image.toString("base64")}`;
+};
+
+export default async function OpenGraphImage() {
+  const cataloguePhoto = await toDataUrl("/catalogue-mockup-sample.png");
+
   return new ImageResponse(
     (
       <div
@@ -49,13 +63,13 @@ export default function OpenGraphImage() {
             display: "flex",
             border: `1px solid ${line}`,
             borderRadius: 32,
-            background: "rgba(255,255,255,0.72)",
+            background: "rgba(255,255,255,0.78)",
             boxShadow: "0 18px 42px rgba(80, 58, 30, 0.08)"
           }}
         >
           <div
             style={{
-              width: "52%",
+              width: "48%",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
@@ -79,14 +93,14 @@ export default function OpenGraphImage() {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  fontSize: 66,
+                  fontSize: 62,
                   lineHeight: 1.04,
                   fontWeight: 700,
-                  maxWidth: 520
+                  maxWidth: 500
                 }}
               >
-                <span>Try straps</span>
-                <span>on your watch</span>
+                <span>See any strap</span>
+                <span>on your watch.</span>
               </div>
               <div
                 style={{
@@ -127,69 +141,34 @@ export default function OpenGraphImage() {
           <div
             style={{
               flex: 1,
-              position: "relative",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center"
+              justifyContent: "center",
+              padding: "40px 42px 40px 8px"
             }}
           >
             <div
               style={{
-                position: "absolute",
-                width: 360,
-                height: 360,
-                borderRadius: "50%",
-                border: `16px solid ${silver}`,
-                background: "#ffffff",
-                boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.8)"
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                width: 468,
-                height: 40,
+                width: "100%",
+                height: "100%",
                 display: "flex",
-                justifyContent: "space-between",
-                transform: "translateY(-188px)"
+                overflow: "hidden",
+                borderRadius: 28,
+                border: `1px solid ${line}`,
+                background: "rgba(255,255,255,0.9)",
+                boxShadow: "0 16px 32px rgba(58, 39, 18, 0.10)"
               }}
             >
-              <div style={{ width: 86, height: 20, borderRadius: 999, background: silver }} />
-              <div style={{ width: 86, height: 20, borderRadius: 999, background: silver }} />
+              <img
+                src={cataloguePhoto}
+                alt="Sample watch on a real strap"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover"
+                }}
+              />
             </div>
-            <div
-              style={{
-                position: "absolute",
-                width: 468,
-                height: 40,
-                display: "flex",
-                justifyContent: "space-between",
-                transform: "translateY(188px)"
-              }}
-            >
-              <div style={{ width: 86, height: 20, borderRadius: 999, background: silver }} />
-              <div style={{ width: 86, height: 20, borderRadius: 999, background: silver }} />
-            </div>
-            <div
-              style={{
-                position: "absolute",
-                width: 90,
-                height: 232,
-                borderRadius: 18,
-                background: `linear-gradient(180deg, ${navy}, #35527c)`,
-                transform: "translateY(-296px)"
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                width: 90,
-                height: 250,
-                borderRadius: 18,
-                background: `linear-gradient(180deg, ${sand}, #b78b5c)`,
-                transform: "translateY(314px)"
-              }}
-            />
           </div>
         </div>
       </div>
