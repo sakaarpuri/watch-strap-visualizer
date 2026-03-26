@@ -2046,52 +2046,47 @@ export default function HomePageClient({
               <div className="mt-4 space-y-4">
                 <div className="rounded-[1.35rem] border border-line bg-canvas/72 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   <p className="text-sm uppercase tracking-[0.12em] text-muted">Your Strap Sheet</p>
-                  <p className="mt-2 text-sm text-muted">
-                    Upload one clean pair image: buckle half and tail half fully visible, either top-and-bottom or side-by-side.
-                  </p>
-                  <div className="mt-4 rounded-[1.1rem] border border-[#e1d6c8] bg-white/80 p-3">
+                  <div className="mt-4 rounded-[1.1rem] border border-[#e1d6c8] bg-white/80 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7a6a57]">
                         Best photo style
                       </p>
                       <p className="text-xs text-muted">Retailer-style product shot</p>
                     </div>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <div className="rounded-[1rem] border border-[#e5dbcd] bg-[#fbf8f3] p-3">
-                        <div className="relative h-44 overflow-hidden rounded-[0.9rem] border border-[#e5dbcd] bg-white">
+                        <div className="relative h-52 overflow-hidden rounded-[0.9rem] border border-[#e5dbcd] bg-white sm:h-56">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/cognac-grain-leather-buckle.png"
                             alt="Top and bottom strap example buckle side"
-                            className="absolute left-1/2 top-3 h-[5.6rem] w-auto -translate-x-1/2 object-contain"
+                            className="absolute left-1/2 top-3 h-[6.7rem] w-auto -translate-x-1/2 object-contain sm:h-[7.2rem]"
                           />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/cognac-grain-leather-tail.png"
                             alt="Top and bottom strap example tail side"
-                            className="absolute left-1/2 bottom-3 h-[6.2rem] w-auto -translate-x-1/2 object-contain"
+                            className="absolute left-1/2 bottom-3 h-[7.4rem] w-auto -translate-x-1/2 object-contain sm:h-[8rem]"
                           />
                         </div>
                         <p className="mt-2 text-sm font-semibold text-ink">Top and bottom</p>
-                        <p className="mt-1 text-sm text-muted">Buckle half above, tail half below.</p>
                       </div>
                       <div className="rounded-[1rem] border border-[#e5dbcd] bg-[#fbf8f3] p-3">
-                        <div className="relative h-44 overflow-hidden rounded-[0.9rem] border border-[#e5dbcd] bg-white">
+                        <div className="relative h-52 overflow-hidden rounded-[0.9rem] border border-[#e5dbcd] bg-white sm:h-56">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/indigo-block-nato-buckle.png"
                             alt="Side by side strap example buckle side"
-                            className="absolute left-[28%] top-1/2 h-[6.1rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain"
+                            className="absolute left-[28%] top-1/2 h-[7.2rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[7.8rem]"
                           />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/indigo-block-nato-tail.png"
                             alt="Side by side strap example tail side"
-                            className="absolute left-[72%] top-1/2 h-[6.4rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain"
+                            className="absolute left-[72%] top-1/2 h-[7.6rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[8.2rem]"
                           />
                         </div>
                         <p className="mt-2 text-sm font-semibold text-ink">Side by side</p>
-                        <p className="mt-1 text-sm text-muted">Both halves straight and fully visible.</p>
                       </div>
                     </div>
                     <p className="mt-3 text-sm text-muted">
