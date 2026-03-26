@@ -56,6 +56,10 @@ const organizationJsonLd = {
 };
 
 export default function HomePage() {
+  const buildVersion =
+    process.env.COMMIT_REF?.slice(0, 7) ??
+    process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
+    "local";
   return (
     <>
       <script
@@ -66,7 +70,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
-      <HomePageClient />
+      <HomePageClient buildVersion={buildVersion} />
       <section className="border-t border-[#ead8c0]/70 bg-white/70 px-4 py-12 text-[#5f5143] sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
           <div>

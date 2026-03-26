@@ -544,7 +544,11 @@ function UploadGuideCard({ item }: { item: UploadGuideItem }) {
   );
 }
 
-export default function HomePageClient() {
+export default function HomePageClient({
+  buildVersion
+}: {
+  buildVersion: string;
+}) {
   const {
     configured: accountConfigured,
     loading: accountLoading,
@@ -1225,6 +1229,7 @@ export default function HomePageClient() {
       const shouldPreserve = Boolean(
         latestPartA &&
           latestPartB &&
+          fitState !== "auto" &&
           !lugGuideOverrides &&
           (preserveSettingsRef.current || lockViewRef.current)
       );
@@ -2615,16 +2620,19 @@ export default function HomePageClient() {
             <p className="mt-3 text-sm text-muted">
               Visual inspiration only. Final fit depends on lug width &amp; strap model.
             </p>
-            <div className="mt-5 flex justify-center md:justify-end">
-              <Link
-                href="mailto:hello@watchstrapper.com"
-                className="neo-button rounded-2xl border border-line px-5 py-3 text-sm font-semibold text-ink"
-              >
-                hello@watchstrapper.com
-              </Link>
-            </div>
+          <div className="mt-5 flex justify-center md:justify-end">
+            <Link
+              href="mailto:hello@watchstrapper.com"
+              className="neo-button rounded-2xl border border-line px-5 py-3 text-sm font-semibold text-ink"
+            >
+              hello@watchstrapper.com
+            </Link>
           </div>
-        </section>
+          <p className="mt-3 text-center text-[11px] uppercase tracking-[0.16em] text-[#8b7c6d] md:text-right">
+            Version {buildVersion}
+          </p>
+        </div>
+      </section>
 
         <section className="order-3 min-w-0 space-y-4 xl:hidden">
           <div className="glass-card atelier-card-soft rounded-[1.7rem] p-4">
@@ -2824,6 +2832,9 @@ export default function HomePageClient() {
               hello@watchstrapper.com
             </Link>
           </div>
+          <p className="mt-3 text-center text-[11px] uppercase tracking-[0.16em] text-[#8b7c6d]">
+            Version {buildVersion}
+          </p>
         </section>
 
         {canOpenTools ? <aside className="order-4 hidden min-w-0 xl:block xl:order-3 xl:self-start" /> : null}
