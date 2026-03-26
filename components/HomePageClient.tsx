@@ -800,7 +800,7 @@ export default function HomePageClient({
         ? "1. Watch head view"
         : "";
   const previewStageHint = canRender
-    ? "Your strap is on the bench. Save the view, or open the bench if you want to refine it."
+    ? "Your strap is on the bench. Open the bench if you want to refine it."
     : cropSourceUrl
       ? "Frame the watch in this same stage, then apply the crop."
       : canShowWatchOnlyPreview
@@ -1082,19 +1082,6 @@ export default function HomePageClient({
       }
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "We couldn't sign you in.");
-    }
-  };
-
-  const handleSaveWatchToCollection = async () => {
-    if (!uploadedWatchFile || !requireSignedIn("Sign in to save this watch to your collection.")) return;
-    const defaultLabel = uploadedWatchFile.name.replace(/\.[^.]+$/, "") || "My watch";
-    const label = window.prompt("Name this watch for your collection.", defaultLabel)?.trim();
-    if (!label) return;
-    try {
-      await saveWatch({ label, file: uploadedWatchFile });
-      setSaveFeedback(`Saved ${label} to My Watches.`);
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "We couldn't save that watch.");
     }
   };
 
@@ -1639,6 +1626,16 @@ export default function HomePageClient({
               {saveFeedback}
             </span>
           ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              if (!requireSignedIn("Sign in to review your saved looks.")) return;
+              setShowSavedLooksDialog(true);
+            }}
+            className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+          >
+            Saved Looks
+          </button>
           {user ? (
             <button
               type="button"
@@ -1665,7 +1662,7 @@ export default function HomePageClient({
           Watchstrapper
         </p>
         <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[1.4rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[2.2rem]">
-          See any strap on your watch before you buy.
+          See any strap on your watch.
         </h1>
       </header>
 
@@ -2140,18 +2137,6 @@ export default function HomePageClient({
                 >
                   My Watches
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!requireSignedIn("Sign in to review your saved looks.")) return;
-                    setShowSavedLooksDialog(true);
-                  }}
-                  className={`neo-button min-h-[3.05rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink ${
-                    currentSampleWatch ? "" : "col-span-1"
-                  }`}
-                >
-                  Saved Looks
-                </button>
               </div>
             </div>
             <div className="hidden grid-cols-1 gap-2 sm:grid sm:grid-cols-2 xl:w-[33rem] xl:justify-self-end">
@@ -2181,30 +2166,11 @@ export default function HomePageClient({
               >
                 My Watches
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!requireSignedIn("Sign in to review your saved looks.")) return;
-                  setShowSavedLooksDialog(true);
-                }}
-                className="neo-button min-h-[3.6rem] rounded-[1.45rem] px-5 py-3 text-base font-semibold text-ink"
-              >
-                Saved Looks
-              </button>
             </div>
           </div>
 
           {(hasUserUpload && !cropSourceUrl) || canRender ? (
             <div className="grid grid-cols-2 gap-2 rounded-[1.3rem] border border-line bg-white/62 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:flex sm:flex-wrap sm:items-center sm:rounded-[1.45rem] sm:px-4 sm:py-4">
-              {hasUserUpload && !cropSourceUrl ? (
-                <button
-                  type="button"
-                  onClick={() => void handleSaveWatchToCollection()}
-                  className="neo-button col-span-2 min-h-[2.8rem] rounded-[1.05rem] px-3.5 py-2 text-[13px] font-semibold text-ink sm:col-auto sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
-                >
-                  Save Watch to Collection
-                </button>
-              ) : null}
               {canRender ? (
                 <>
                   <button
@@ -2219,7 +2185,7 @@ export default function HomePageClient({
                     onClick={() => void handleSaveLook()}
                     className="neo-button min-h-[2.8rem] rounded-[1.05rem] px-3.5 py-2 text-[13px] font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
                   >
-                    Save to Looks
+                    Save Look
                   </button>
                 </>
               ) : null}
@@ -2234,12 +2200,39 @@ export default function HomePageClient({
             }
           >
             {cropSourceUrl && originalWatchFile ? (
-              <CropEditor
-                file={originalWatchFile}
-                sourceUrl={cropSourceUrl}
-                onApply={applyCroppedDial}
-                onClose={() => setCropSourceUrl(null)}
-              />
+              <div className="space-y-4">
+                <div className="glass-card atelier-card-soft rounded-[1.4rem] p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
+                        Extract Watch with AI
+                      </p>
+                      <p className="mt-1 text-sm text-muted">
+                        Use AI cleanup before cropping if the watch needs separating from the background.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void runCleanupFallback()}
+                      disabled={!hasUserUpload || aiTools.cleanup.loading}
+                      className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
+                    >
+                      {aiTools.cleanup.loading ? "Extracting..." : "Extract Watch with AI"}
+                    </button>
+                  </div>
+                  {aiTools.cleanup.error ? (
+                    <div className="mt-3">
+                      <ErrorText message={aiTools.cleanup.error} />
+                    </div>
+                  ) : null}
+                </div>
+                <CropEditor
+                  file={originalWatchFile}
+                  sourceUrl={cropSourceUrl}
+                  onApply={applyCroppedDial}
+                  onClose={() => setCropSourceUrl(null)}
+                />
+              </div>
             ) : canRender ? (
               <div className={`${highlightPreviewWindow ? "preview-attention-ring rounded-[1.75rem]" : ""} ${animateStrapSettle ? "strap-settle-in" : ""}`}>
                 <CanvasPreview
@@ -2339,14 +2332,6 @@ export default function HomePageClient({
             {(hasUserUpload || canRender) && !cropSourceUrl ? (
               <div className="glass-card atelier-card-soft rounded-[1.6rem] p-4">
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void runCleanupFallback()}
-                    disabled={!hasUserUpload || aiTools.cleanup.loading}
-                    className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
-                  >
-                    {aiTools.cleanup.loading ? "Extracting..." : "Extract Watch with AI"}
-                  </button>
                   {canOpenTools ? (
                     <div className="rounded-2xl border border-line bg-white/78 px-4 py-2.5 text-sm text-[#5f5143]">
                       <button
@@ -2461,18 +2446,6 @@ export default function HomePageClient({
               </div>
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <div className="space-y-2">
-                  <ToolButton
-                    title="Extract Watch with AI"
-                    subtitle="from messy backgrounds"
-                    disabled={!hasUserUpload}
-                    loading={aiTools.cleanup.loading}
-                    sampleImageSrc="/bench-details/extract-watch.jpg"
-                    onClick={() => void runCleanupFallback()}
-                  />
-                  {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
-                </div>
-
-                <div className="space-y-3">
                   <ToolButton
                     title="Create Catalogue Image"
                     disabled={!canRender}
@@ -2665,18 +2638,6 @@ export default function HomePageClient({
             {mobileBenchToolsOpen ? (
               <div className="mt-4 grid gap-4">
                 <div className="space-y-2">
-                  <ToolButton
-                    title="Extract Watch with AI"
-                    subtitle="from messy backgrounds"
-                    disabled={!hasUserUpload}
-                    loading={aiTools.cleanup.loading}
-                    sampleImageSrc="/bench-details/extract-watch.jpg"
-                    onClick={() => void runCleanupFallback()}
-                  />
-                  {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
-                </div>
-
-                <div className="space-y-3">
                   <ToolButton
                     title="Create Catalogue Image"
                     disabled={!canRender}
