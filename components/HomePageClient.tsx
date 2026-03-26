@@ -2056,35 +2056,37 @@ export default function HomePageClient({
                     </div>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <div className="rounded-[1rem] p-0">
-                        <div className="relative h-64 overflow-hidden rounded-[0.9rem] bg-white sm:h-72">
+                        <div className="relative h-72 overflow-hidden rounded-[0.9rem] bg-white sm:h-80">
+                          <div className="absolute left-6 right-6 top-1/2 z-[1] border-t border-dashed border-[#d5c7b4]" />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/cognac-grain-leather-buckle.png"
                             alt="Top and bottom strap example buckle side"
-                            className="absolute left-1/2 top-1 h-[8.8rem] w-auto -translate-x-1/2 object-contain sm:h-[10rem]"
+                            className="absolute left-1/2 top-1 h-[10.8rem] w-auto -translate-x-1/2 object-contain sm:h-[12.4rem]"
                           />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/strap-selection-kie/cognac-grain-leather-tail.png"
                             alt="Top and bottom strap example tail side"
-                            className="absolute left-1/2 bottom-1 h-[9.8rem] w-auto -translate-x-1/2 object-contain sm:h-[11rem]"
+                            className="absolute left-1/2 bottom-1 h-[11.6rem] w-auto -translate-x-1/2 object-contain sm:h-[13.2rem]"
                           />
                         </div>
                         <p className="mt-2 text-sm font-semibold text-ink">Top and bottom</p>
                       </div>
                       <div className="rounded-[1rem] p-0">
-                        <div className="relative h-64 overflow-hidden rounded-[0.9rem] bg-white sm:h-72">
+                        <div className="relative h-72 overflow-hidden rounded-[0.9rem] bg-white sm:h-80">
+                          <div className="absolute bottom-6 top-6 left-1/2 z-[1] border-l border-dashed border-[#d5c7b4]" />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src="/strap-selection-kie/indigo-block-nato-buckle.png"
+                            src="/strap-selection-kie/cognac-grain-leather-buckle.png"
                             alt="Side by side strap example buckle side"
-                            className="absolute left-[28%] top-1/2 h-[9.6rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[10.8rem]"
+                            className="absolute left-[28%] top-1/2 h-[11.2rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[12.8rem]"
                           />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src="/strap-selection-kie/indigo-block-nato-tail.png"
+                            src="/strap-selection-kie/cognac-grain-leather-tail.png"
                             alt="Side by side strap example tail side"
-                            className="absolute left-[72%] top-1/2 h-[10rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[11.2rem]"
+                            className="absolute left-[72%] top-1/2 h-[11.6rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain sm:h-[13.2rem]"
                           />
                         </div>
                         <p className="mt-2 text-sm font-semibold text-ink">Side by side</p>
