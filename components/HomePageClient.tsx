@@ -600,6 +600,7 @@ export default function HomePageClient() {
   const [fitState, setFitState] = useState<FitState>("auto");
   const [fitConfidence, setFitConfidence] = useState(0);
   const [showFitBench, setShowFitBench] = useState(false);
+  const [mobileBenchToolsOpen, setMobileBenchToolsOpen] = useState(false);
   const [isAutoAligning, setIsAutoAligning] = useState(false);
   const [aiTools, setAiTools] = useState<Record<AiToolKey, AiToolState>>(defaultToolState);
   const [generatedResults, setGeneratedResults] = useState<GeneratedResultState>({
@@ -2055,7 +2056,7 @@ export default function HomePageClient() {
 
         <section
           ref={previewSectionRef}
-          className={`relative order-1 min-w-0 space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
+          className={`relative order-1 min-w-0 space-y-3 sm:space-y-4 xl:order-2 ${hasUserUpload ? "" : "xl:pt-14 xl:max-w-[58rem]"}`}
         >
           <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start xl:gap-x-8">
             <div className="max-w-[38rem]">
@@ -2070,7 +2071,51 @@ export default function HomePageClient() {
                 </p>
               ) : null}
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:w-[33rem] xl:justify-self-end">
+            <div className="space-y-2 sm:hidden">
+              <button
+                type="button"
+                onClick={() => changeWatchInputRef.current?.click()}
+                className="neo-button min-h-[3.2rem] w-full rounded-[1.2rem] px-4 py-2.5 text-sm font-semibold text-ink"
+              >
+                {hasUserUpload ? "Upload New Watch" : "Upload Watch"}
+              </button>
+              <div className="grid grid-cols-2 gap-2">
+                {currentSampleWatch ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowSampleWatchesDialog(true)}
+                    className="neo-button min-h-[3.05rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink"
+                  >
+                    Try Another Sample
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!requireSignedIn("Sign in to reuse your prepared watch collection.")) return;
+                    setShowMyWatchesDialog(true);
+                  }}
+                  className={`neo-button min-h-[3.05rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink ${
+                    currentSampleWatch ? "" : "col-span-1"
+                  }`}
+                >
+                  My Watches
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!requireSignedIn("Sign in to review your saved looks.")) return;
+                    setShowSavedLooksDialog(true);
+                  }}
+                  className={`neo-button min-h-[3.05rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink ${
+                    currentSampleWatch ? "" : "col-span-1"
+                  }`}
+                >
+                  Saved Looks
+                </button>
+              </div>
+            </div>
+            <div className="hidden grid-cols-1 gap-2 sm:grid sm:grid-cols-2 xl:w-[33rem] xl:justify-self-end">
               <button
                 type="button"
                 onClick={() => changeWatchInputRef.current?.click()}
@@ -2111,12 +2156,12 @@ export default function HomePageClient() {
           </div>
 
           {(hasUserUpload && !cropSourceUrl) || canRender ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-[1.45rem] border border-line bg-white/62 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+            <div className="flex flex-wrap items-center gap-2 rounded-[1.3rem] border border-line bg-white/62 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:rounded-[1.45rem] sm:px-4 sm:py-4">
               {hasUserUpload && !cropSourceUrl ? (
                 <button
                   type="button"
                   onClick={() => void handleSaveWatchToCollection()}
-                  className="neo-button min-h-[3.45rem] rounded-[1.35rem] px-5 py-3 text-base font-semibold text-ink"
+                  className="neo-button min-h-[3rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
                 >
                   Save Watch to Collection
                 </button>
@@ -2126,7 +2171,7 @@ export default function HomePageClient() {
                   <button
                     type="button"
                     onClick={toggleLockView}
-                    className={`min-h-[3.45rem] rounded-[1.35rem] border px-5 py-3 text-base font-semibold transition ${
+                    className={`min-h-[3rem] rounded-[1.15rem] border px-4 py-2.5 text-sm font-semibold transition sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base ${
                       lockView
                         ? "atelier-accent-soft"
                         : "border-line bg-white/78 text-ink hover:bg-white"
@@ -2137,14 +2182,14 @@ export default function HomePageClient() {
                   <button
                     type="button"
                     onClick={() => void onSavePreviewImage()}
-                    className="neo-button min-h-[3.45rem] rounded-[1.35rem] px-5 py-3 text-base font-semibold text-ink"
+                    className="neo-button min-h-[3rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
                   >
                     Save Image
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleSaveLook()}
-                    className="neo-button min-h-[3.45rem] rounded-[1.35rem] px-5 py-3 text-base font-semibold text-ink"
+                    className="neo-button min-h-[3rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
                   >
                     Save to Looks
                   </button>
@@ -2156,8 +2201,8 @@ export default function HomePageClient() {
           <div
             className={
               cropSourceUrl || canRender || canShowWatchOnlyPreview
-                ? "relative glass-card atelier-card-soft rounded-[2rem] p-3 sm:p-4"
-                : "relative"
+                ? "relative -mx-1 glass-card atelier-card-soft rounded-[1.7rem] p-2.5 sm:mx-0 sm:rounded-[2rem] sm:p-4"
+                : "relative -mx-1 sm:mx-0"
             }
           >
             {cropSourceUrl && originalWatchFile ? (
@@ -2562,57 +2607,69 @@ export default function HomePageClient() {
         </section>
 
         <section className="order-3 min-w-0 space-y-4 xl:hidden">
-          <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
-            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div className="glass-card atelier-card-soft rounded-[1.7rem] p-4">
+            <button
+              type="button"
+              onClick={() => setMobileBenchToolsOpen((prev) => !prev)}
+              className="flex w-full items-start justify-between gap-3 text-left"
+              aria-expanded={mobileBenchToolsOpen}
+            >
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
                   3. Bench Tools
                 </p>
+                <p className="mt-1 text-sm text-muted">
+                  AI cleanup and catalogue tools when you need them, tucked away by default on phone.
+                </p>
               </div>
-              {activeAiStatus.tool ? (
-                <div className="md:max-w-[18rem]">
-                  <CompactAiStatus label={activeAiStatus.label} stage={activeAiStatus.stage} />
-                </div>
-              ) : null}
-            </div>
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              <div className="space-y-2">
-                <ToolButton
-                  title="Extract Watch with AI"
-                  subtitle="from messy backgrounds"
-                  disabled={!hasUserUpload}
-                  loading={aiTools.cleanup.loading}
-                  sampleImageSrc="/bench-details/extract-watch.jpg"
-                  onClick={() => void runCleanupFallback()}
-                />
-                {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
+              <span className="neo-button shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold text-ink">
+                {mobileBenchToolsOpen ? "Hide" : "Open"}
+              </span>
+            </button>
+            {activeAiStatus.tool ? (
+              <div className="mt-3">
+                <CompactAiStatus label={activeAiStatus.label} stage={activeAiStatus.stage} />
               </div>
-
-              <div className="space-y-3">
-                <ToolButton
-                  title="Create Catalogue Image"
-                  disabled={!canRender || !lockView}
-                  loading={aiTools.final.loading}
-                  sampleImageSrc="/catalogue-mockup-sample.png"
-                  highlighted={mockupReadyHighlight}
-                  note="Lock the view with your favourite strap, then create a catalogue-style shot."
-                  onClick={() => void runFinalRender()}
-                />
-                {generatedResults.final ? (
-                  <ResultActions
-                    url={generatedResults.final}
-                    label="View mockup"
-                    onOpenInPage={() => {
-                      clearMockupReadyHighlight();
-                      setInlineMockupUrl(generatedResults.final);
-                    }}
-                    onSave={() => void onSaveMockupImage(generatedResults.final as string)}
+            ) : null}
+            {mobileBenchToolsOpen ? (
+              <div className="mt-4 grid gap-4">
+                <div className="space-y-2">
+                  <ToolButton
+                    title="Extract Watch with AI"
+                    subtitle="from messy backgrounds"
+                    disabled={!hasUserUpload}
+                    loading={aiTools.cleanup.loading}
+                    sampleImageSrc="/bench-details/extract-watch.jpg"
+                    onClick={() => void runCleanupFallback()}
                   />
-                ) : null}
-                {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
-              </div>
+                  {aiTools.cleanup.error ? <ErrorText message={aiTools.cleanup.error} /> : null}
+                </div>
 
-            </div>
+                <div className="space-y-3">
+                  <ToolButton
+                    title="Create Catalogue Image"
+                    disabled={!canRender || !lockView}
+                    loading={aiTools.final.loading}
+                    sampleImageSrc="/catalogue-mockup-sample.png"
+                    highlighted={mockupReadyHighlight}
+                    note="Lock the view with your favourite strap, then create a catalogue-style shot."
+                    onClick={() => void runFinalRender()}
+                  />
+                  {generatedResults.final ? (
+                    <ResultActions
+                      url={generatedResults.final}
+                      label="View mockup"
+                      onOpenInPage={() => {
+                        clearMockupReadyHighlight();
+                        setInlineMockupUrl(generatedResults.final);
+                      }}
+                      onSave={() => void onSaveMockupImage(generatedResults.final as string)}
+                    />
+                  ) : null}
+                  {aiTools.final.error ? <ErrorText message={aiTools.final.error} /> : null}
+                </div>
+              </div>
+            ) : null}
           </div>
           {strapSourceMode === "library" ? (
             <div
