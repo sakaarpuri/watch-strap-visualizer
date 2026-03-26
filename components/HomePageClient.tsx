@@ -597,6 +597,7 @@ export default function HomePageClient({
   const [selectedLibraryStrap, setSelectedLibraryStrap] = useState<StrapVariant | null>(null);
   const [selectedSavedStrap, setSelectedSavedStrap] = useState<SavedStrap | null>(null);
   const [pendingStrapSelection, setPendingStrapSelection] = useState<PendingStrapSelection>(null);
+  const [pendingUploadedStrapSelection, setPendingUploadedStrapSelection] = useState(false);
   const [partA, setPartA] = useState<PartTransform | null>(null);
   const [partB, setPartB] = useState<PartTransform | null>(null);
   const [dialScale, setDialScale] = useState(DEFAULT_WATCH_PREVIEW_SCALE);
@@ -790,7 +791,9 @@ export default function HomePageClient({
     () => Boolean(partA && partB && activeStrapASrc && activeStrapBSrc),
     [partA, partB, activeStrapASrc, activeStrapBSrc]
   );
-  const hasPendingPreUploadStrap = Boolean(pendingStrapSelection && hasUserUpload && !canRender);
+  const hasPendingPreUploadStrap = Boolean(
+    (pendingStrapSelection || pendingUploadedStrapSelection) && hasUserUpload && !canRender
+  );
   const canShowLiveLugGuides = showLugGuides && !lockView && firstRenderedStrapRef.current;
   const canShowWatchOnlyPreview = hasUserUpload && !canRender;
   const previewStageTitle = canRender
@@ -806,7 +809,10 @@ export default function HomePageClient({
       ? "Frame the watch in this same stage, then apply the crop."
       : canShowWatchOnlyPreview
         ? hasPendingPreUploadStrap
-          ? `Your watch is ready. Line up the lug guides, then apply ${pendingStrapSelection?.strap.label ?? "your selected strap"}.`
+          ? `Your watch is ready. Line up the lug guides, then apply ${
+              pendingStrapSelection?.strap.label ??
+              (pendingUploadedStrapSelection ? "your uploaded strap" : "your selected strap")
+            }.`
           : "Your watch is ready. Line up the lug guides if needed, then pick a strap."
         : "";
   const canOpenTools = hasUserUpload && !cropSourceUrl;
@@ -890,6 +896,7 @@ export default function HomePageClient({
     setStrapSplitSourceUrl(nextUrl);
     setUploadedStrapPartA(null);
     setUploadedStrapPartB(null);
+    setPendingUploadedStrapSelection(false);
     setStrapSourceMode("uploaded");
     setStrapDrawerView("uploaded");
   };
@@ -908,7 +915,12 @@ export default function HomePageClient({
     setStrapDrawerView("uploaded");
     setShowFitBench(false);
     setFitState("auto");
-    triggerStrapSettle();
+    if (hasUserUpload) {
+      setPendingUploadedStrapSelection(false);
+      triggerStrapSettle();
+    } else {
+      setPendingUploadedStrapSelection(true);
+    }
   };
 
   useEffect(() => {
@@ -1144,18 +1156,20 @@ export default function HomePageClient({
   };
 
   const applyPendingSelection = () => {
-    if (!pendingStrapSelection) return;
-    if (pendingStrapSelection.sourceType === "library") {
-      setStrapIndex(pendingStrapSelection.index);
-      setSelectedLibraryStrap(pendingStrapSelection.strap);
-      setSelectedSavedStrap(null);
-      setStrapSourceMode("library");
-    } else {
-      setSelectedSavedStrap(pendingStrapSelection.strap);
-      setSelectedLibraryStrap(null);
-      setStrapSourceMode("saved");
+    if (pendingStrapSelection) {
+      if (pendingStrapSelection.sourceType === "library") {
+        setStrapIndex(pendingStrapSelection.index);
+        setSelectedLibraryStrap(pendingStrapSelection.strap);
+        setSelectedSavedStrap(null);
+        setStrapSourceMode("library");
+      } else {
+        setSelectedSavedStrap(pendingStrapSelection.strap);
+        setSelectedLibraryStrap(null);
+        setStrapSourceMode("saved");
+      }
     }
     setPendingStrapSelection(null);
+    setPendingUploadedStrapSelection(false);
     setShowFitBench(false);
     setFitState("auto");
     triggerStrapSettle();
@@ -1212,6 +1226,7 @@ export default function HomePageClient({
 
   const autoAlignStraps = async () => {
     if (!activeStrapASrc || !activeStrapBSrc) return;
+    if (pendingStrapSelection || pendingUploadedStrapSelection) return;
     setIsAutoAligning(true);
     try {
       const latestPartA = latestPartARef.current;
@@ -1301,6 +1316,7 @@ export default function HomePageClient({
   const activateLibraryStrap = (strap: StrapVariant, index: number) => {
     if (!hasUserUpload) {
       setPendingStrapSelection({ sourceType: "library", strap, index });
+      setPendingUploadedStrapSelection(false);
       setSelectedLibraryStrap(null);
       setSelectedSavedStrap(null);
       setStrapSourceMode("library");
@@ -1310,6 +1326,7 @@ export default function HomePageClient({
       return;
     }
     setPendingStrapSelection(null);
+    setPendingUploadedStrapSelection(false);
     setStrapIndex(index);
     setSelectedLibraryStrap(strap);
     setSelectedSavedStrap(null);
@@ -1929,6 +1946,7 @@ export default function HomePageClient({
                             showCategory={false}
                             onClick={() => {
                               if (!hasUserUpload) {
+                                setPendingUploadedStrapSelection(false);
                                 if (item.sourceType === "saved" && saved) {
                                   setPendingStrapSelection({ sourceType: "saved", strap: saved });
                                   setStrapSourceMode("saved");
@@ -1945,6 +1963,7 @@ export default function HomePageClient({
                                 return;
                               }
                               setPendingStrapSelection(null);
+                              setPendingUploadedStrapSelection(false);
                               if (item.sourceType === "saved" && saved) {
                                 setSelectedSavedStrap(saved);
                                 setSelectedLibraryStrap(null);
@@ -2317,7 +2336,12 @@ export default function HomePageClient({
                 onLugGuidesChange={handleLugGuidesChange}
                 showGuideOnboarding={showLugGuideOnboarding}
                 onDismissGuideOnboarding={dismissLugGuideOnboarding}
-                pendingStrapLabel={hasPendingPreUploadStrap ? pendingStrapSelection?.strap.label ?? null : null}
+                pendingStrapLabel={
+                  hasPendingPreUploadStrap
+                    ? pendingStrapSelection?.strap.label ??
+                      (pendingUploadedStrapSelection ? "your uploaded strap" : null)
+                    : null
+                }
               />
             ) : (
               <PreviewUploadStage
