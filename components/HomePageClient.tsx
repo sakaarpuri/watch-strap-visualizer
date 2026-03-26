@@ -799,7 +799,7 @@ export default function HomePageClient({
         ? "1. Watch head view"
         : "";
   const previewStageHint = canRender
-    ? "Your strap is on the bench. Lock the fit, save the view, or open the bench if you want to refine."
+    ? "Your strap is on the bench. Save the view, or open the bench if you want to refine it."
     : cropSourceUrl
       ? "Frame the watch in this same stage, then apply the crop."
       : canShowWatchOnlyPreview
@@ -2194,12 +2194,12 @@ export default function HomePageClient({
           </div>
 
           {(hasUserUpload && !cropSourceUrl) || canRender ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-[1.3rem] border border-line bg-white/62 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:rounded-[1.45rem] sm:px-4 sm:py-4">
+            <div className="grid grid-cols-2 gap-2 rounded-[1.3rem] border border-line bg-white/62 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] sm:flex sm:flex-wrap sm:items-center sm:rounded-[1.45rem] sm:px-4 sm:py-4">
               {hasUserUpload && !cropSourceUrl ? (
                 <button
                   type="button"
                   onClick={() => void handleSaveWatchToCollection()}
-                  className="neo-button min-h-[3rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
+                  className="neo-button col-span-2 min-h-[2.8rem] rounded-[1.05rem] px-3.5 py-2 text-[13px] font-semibold text-ink sm:col-auto sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
                 >
                   Save Watch to Collection
                 </button>
@@ -2208,26 +2208,15 @@ export default function HomePageClient({
                 <>
                   <button
                     type="button"
-                    onClick={toggleLockView}
-                    className={`min-h-[3rem] rounded-[1.15rem] border px-4 py-2.5 text-sm font-semibold transition sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base ${
-                      lockView
-                        ? "atelier-accent-soft"
-                        : "border-line bg-white/78 text-ink hover:bg-white"
-                    }`}
-                  >
-                    {lockView ? "Unlock Fit" : "Lock Fit"}
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => void onSavePreviewImage()}
-                    className="neo-button min-h-[3rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
+                    className="neo-button min-h-[2.8rem] rounded-[1.05rem] px-3.5 py-2 text-[13px] font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
                   >
                     Save Image
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleSaveLook()}
-                    className="neo-button min-h-[3rem] rounded-[1.15rem] px-4 py-2.5 text-sm font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
+                    className="neo-button min-h-[2.8rem] rounded-[1.05rem] px-3.5 py-2 text-[13px] font-semibold text-ink sm:min-h-[3.45rem] sm:rounded-[1.35rem] sm:px-5 sm:py-3 sm:text-base"
                   >
                     Save to Looks
                   </button>
@@ -2302,16 +2291,17 @@ export default function HomePageClient({
             )}
             {canOpenTools ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => setShowFitBench(true)}
-                  className={`pointer-events-auto absolute top-5 right-[-1px] z-20 hidden h-11 items-center rounded-l-none rounded-r-[1.1rem] border border-l-0 px-4 text-[11px] font-semibold uppercase tracking-[0.22em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] backdrop-blur-sm transition xl:inline-flex ${
-                    showFitBench
-                      ? "opacity-0 pointer-events-none"
-                      : "translate-x-[calc(100%-1px)] border-[#e3d3bd] bg-[#fffdf9] text-[#6f6559] hover:border-[#d9c2a3] hover:bg-[#fff8ef]"
-                  }`}
-                  aria-expanded={showFitBench}
-                >
+                  <button
+                    type="button"
+                    onClick={() => setShowFitBench(true)}
+                    className={`pointer-events-auto absolute top-5 right-[-1px] z-20 hidden h-11 items-center rounded-l-none rounded-r-[1.1rem] border border-l-0 px-4 text-[11px] font-semibold uppercase tracking-[0.22em] shadow-[0_12px_24px_rgba(56,44,32,0.08)] backdrop-blur-sm transition xl:inline-flex ${
+                      showFitBench
+                        ? "opacity-0 pointer-events-none"
+                        : "translate-x-[calc(100%-1px)] border-[#e3d3bd] bg-[#fffdf9] text-[#6f6559] hover:border-[#d9c2a3] hover:bg-[#fff8ef]"
+                    }`}
+                    aria-expanded={showFitBench}
+                    title="Open tools to zoom in or out on the preview window"
+                  >
                   Tools
                 </button>
                 {showFitBench ? (
@@ -2357,18 +2347,17 @@ export default function HomePageClient({
                     {aiTools.cleanup.loading ? "Extracting..." : "Extract Watch with AI"}
                   </button>
                   {canOpenTools ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowFitBench((prev) => !prev)}
-                      className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${
-                        showFitBench
-                          ? "atelier-accent-soft"
-                          : "border-line bg-white/78 text-ink hover:bg-white"
-                      }`}
-                      aria-expanded={showFitBench}
-                    >
-                      {showFitBench ? "Hide Tools" : "Tools"}
-                    </button>
+                    <div className="rounded-2xl border border-line bg-white/78 px-4 py-2.5 text-sm text-[#5f5143]">
+                      <button
+                        type="button"
+                        onClick={() => setShowFitBench((prev) => !prev)}
+                        className="font-semibold text-ink"
+                        aria-expanded={showFitBench}
+                      >
+                        {showFitBench ? "Hide Tools" : "Tools"}
+                      </button>
+                      <p className="mt-1 text-xs leading-4 text-muted">Zoom in or out on the preview window.</p>
+                    </div>
                   ) : null}
                 </div>
                 {aiTools.cleanup.error ? (
@@ -2485,11 +2474,11 @@ export default function HomePageClient({
                 <div className="space-y-3">
                   <ToolButton
                     title="Create Catalogue Image"
-                    disabled={!canRender || !lockView}
+                    disabled={!canRender}
                     loading={aiTools.final.loading}
                     sampleImageSrc="/catalogue-mockup-sample.png"
                     highlighted={mockupReadyHighlight}
-                    note="Lock the view with your favourite strap, then create a catalogue-style shot."
+                    note="Create a catalogue-style shot from the current pairing."
                     onClick={() => void runFinalRender()}
                   />
                   {generatedResults.final ? (
@@ -2527,7 +2516,7 @@ export default function HomePageClient({
                       </p>
                     ) : (
                       <p className="mt-1 text-sm text-muted">
-                        Lock the view to see matching buying options for the strap on the bench.
+                        Matching buying options will show up here for the strap on the bench.
                       </p>
                     )}
                   </div>
@@ -2570,7 +2559,7 @@ export default function HomePageClient({
                     </div>
                   ) : (
                     <p className="mt-3 text-sm text-muted">
-                      No close store match yet for this locked strap.
+                      No close store match yet for this strap.
                     </p>
                   )
                 ) : (
@@ -2588,7 +2577,7 @@ export default function HomePageClient({
                       />
                     </div>
                     <p className="mt-3 text-sm text-slate-500">
-                      Shopping links stay tucked away until the fit is locked in.
+                      Shopping links will appear here when matching options are available.
                     </p>
                   </div>
                 )}
@@ -2689,11 +2678,11 @@ export default function HomePageClient({
                 <div className="space-y-3">
                   <ToolButton
                     title="Create Catalogue Image"
-                    disabled={!canRender || !lockView}
+                    disabled={!canRender}
                     loading={aiTools.final.loading}
                     sampleImageSrc="/catalogue-mockup-sample.png"
                     highlighted={mockupReadyHighlight}
-                    note="Lock the view with your favourite strap, then create a catalogue-style shot."
+                    note="Create a catalogue-style shot from the current pairing."
                     onClick={() => void runFinalRender()}
                   />
                   {generatedResults.final ? (
@@ -2731,7 +2720,7 @@ export default function HomePageClient({
                     </p>
                   ) : (
                     <p className="mt-1 text-sm text-muted">
-                      Lock the view to see matching buying options for the strap on the bench.
+                      Matching buying options will show up here for the strap on the bench.
                     </p>
                   )}
                 </div>
@@ -2774,7 +2763,7 @@ export default function HomePageClient({
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-muted">
-                    No close store match yet for this locked strap.
+                    No close store match yet for this strap.
                   </p>
                 )
               ) : (
@@ -2792,7 +2781,7 @@ export default function HomePageClient({
                     />
                   </div>
                   <p className="mt-3 text-sm text-slate-500">
-                    Shopping links stay tucked away until the fit is locked in.
+                    Shopping links will appear here when matching options are available.
                   </p>
                 </div>
               )}
@@ -4076,10 +4065,20 @@ function FitBenchPanel({
         <p className={`${onToggleVisibility ? "" : "mt-1.5"} max-w-[28rem] text-xs leading-5 text-[#5f5143]`}>
           {fitConfidence >= 0.65
             ? "Auto-fit is already close. Use these controls only if you want to refine the look."
-            : "Adjust spacing, scale, and framing before you lock or save the pairing."}
+            : "Adjust zoom, spacing, scale, and framing before you save the pairing."}
         </p>
 
       <div className="mt-4 grid gap-2 md:grid-cols-2">
+        <SliderControl
+          label="View Zoom"
+          min={0.2}
+          max={1.4}
+          step={0.02}
+          value={sceneZoom}
+          onChange={setSceneZoomValue}
+          disabled={!canRender}
+          hint="Whole watch ↔ Detail"
+        />
         <SliderControl
           label="Strap Gap"
           min={250}
@@ -4109,16 +4108,6 @@ function FitBenchPanel({
           onChange={setDialScaleValue}
           disabled={!canRender}
           hint="Smaller ↔ Larger"
-        />
-        <SliderControl
-          label="View Zoom"
-          min={0.2}
-          max={1.4}
-          step={0.02}
-          value={sceneZoom}
-          onChange={setSceneZoomValue}
-          disabled={!canRender}
-          hint="Whole watch ↔ Detail"
         />
       </div>
 
