@@ -5,11 +5,38 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://watchstrapper.com"),
   title: {
-    default: "Watchstrapper",
+    default: "Watchstrapper | See Any Strap On Your Watch",
     template: "%s | Watchstrapper"
   },
-  description: "Preview strap aesthetics behind your watch photo.",
-  applicationName: "Watchstrapper"
+  description:
+    "Upload a watch photo and preview different straps on it before you buy. Compare styles, materials, and fit in one place.",
+  applicationName: "Watchstrapper",
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    type: "website",
+    url: "https://watchstrapper.com",
+    siteName: "Watchstrapper",
+    title: "See Any Strap On Your Watch Before You Buy",
+    description:
+      "Upload a watch photo, preview different straps on it, and compare fit before you commit.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Watchstrapper share preview"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "See Any Strap On Your Watch Before You Buy",
+    description:
+      "Upload a watch photo, preview different straps on it, and compare fit before you commit.",
+    images: ["/opengraph-image"]
+  }
 };
 
 export default function RootLayout({
