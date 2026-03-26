@@ -43,6 +43,7 @@ const DIAL_SCALE_MAX = 1.8;
 const DEFAULT_WATCH_PREVIEW_SCALE = 0.64;
 const DEFAULT_SCENE_ZOOM = 0.75;
 const DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.28;
+const SHOW_SHOPPING_PREVIEW = false;
 const strapScaleToUi = (scale: number) => {
   const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
   return Math.cbrt(t) * 100;
@@ -2497,7 +2498,7 @@ export default function HomePageClient({
 
               </div>
             </div>
-            {strapSourceMode === "library" ? (
+            {SHOW_SHOPPING_PREVIEW && strapSourceMode === "library" ? (
               <div
                 className={`glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 transition ${
                   lockView
@@ -2701,7 +2702,7 @@ export default function HomePageClient({
               </div>
             ) : null}
           </div>
-          {strapSourceMode === "library" ? (
+          {SHOW_SHOPPING_PREVIEW && strapSourceMode === "library" ? (
             <div
               className={`glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 transition ${
                 lockView
