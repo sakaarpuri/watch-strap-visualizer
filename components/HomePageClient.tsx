@@ -3324,13 +3324,23 @@ function PreviewUploadStage({
     setUploadSectionActivated(true);
   };
 
+  const renderSampleWatchLabel = (sample: { id: string; label: string }) => {
+    if (sample.id === "chronograph") {
+      return (
+        <>
+          <span className="block">Chrono</span>
+          <span className="block">graph</span>
+        </>
+      );
+    }
+
+    return sample.label;
+  };
+
   const canAnimateSampleWatches = uploadSectionActivated && sampleWatchesLoaded;
 
   return (
     <div
-      onMouseEnter={activateUploadStage}
-      onFocusCapture={activateUploadStage}
-      onTouchStart={activateUploadStage}
       className={`relative overflow-hidden rounded-[1.75rem] border border-[#e4d7c5] bg-[radial-gradient(circle_at_94%_90%,rgba(245,141,24,0.92)_0%,rgba(248,160,42,0.7)_18%,rgba(250,188,88,0.44)_34%,rgba(252,215,150,0.2)_54%,rgba(255,252,248,0)_82%),radial-gradient(145%_74%_at_62%_104%,rgba(247,157,44,0.56)_0%,rgba(249,181,76,0.38)_24%,rgba(251,209,136,0.22)_46%,rgba(255,252,248,0.08)_67%,rgba(255,252,248,0)_88%),radial-gradient(112%_54%_at_24%_100%,rgba(248,181,74,0.26)_0%,rgba(251,222,177,0.16)_38%,rgba(255,252,248,0)_72%),linear-gradient(180deg,rgba(255,252,248,0.98)_0%,rgba(255,250,245,0.97)_56%,rgba(250,240,226,0.9)_82%,rgba(246,214,170,0.36)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),inset_0_0_0_1px_rgba(255,250,242,0.55),0_18px_36px_rgba(56,44,32,0.08)] sm:p-7 ${uploadSectionActivated ? "upload-attention-ring" : ""}`}
     >
       <div className="relative mx-auto max-w-[34rem]">
@@ -3400,6 +3410,9 @@ function PreviewUploadStage({
                 key={sample.id}
                 type="button"
                 onClick={() => onSelectSampleWatch(sample)}
+                onMouseEnter={activateUploadStage}
+                onFocus={activateUploadStage}
+                onTouchStart={activateUploadStage}
                 className={`sample-watch-card rounded-[1.1rem] border border-line bg-white/88 px-2 py-2 text-center transition hover:border-[#d7c1a3] hover:bg-white ${
                   canAnimateSampleWatches ? "sample-watch-card-ready" : ""
                 }`}
@@ -3417,8 +3430,8 @@ function PreviewUploadStage({
                   decoding="async"
                   fetchPriority="high"
                 />
-                <p className="mt-1 text-[11px] font-semibold leading-tight text-ink sm:text-xs">
-                  {sample.label}
+                <p className="mt-1 min-h-[2rem] text-[11px] font-semibold leading-tight text-ink sm:min-h-[2.25rem] sm:text-xs">
+                  {renderSampleWatchLabel(sample)}
                 </p>
               </button>
             ))}
