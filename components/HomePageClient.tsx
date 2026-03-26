@@ -611,6 +611,7 @@ export default function HomePageClient() {
   const [highlightPreviewWindow, setHighlightPreviewWindow] = useState(false);
   const [hasAutoOpenedUploadGuide, setHasAutoOpenedUploadGuide] = useState(false);
   const [lugGuideOverrides, setLugGuideOverrides] = useState<PreviewLugGuideOverrides | null>(null);
+  const [detectedPreviewLugGuides, setDetectedPreviewLugGuides] = useState<PreviewLugGuides | null>(null);
   const [showLugGuides, setShowLugGuides] = useState(true);
   const [showLugGuideOnboarding, setShowLugGuideOnboarding] = useState(false);
   const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
@@ -944,6 +945,24 @@ export default function HomePageClient() {
   }, [canShowWatchOnlyPreview, hasUserUpload, watchSrc]);
 
   useEffect(() => {
+    let active = true;
+    const loadDefaultPreviewGuides = async () => {
+      try {
+        const guides = await detectPreviewLugGuides(watchSrc, dialScale);
+        if (!active) return;
+        setDetectedPreviewLugGuides(guides);
+      } catch {
+        if (!active) return;
+        setDetectedPreviewLugGuides(null);
+      }
+    };
+    void loadDefaultPreviewGuides();
+    return () => {
+      active = false;
+    };
+  }, [watchSrc, dialScale]);
+
+  useEffect(() => {
     if (!canRender) {
       firstRenderedStrapRef.current = false;
       return;
@@ -1202,6 +1221,7 @@ export default function HomePageClient() {
     try {
       const latestPartA = latestPartARef.current;
       const latestPartB = latestPartBRef.current;
+      const effectiveGuidePlacement = lugGuideOverrides ?? detectedPreviewLugGuides ?? undefined;
       const shouldPreserve = Boolean(
         latestPartA &&
           latestPartB &&
@@ -1215,7 +1235,7 @@ export default function HomePageClient() {
         activeAutoFitWidthFactor,
         activeAutoGapFactor,
         dialScale,
-        lugGuideOverrides ?? undefined
+        effectiveGuidePlacement
       );
       let nextPartA = aligned.partA;
       let nextPartB = aligned.partB;
