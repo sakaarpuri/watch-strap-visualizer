@@ -1373,6 +1373,7 @@ export default function HomePageClient({
 
   const setSceneZoomValue = (nextScale: number) => {
     setSceneZoom(nextScale);
+    setFitState("adjusted");
   };
 
   const setToolLoading = (tool: AiToolKey, loading: boolean, error: string | null = null) => {
