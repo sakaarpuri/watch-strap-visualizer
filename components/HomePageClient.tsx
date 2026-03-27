@@ -1704,22 +1704,21 @@ export default function HomePageClient({
   return (
       <main className="mx-auto max-w-[92rem] px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
       <header className="relative mb-10 text-center sm:mb-12">
-        <div className="absolute right-0 top-0 flex items-center gap-2">
+        <div className="absolute right-0 top-0 hidden items-center gap-2 sm:flex">
           {saveFeedback ? (
             <span className="rounded-full border border-[#d7c1a3] bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#7c5b2e]">
               {saveFeedback}
             </span>
           ) : null}
-          <button
-            type="button"
-            onClick={() => {
-              if (!requireSignedIn("Sign in to review your saved looks.")) return;
-              setShowSavedLooksDialog(true);
-            }}
-            className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
-          >
-            Saved Looks
-          </button>
+          {user ? (
+            <button
+              type="button"
+              onClick={() => setShowSavedLooksDialog(true)}
+              className="neo-button rounded-2xl px-4 py-2 text-sm font-semibold text-ink"
+            >
+              Saved Looks
+            </button>
+          ) : null}
           {user ? (
             <button
               type="button"
@@ -1748,6 +1747,29 @@ export default function HomePageClient({
         <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[1.4rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[2.2rem]">
           See any strap on your watch.
         </h1>
+        <div className="mt-4 flex justify-center sm:hidden">
+          {user ? (
+            <button
+              type="button"
+              onClick={() => setShowSettingsDialog(true)}
+              className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+            >
+              {profile?.full_name?.trim() || user.email || "Account"}
+            </button>
+          ) : accountConfigured ? (
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode("sign-in");
+                setAuthError(null);
+                setShowAuthDialog(true);
+              }}
+              className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+            >
+              Sign in
+            </button>
+          ) : null}
+        </div>
       </header>
 
       {strapSplitSourceUrl && uploadedStrapSheetFile ? (
@@ -3033,6 +3055,10 @@ export default function HomePageClient({
             profileName={profile?.full_name || ""}
             email={user.email || ""}
             busy={authBusy || accountLoading}
+            onOpenSavedLooks={() => {
+              setShowSettingsDialog(false);
+              setShowSavedLooksDialog(true);
+            }}
             onSaveName={async (fullName) => {
               try {
                 await updateDisplayName(fullName);
@@ -3248,6 +3274,7 @@ function AccountSettingsPanel({
   profileName,
   email,
   busy,
+  onOpenSavedLooks,
   onSaveName,
   onChangePassword,
   onSignOut
@@ -3255,6 +3282,7 @@ function AccountSettingsPanel({
   profileName: string;
   email: string;
   busy: boolean;
+  onOpenSavedLooks: () => void;
   onSaveName: (fullName: string) => Promise<void>;
   onChangePassword: (password: string) => Promise<void>;
   onSignOut: () => Promise<void>;
@@ -3301,6 +3329,13 @@ function AccountSettingsPanel({
         />
       </label>
       <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={onOpenSavedLooks}
+          className="neo-button rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink"
+        >
+          Saved Looks
+        </button>
         <button
           type="button"
           disabled={busy || !password.trim()}
