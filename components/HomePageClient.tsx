@@ -32,6 +32,7 @@ import {
   SavedWatch,
   savedStrapToDrawerItem
 } from "@/lib/collection";
+import { trackEvent } from "@/lib/analytics";
 import { usePersonalCollection } from "@/hooks/usePersonalCollection";
 
 const clamp = (value: number, min: number, max: number) =>
@@ -864,6 +865,13 @@ export default function HomePageClient({
   }, [dialScale, lugGuideOverrides]);
 
   const onUploadDial = (file: File) => {
+    void trackEvent("watch_uploaded", {
+      user_id: user?.id ?? null,
+      watch_source: "upload",
+      metadata: {
+        file_type: file.type || "unknown"
+      }
+    });
     const uploadedUrl = URL.createObjectURL(file);
     setOriginalWatchFile(file);
     setUploadedWatchFile(file);
@@ -1023,6 +1031,13 @@ export default function HomePageClient({
     const blob = await canvasRef.current?.getPngBlob();
     if (!blob) return;
     await saveBlob(blob, "watch-strap-preview.png");
+    void trackEvent("save_image", {
+      user_id: user?.id ?? null,
+      strap_id: activeLibraryStrap?.id ?? null,
+      strap_label: activeStrapLabel,
+      strap_category: activeLibraryStrap?.category ?? null,
+      watch_source: activeSavedWatchId ? "saved" : originalWatchSrc ? "uploaded" : null
+    });
   };
 
   const onSaveMockupImage = async (url: string) => {
@@ -1137,6 +1152,10 @@ export default function HomePageClient({
       setOriginalWatchSrc(sample.src);
       setActiveSavedWatchId(null);
       applyWatchAsset(fetched, sample.src);
+      void trackEvent("sample_watch_selected", {
+        user_id: user?.id ?? null,
+        watch_source: sample.id
+      });
     } catch {
       setAuthError("We couldn't load that sample watch.");
     }
@@ -1207,6 +1226,16 @@ export default function HomePageClient({
           lugGuideOverrides,
           partA,
           partB
+        }
+      });
+      void trackEvent("save_look", {
+        user_id: user?.id ?? null,
+        strap_id: activeLibraryStrap?.id ?? null,
+        strap_label: activeStrapLabel,
+        strap_category: activeLibraryStrap?.category ?? null,
+        watch_source: activeSavedWatchId ? "saved" : originalWatchSrc ? "uploaded" : null,
+        metadata: {
+          source_mode: strapSourceMode
         }
       });
       setSaveFeedback(`Saved ${label} to Saved Looks.`);
@@ -1324,6 +1353,15 @@ export default function HomePageClient({
   };
 
   const activateLibraryStrap = (strap: StrapVariant, index: number) => {
+    void trackEvent("strap_selected", {
+      user_id: user?.id ?? null,
+      strap_id: strap.id,
+      strap_label: strap.label,
+      strap_category: strap.category,
+      metadata: {
+        source_mode: "library"
+      }
+    });
     if (!hasUserUpload) {
       setPendingStrapSelection({ sourceType: "library", strap, index });
       setPendingUploadedStrapSelection(false);
@@ -1431,6 +1469,11 @@ export default function HomePageClient({
 
   const runCleanupFallback = async () => {
     if (!uploadedWatchFile) return;
+    void trackEvent("tool_used", {
+      user_id: user?.id ?? null,
+      tool_name: "extract_watch_ai",
+      watch_source: originalWatchSrc ? "uploaded" : null
+    });
     setToolLoading("cleanup", true);
     try {
       setAiStage("cleanup", "Extract Watch with AI", "Uploading");
@@ -1452,6 +1495,11 @@ export default function HomePageClient({
 
   const runRescueMode = async () => {
     if (!uploadedWatchFile) return;
+    void trackEvent("tool_used", {
+      user_id: user?.id ?? null,
+      tool_name: "wrist_rescue",
+      watch_source: originalWatchSrc ? "uploaded" : null
+    });
     setToolLoading("rescue", true);
     try {
       setAiStage("rescue", "Wrist Rescue", "Uploading");
@@ -1569,6 +1617,14 @@ export default function HomePageClient({
 
   const runFinalRender = async () => {
     if (!canvasRef.current) return;
+    void trackEvent("tool_used", {
+      user_id: user?.id ?? null,
+      tool_name: "create_catalogue_image",
+      strap_id: activeLibraryStrap?.id ?? null,
+      strap_label: activeStrapLabel,
+      strap_category: activeLibraryStrap?.category ?? null,
+      watch_source: activeSavedWatchId ? "saved" : originalWatchSrc ? "uploaded" : null
+    });
     setToolLoading("final", true);
     try {
       setAiStage("final", "Create Catalogue Image", "Packaging preview");
@@ -1955,6 +2011,28 @@ export default function HomePageClient({
                             }
                             showCategory={false}
                             onClick={() => {
+                              if (item.sourceType === "saved" && saved) {
+                                void trackEvent("strap_selected", {
+                                  user_id: user?.id ?? null,
+                                  strap_id: saved.id,
+                                  strap_label: saved.label,
+                                  strap_category: saved.category,
+                                  metadata: {
+                                    source_mode: "saved"
+                                  }
+                                });
+                              }
+                              if (item.sourceType === "library" && library) {
+                                void trackEvent("strap_selected", {
+                                  user_id: user?.id ?? null,
+                                  strap_id: library.id,
+                                  strap_label: library.label,
+                                  strap_category: library.category,
+                                  metadata: {
+                                    source_mode: "library"
+                                  }
+                                });
+                              }
                               if (!hasUserUpload) {
                                 setPendingUploadedStrapSelection(false);
                                 if (item.sourceType === "saved" && saved) {
