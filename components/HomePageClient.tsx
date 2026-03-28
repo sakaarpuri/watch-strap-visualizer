@@ -3820,8 +3820,9 @@ function WatchOnlyPreview({
         centerX: nextTopWidthState?.centerX ?? nextCenterXBase,
         topY: nextTopY,
         bottomY: effectiveLugGuides.bottomY,
-        topWidth: nextTopWidthState?.width ?? effectiveLugGuides.topWidth,
-        bottomWidth: effectiveLugGuides.bottomWidth
+        ...(typeof nextTopWidthState?.width === "number"
+          ? { topWidth: nextTopWidthState.width }
+          : {})
       });
     } else {
       const nextBottomY = clamp(drag.initialBottomY + deltaY, drag.initialTopY + 60, CANVAS_SIZE * 0.88);
@@ -3835,8 +3836,9 @@ function WatchOnlyPreview({
         centerX: nextBottomWidthState?.centerX ?? nextCenterXBase,
         topY: effectiveLugGuides.topY,
         bottomY: nextBottomY,
-        topWidth: effectiveLugGuides.topWidth,
-        bottomWidth: nextBottomWidthState?.width ?? effectiveLugGuides.bottomWidth
+        ...(typeof nextBottomWidthState?.width === "number"
+          ? { bottomWidth: nextBottomWidthState.width }
+          : {})
       });
     }
   };
