@@ -260,6 +260,8 @@ export interface PreviewLugGuides {
   confidence: number;
 }
 
+const DEFAULT_DETECTED_LUG_GUIDE_WIDTH_FACTOR = 0.95;
+
 export interface PreviewLugGuideOverrides {
   centerX?: number;
   topY?: number;
@@ -590,8 +592,10 @@ export const detectPreviewLugGuides = async (
     centerX: placement.centerX,
     topY: placement.topAnchorY,
     bottomY: placement.bottomAnchorY,
-    topWidth: placement.topAnchorWidth,
-    bottomWidth: placement.bottomAnchorWidth,
+    // Keep untouched default guides slightly slimmer so first-landed straps
+    // seat a touch tighter before the user starts adjusting guides manually.
+    topWidth: placement.topAnchorWidth * DEFAULT_DETECTED_LUG_GUIDE_WIDTH_FACTOR,
+    bottomWidth: placement.bottomAnchorWidth * DEFAULT_DETECTED_LUG_GUIDE_WIDTH_FACTOR,
     confidence: placement.geometry.confidence
   };
 };
