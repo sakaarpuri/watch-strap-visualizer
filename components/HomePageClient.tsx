@@ -2702,9 +2702,16 @@ export default function HomePageClient({
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                              {product.store}
-                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.12em] text-muted">
+                              <span>{product.store}</span>
+                              {product.matchType ? (
+                                <span className="rounded-full border border-line px-2 py-0.5 normal-case tracking-normal text-[11px]">
+                                  {product.matchType}
+                                </span>
+                              ) : null}
+                              {product.price ? <span className="normal-case tracking-normal">{product.price}</span> : null}
+                            </div>
+                            {product.reason ? <p className="mt-1 text-xs text-muted">{product.reason}</p> : null}
                           </div>
                           <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
                             View Product
@@ -2894,9 +2901,16 @@ export default function HomePageClient({
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="line-clamp-2 text-sm font-semibold text-ink">{product.title}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted">
-                            {product.store}
-                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.12em] text-muted">
+                            <span>{product.store}</span>
+                            {product.matchType ? (
+                              <span className="rounded-full border border-line px-2 py-0.5 normal-case tracking-normal text-[11px]">
+                                {product.matchType}
+                              </span>
+                            ) : null}
+                            {product.price ? <span className="normal-case tracking-normal">{product.price}</span> : null}
+                          </div>
+                          {product.reason ? <p className="mt-1 text-xs text-muted">{product.reason}</p> : null}
                         </div>
                         <span className="inline-flex shrink-0 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink">
                           View Product

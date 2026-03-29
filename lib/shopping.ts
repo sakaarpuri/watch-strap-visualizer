@@ -20,7 +20,52 @@ export interface SimilarProductCard {
   store: string;
   url: string;
   imageSrc: string;
+  price?: string;
+  matchType?: "exact" | "compatible" | "similar";
+  reason?: string;
 }
+
+interface ShoppingSeed {
+  productType: "watch strap";
+  construction: "single-pass" | "two-piece" | "bracelet-two-piece";
+  material: StrapVariant["shopping"]["material"];
+  styleFamily: StrapVariant["shopping"]["styleFamily"];
+  colorFamily: StrapVariant["shopping"]["colorFamily"];
+  hardwareFinish: StrapVariant["shopping"]["hardwareFinish"];
+  keywords: string[];
+  negativeKeywords: string[];
+}
+
+interface GeminiQueryPlan {
+  exact: string[];
+  compatible: string[];
+  similar: string[];
+  negativeKeywords?: string[];
+}
+
+interface NormalizedShoppingResult {
+  id: string;
+  title: string;
+  store: string;
+  url: string;
+  imageSrc: string;
+  price?: string;
+  parsedMaterial?: StrapVariant["shopping"]["material"];
+  parsedStyle?: StrapVariant["shopping"]["styleFamily"];
+  parsedColor?: StrapVariant["shopping"]["colorFamily"];
+  parsedHardware?: StrapVariant["shopping"]["hardwareFinish"];
+  keywords: string[];
+}
+
+interface RankedShoppingResult {
+  product: SimilarProductCard;
+  score: number;
+}
+
+const SERPAPI_ENDPOINT = "https://serpapi.com/search.json";
+const DEFAULT_SERP_COUNTRY = process.env.SERPAPI_COUNTRY || "uk";
+const DEFAULT_SERP_LANGUAGE = process.env.SERPAPI_LANGUAGE || "en";
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
 const CURATED_PRODUCTS: SimilarProduct[] = [
   {
@@ -179,17 +224,305 @@ const CURATED_PRODUCTS: SimilarProduct[] = [
   }
 ];
 
+const warmLeather = new Set(["brown", "tan", "beige"]);
+const blueFamily = new Set(["blue"]);
+const metalMarkers = ["bracelet", "mesh", "milanese", "link", "jubilee", "oyster", "flat link", "watch band"];
+const fabricMarkers = ["nato", "nylon", "canvas", "sailcloth", "fabric", "seatbelt"];
+const rubberMarkers = ["rubber", "fkm", "silicone", "tropic", "performance"];
+const suedeMarkers = ["suede", "nubuck"];
+const pebbledMarkers = ["pebbled"];
+const grainMarkers = ["grain", "lizard"];
+const pullupMarkers = ["pull-up", "pull up"];
+const saffianoMarkers = ["saffiano"];
+const meshMarkers = ["mesh", "milanese"];
+const linkMarkers = ["link", "jubilee", "oyster", "flat link", "beads of rice"];
+
+const includesAny = (haystack: string, needles: string[]) => needles.some((needle) => haystack.includes(needle));
+
 const areColorFamiliesCompatible = (
   strapColor: StrapVariant["shopping"]["colorFamily"],
   productColor: StrapVariant["shopping"]["colorFamily"]
 ) => {
   if (strapColor === productColor) return true;
-  const warmLeather = new Set(["brown", "tan", "beige"]);
   if (warmLeather.has(strapColor) && warmLeather.has(productColor)) return true;
+  if (blueFamily.has(strapColor) && blueFamily.has(productColor)) return true;
   return false;
 };
 
-const scoreProduct = (strap: StrapVariant, product: SimilarProduct) => {
+const getStrapById = (strapId: string) => getStrapsForCategory("All categories").find((entry) => entry.id === strapId);
+
+const inferConstruction = (strap: StrapVariant): ShoppingSeed["construction"] => {
+  if (strap.shopping.material === "metal") return "bracelet-two-piece";
+  if (strap.shopping.styleFamily === "nato") return "single-pass";
+  return "two-piece";
+};
+
+const buildSeedFromStrap = (strap: StrapVariant): ShoppingSeed => ({
+  productType: "watch strap",
+  construction: inferConstruction(strap),
+  material: strap.shopping.material,
+  styleFamily: strap.shopping.styleFamily,
+  colorFamily: strap.shopping.colorFamily,
+  hardwareFinish: strap.shopping.hardwareFinish,
+  keywords: strap.shopping.keywords,
+  negativeKeywords: ["apple watch", "smartwatch", "fitness tracker", "garmin", "fitbit", "case"]
+});
+
+const humanizeStyle = (style: ShoppingSeed["styleFamily"]) => {
+  if (style === "link-bracelet") return "link bracelet";
+  return style.replace(/-/g, " ");
+};
+
+const buildDeterministicQueries = (seed: ShoppingSeed): GeminiQueryPlan => {
+  const style = humanizeStyle(seed.styleFamily);
+  const hardware = seed.hardwareFinish === "silver" ? "steel buckle" : `${seed.hardwareFinish} buckle`;
+  const materialLabel = seed.material === "metal" ? "watch bracelet" : `${seed.material} watch strap`;
+  const exactBase = `${seed.colorFamily} ${style} ${materialLabel}`.replace(/\s+/g, " ").trim();
+  const compatibleBase = `${seed.colorFamily} ${seed.material} watch strap`.replace(/\s+/g, " ").trim();
+  const similarBase = `${seed.material} watch strap ${style}`.replace(/\s+/g, " ").trim();
+
+  return {
+    exact: [
+      `${exactBase} ${seed.material === "metal" ? "" : hardware}`.replace(/\s+/g, " ").trim(),
+      `${seed.colorFamily} ${style} watch strap`.replace(/\s+/g, " ").trim()
+    ],
+    compatible: [
+      `${compatibleBase} ${seed.material === "metal" ? "" : hardware}`.replace(/\s+/g, " ").trim(),
+      `${seed.colorFamily} watch strap`.replace(/\s+/g, " ").trim()
+    ],
+    similar: [similarBase, `${style} watch strap`.replace(/\s+/g, " ").trim()],
+    negativeKeywords: seed.negativeKeywords
+  };
+};
+
+const safeJsonParse = <T>(input: string): T | null => {
+  try {
+    return JSON.parse(input) as T;
+  } catch {
+    return null;
+  }
+};
+
+const extractGeminiJson = <T>(rawText: string): T | null => {
+  const cleaned = rawText
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  const direct = safeJsonParse<T>(cleaned);
+  if (direct) return direct;
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    return safeJsonParse<T>(cleaned.slice(start, end + 1));
+  }
+  return null;
+};
+
+const buildGeminiPrompt = (strap: StrapVariant, seed: ShoppingSeed) => `You are helping a watch strap visualizer find shoppable alternatives.
+Return strict JSON only with this shape:
+{
+  "exact": string[],
+  "compatible": string[],
+  "similar": string[],
+  "negativeKeywords": string[]
+}
+Rules:
+- These are Google Shopping queries for watch straps only.
+- Keep each query concise and retailer-friendly.
+- Prefer compatibility and product terms over poetic language.
+- Avoid widths because this app does not know the user's lug width yet.
+- Exclude smartwatch and fitness band language.
+- exact queries should preserve color, material, style, and hardware when possible.
+- compatible queries can relax hardware or style slightly.
+- similar queries can broaden to visually similar alternatives.
+Strap label: ${strap.label}
+Known attributes: ${JSON.stringify(seed)}`;
+
+const getGeminiPlan = async (strap: StrapVariant, seed: ShoppingSeed): Promise<GeminiQueryPlan | null> => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(DEFAULT_GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: "application/json"
+        },
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: buildGeminiPrompt(strap, seed) }]
+          }
+        ]
+      })
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini query planning failed (${response.status})`);
+  }
+
+  const payload = (await response.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  };
+  const rawText =
+    payload.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n") || "";
+  const parsed = extractGeminiJson<GeminiQueryPlan>(rawText);
+  if (!parsed) return null;
+
+  return {
+    exact: Array.isArray(parsed.exact) ? parsed.exact.filter(Boolean) : [],
+    compatible: Array.isArray(parsed.compatible) ? parsed.compatible.filter(Boolean) : [],
+    similar: Array.isArray(parsed.similar) ? parsed.similar.filter(Boolean) : [],
+    negativeKeywords: Array.isArray(parsed.negativeKeywords) ? parsed.negativeKeywords.filter(Boolean) : []
+  };
+};
+
+const mergeQueryPlans = (fallbackPlan: GeminiQueryPlan, geminiPlan: GeminiQueryPlan | null): GeminiQueryPlan => {
+  if (!geminiPlan) return fallbackPlan;
+  return {
+    exact: [...new Set([...geminiPlan.exact, ...fallbackPlan.exact])].slice(0, 4),
+    compatible: [...new Set([...geminiPlan.compatible, ...fallbackPlan.compatible])].slice(0, 4),
+    similar: [...new Set([...geminiPlan.similar, ...fallbackPlan.similar])].slice(0, 4),
+    negativeKeywords: [...new Set([...(fallbackPlan.negativeKeywords || []), ...(geminiPlan.negativeKeywords || [])])]
+  };
+};
+
+const buildSearchQuery = (query: string, negativeKeywords: string[]) => {
+  const cleanedBase = query.replace(/\s+/g, " ").trim();
+  if (!negativeKeywords.length) return cleanedBase;
+  return `${cleanedBase} ${negativeKeywords.map((keyword) => `-${keyword.replace(/\s+/g, "-")}`).join(" ")}`;
+};
+
+const parseMaterial = (text: string): StrapVariant["shopping"]["material"] | undefined => {
+  if (includesAny(text, metalMarkers)) return "metal";
+  if (includesAny(text, rubberMarkers)) return "rubber";
+  if (includesAny(text, fabricMarkers)) return "fabric";
+  if (
+    text.includes("leather") ||
+    includesAny(text, suedeMarkers) ||
+    includesAny(text, pebbledMarkers) ||
+    includesAny(text, grainMarkers)
+  ) {
+    return "leather";
+  }
+  return undefined;
+};
+
+const parseStyle = (
+  text: string,
+  material?: StrapVariant["shopping"]["material"]
+): StrapVariant["shopping"]["styleFamily"] | undefined => {
+  if (material === "metal") {
+    if (includesAny(text, meshMarkers)) return "mesh";
+    if (includesAny(text, linkMarkers)) return "link-bracelet";
+    return includesAny(text, metalMarkers) ? "bracelet" : undefined;
+  }
+  if (material === "rubber") {
+    if (text.includes("tropic")) return "tropic";
+    if (text.includes("fkm")) return "fkm";
+    if (text.includes("performance")) return "performance";
+    return includesAny(text, rubberMarkers) ? "rubber" : undefined;
+  }
+  if (material === "fabric") {
+    if (text.includes("sailcloth")) return "sailcloth";
+    if (text.includes("canvas")) return "canvas";
+    return includesAny(text, fabricMarkers) ? "nato" : undefined;
+  }
+  if (includesAny(text, suedeMarkers)) return "suede";
+  if (includesAny(text, pebbledMarkers)) return "pebbled";
+  if (includesAny(text, pullupMarkers)) return "pull-up";
+  if (includesAny(text, saffianoMarkers)) return "saffiano";
+  if (includesAny(text, grainMarkers)) return "grain";
+  if (text.includes("smooth")) return "smooth";
+  return material === "leather" ? "classic" : undefined;
+};
+
+const parseColor = (
+  text: string,
+  material?: StrapVariant["shopping"]["material"]
+): StrapVariant["shopping"]["colorFamily"] | undefined => {
+  if (text.includes("black") || text.includes("pvd")) return "black";
+  if (["espresso", "dark brown", "chocolate", "bourbon", "cognac", "brown"].some((token) => text.includes(token))) return "brown";
+  if (["tan", "saffron"].some((token) => text.includes(token))) return "tan";
+  if (["beige", "sand", "taupe"].some((token) => text.includes(token))) return "beige";
+  if (["burgundy", "oxblood", "aubergine", "maroon"].some((token) => text.includes(token))) return "burgundy";
+  if (["navy", "bond", "indigo", "talavera", "sapphire", "blue"].some((token) => text.includes(token))) return "blue";
+  if (["olive", "forest", "khaki", "emerald", "mustard", "green"].some((token) => text.includes(token))) return "green";
+  if (["gray", "grey", "slate", "charcoal", "gunmetal"].some((token) => text.includes(token))) {
+    return material === "metal" ? "silver" : "gray";
+  }
+  if (text.includes("gold")) return "gold";
+  if (text.includes("orange")) return "orange";
+  if (["stripe", "striped", "rainbow", "multicolor", "multi color"].some((token) => text.includes(token))) return "multicolor";
+  if (material === "metal") return "silver";
+  return undefined;
+};
+
+const parseHardware = (text: string): StrapVariant["shopping"]["hardwareFinish"] | undefined => {
+  if (text.includes("black pvd") || text.includes("pvd") || text.includes("black buckle")) return "black";
+  if (text.includes("gold") || text.includes("gilt") || text.includes("gold buckle")) return "gold";
+  if (text.includes("silver") || text.includes("steel") || text.includes("stainless")) return "silver";
+  return undefined;
+};
+
+const tokenize = (text: string) =>
+  [
+    ...new Set(
+      text
+        .split(/[^a-z0-9]+/)
+        .filter((token) => token.length > 2 && !["watch", "strap", "band", "bands", "bracelet"].includes(token))
+    )
+  ];
+
+const normalizeSerpResult = (raw: Record<string, unknown>, strap: StrapVariant): NormalizedShoppingResult | null => {
+  const title = typeof raw.title === "string" ? raw.title.trim() : "";
+  const store =
+    (typeof raw.source === "string" && raw.source.trim()) ||
+    (typeof raw.store === "string" && raw.store.trim()) ||
+    "Unknown store";
+  const url =
+    (typeof raw.link === "string" && raw.link.trim()) ||
+    (typeof raw.product_link === "string" && raw.product_link.trim()) ||
+    (typeof raw.serpapi_link === "string" && raw.serpapi_link.trim()) ||
+    "";
+  const imageSrc =
+    (typeof raw.thumbnail === "string" && raw.thumbnail.trim()) ||
+    (typeof raw.image === "string" && raw.image.trim()) ||
+    strap.strapASrc;
+  const price =
+    (typeof raw.price === "string" && raw.price.trim()) ||
+    (typeof raw.extracted_price === "number" ? String(raw.extracted_price) : undefined);
+
+  if (!title || !url) return null;
+
+  const haystack = `${title} ${store} ${typeof raw.snippet === "string" ? raw.snippet : ""}`.toLowerCase();
+  const parsedMaterial = parseMaterial(haystack);
+  const parsedStyle = parseStyle(haystack, parsedMaterial);
+  const parsedColor = parseColor(haystack, parsedMaterial);
+  const parsedHardware = parseHardware(haystack);
+
+  return {
+    id: `${store}-${title}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+    title,
+    store,
+    url,
+    imageSrc,
+    price,
+    parsedMaterial,
+    parsedStyle,
+    parsedColor,
+    parsedHardware,
+    keywords: tokenize(haystack)
+  };
+};
+
+const scoreCuratedProduct = (strap: StrapVariant, product: SimilarProduct) => {
   const meta = strap.shopping;
   if (product.material !== meta.material) return -1;
 
@@ -210,14 +543,14 @@ const scoreProduct = (strap: StrapVariant, product: SimilarProduct) => {
   return score;
 };
 
-export const getSimilarProductsForStrap = (strapId: string, limit = 4): SimilarProductCard[] => {
-  const strap = getStrapsForCategory("All categories").find((entry) => entry.id === strapId);
+const getCuratedProductsForStrap = (strapId: string, limit = 4): SimilarProductCard[] => {
+  const strap = getStrapById(strapId);
   if (!strap) return [];
 
   return CURATED_PRODUCTS
     .map((product) => ({
       product,
-      score: scoreProduct(strap, product)
+      score: scoreCuratedProduct(strap, product)
     }))
     .filter(({ score }) => score >= 17)
     .sort((a, b) => b.score - a.score || a.product.title.localeCompare(b.product.title))
@@ -230,3 +563,142 @@ export const getSimilarProductsForStrap = (strapId: string, limit = 4): SimilarP
       imageSrc: strap.strapASrc
     }));
 };
+
+const rankLiveProduct = (strap: StrapVariant, result: NormalizedShoppingResult): RankedShoppingResult | null => {
+  const meta = strap.shopping;
+  const sameMaterial = result.parsedMaterial === meta.material;
+  const sameStyle = result.parsedStyle === meta.styleFamily;
+  const sameColor = result.parsedColor ? areColorFamiliesCompatible(meta.colorFamily, result.parsedColor) : false;
+  const sameHardware = result.parsedHardware === meta.hardwareFinish;
+  const sharedKeywords = result.keywords.filter((keyword) => meta.keywords.includes(keyword)).length;
+
+  let score = 0;
+  if (sameMaterial) score += 10;
+  if (sameStyle) score += 8;
+  if (sameColor) score += 6;
+  if (sameHardware) score += 3;
+  score += Math.min(sharedKeywords, 4);
+
+  if (!sameMaterial && meta.material !== "metal") return null;
+  if (!sameStyle && !sameColor && sharedKeywords === 0) return null;
+
+  const matchType: SimilarProductCard["matchType"] =
+    sameMaterial && sameStyle && sameColor
+      ? "exact"
+      : sameMaterial && (sameStyle || sameColor)
+        ? "compatible"
+        : "similar";
+
+  const reason =
+    matchType === "exact"
+      ? "Close match on material, color, and style"
+      : matchType === "compatible"
+        ? "Compatible alternative with a similar feel"
+        : "Similar look — check specs before buying";
+
+  return {
+    product: {
+      id: result.id,
+      title: result.title,
+      store: result.store,
+      url: result.url,
+      imageSrc: result.imageSrc,
+      price: result.price,
+      matchType,
+      reason
+    },
+    score
+  };
+};
+
+const fetchSerpShoppingResults = async (query: string): Promise<Record<string, unknown>[]> => {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) return [];
+
+  const searchParams = new URLSearchParams({
+    engine: "google_shopping",
+    q: query,
+    api_key: apiKey,
+    gl: DEFAULT_SERP_COUNTRY,
+    hl: DEFAULT_SERP_LANGUAGE,
+    num: "10"
+  });
+
+  const response = await fetch(`${SERPAPI_ENDPOINT}?${searchParams.toString()}`, {
+    headers: { Accept: "application/json" },
+    next: { revalidate: 60 * 60 * 6 }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Shopping lookup failed (${response.status})`);
+  }
+
+  const payload = (await response.json()) as {
+    shopping_results?: Record<string, unknown>[];
+  };
+  return Array.isArray(payload.shopping_results) ? payload.shopping_results : [];
+};
+
+const dedupeProducts = (products: SimilarProductCard[]) => {
+  const seen = new Set<string>();
+  return products.filter((product) => {
+    const key = `${product.url}|${product.title}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const getHybridProductsForStrap = async (strapId: string, limit = 6): Promise<SimilarProductCard[]> => {
+  const strap = getStrapById(strapId);
+  if (!strap) return [];
+
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) {
+    return getCuratedProductsForStrap(strapId, limit);
+  }
+
+  const seed = buildSeedFromStrap(strap);
+  const deterministicPlan = buildDeterministicQueries(seed);
+  let plan = deterministicPlan;
+
+  try {
+    const geminiPlan = await getGeminiPlan(strap, seed);
+    plan = mergeQueryPlans(deterministicPlan, geminiPlan);
+  } catch {
+    plan = deterministicPlan;
+  }
+
+  const orderedQueries = [
+    ...plan.exact.map((query) => ({ query, tier: "exact" as const })),
+    ...plan.compatible.map((query) => ({ query, tier: "compatible" as const })),
+    ...plan.similar.map((query) => ({ query, tier: "similar" as const }))
+  ].slice(0, 8);
+
+  const ranked: RankedShoppingResult[] = [];
+
+  for (const entry of orderedQueries) {
+    const searchQuery = buildSearchQuery(entry.query, plan.negativeKeywords || []);
+    const rawResults = await fetchSerpShoppingResults(searchQuery);
+    const normalized = rawResults
+      .map((raw) => normalizeSerpResult(raw, strap))
+      .filter((result): result is NormalizedShoppingResult => Boolean(result));
+
+    for (const result of normalized) {
+      const rankedResult = rankLiveProduct(strap, result);
+      if (rankedResult) ranked.push(rankedResult);
+    }
+  }
+
+  const liveProducts = dedupeProducts(
+    ranked
+      .sort((a, b) => b.score - a.score || a.product.title.localeCompare(b.product.title))
+      .map(({ product }) => product)
+  ).slice(0, limit);
+
+  if (liveProducts.length) return liveProducts;
+  return getCuratedProductsForStrap(strapId, limit);
+};
+
+export const getSimilarProductsForStrap = async (strapId: string, limit = 6): Promise<SimilarProductCard[]> =>
+  getHybridProductsForStrap(strapId, limit);

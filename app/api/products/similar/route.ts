@@ -9,6 +9,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing strap id" }, { status: 400 });
   }
 
-  const products = getSimilarProductsForStrap(strapId);
+  const products = await getSimilarProductsForStrap(strapId);
   return NextResponse.json({ products });
 }
