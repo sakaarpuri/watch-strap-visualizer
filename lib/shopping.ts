@@ -65,7 +65,7 @@ interface RankedShoppingResult {
 const SERPAPI_ENDPOINT = "https://serpapi.com/search.json";
 const DEFAULT_SERP_COUNTRY = process.env.SERPAPI_COUNTRY || "uk";
 const DEFAULT_SERP_LANGUAGE = process.env.SERPAPI_LANGUAGE || "en";
-const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3-flash-preview";
 
 const CURATED_PRODUCTS: SimilarProduct[] = [
   {
