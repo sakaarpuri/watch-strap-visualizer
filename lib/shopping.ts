@@ -280,6 +280,59 @@ const humanizeStyle = (style: ShoppingSeed["styleFamily"]) => {
 };
 
 const GENERIC_QUERY_KEYWORDS = new Set(["classic", "smooth", "grain", "pebbled", "pull", "saffiano"]);
+const DEFAULT_ALLOWLIST_MERCHANTS = [
+  "watchgecko",
+  "cns watch bands",
+  "barton",
+  "strapcode",
+  "watch obsession",
+  "forstner",
+  "staib",
+  "crown & buckle",
+  "bulang"
+];
+const DEFAULT_BLOCKLIST_MERCHANTS = ["amazon", "ebay", "etsy", "aliexpress", "temu", "wish"];
+const MERCHANT_ALLOWLIST = new Set(
+  (process.env.SHOPPING_MERCHANT_ALLOWLIST || DEFAULT_ALLOWLIST_MERCHANTS.join(","))
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+);
+const MERCHANT_BLOCKLIST = new Set(
+  (process.env.SHOPPING_MERCHANT_BLOCKLIST || DEFAULT_BLOCKLIST_MERCHANTS.join(","))
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+);
+
+const MATERIAL_QUERY_TERMS: Record<ShoppingSeed["material"], string[]> = {
+  leather: ["leather", "watch strap"],
+  fabric: ["nylon", "fabric", "watch strap"],
+  rubber: ["rubber", "watch strap"],
+  metal: ["watch bracelet"]
+};
+
+const STYLE_QUERY_TERMS: Record<ShoppingSeed["styleFamily"], string[]> = {
+  classic: ["classic"],
+  smooth: ["smooth"],
+  grain: ["grain", "grained", "lizard grain"],
+  pebbled: ["pebbled"],
+  "pull-up": ["pull up", "pull-up"],
+  saffiano: ["saffiano"],
+  suede: ["suede", "nubuck"],
+  nato: ["nato", "nylon"],
+  canvas: ["canvas"],
+  sailcloth: ["sailcloth"],
+  rubber: ["rubber"],
+  tropic: ["tropic"],
+  fkm: ["fkm", "fluoro rubber"],
+  performance: ["performance", "rubber"],
+  bracelet: ["bracelet"],
+  "link-bracelet": ["link bracelet", "oyster", "jubilee", "flat link"],
+  mesh: ["mesh", "milanese"]
+};
+
+const MULTICOLOR_HINTS = new Set(["striped", "patterned", "woven", "serape", "talavera", "holi", "oaxaca", "block", "indigo"]);
 
 const buildDescriptorFromKeywords = (keywords: string[]) =>
   keywords
@@ -298,31 +351,58 @@ const buildPatternHints = (keywords: string[]) => {
   return [...new Set(hints)];
 };
 
+const buildColorTerms = (color: ShoppingSeed["colorFamily"], keywords: string[]) => {
+  if (color === "multicolor") {
+    const keywordHints = keywords.filter((keyword) => MULTICOLOR_HINTS.has(keyword)).slice(0, 2);
+    return ["multicolor", ...keywordHints];
+  }
+  if (color === "brown") return ["brown", "cognac"];
+  if (color === "blue") return ["blue", "navy"];
+  if (color === "green") return ["green", "olive"];
+  if (color === "silver") return ["silver", "steel"];
+  return [color];
+};
+
+const buildHardwareTerms = (hardware: ShoppingSeed["hardwareFinish"], material: ShoppingSeed["material"]) => {
+  if (material === "metal") return hardware === "black" ? ["black"] : ["steel"];
+  if (hardware === "silver") return ["steel buckle", "silver buckle"];
+  if (hardware === "gold") return ["gold buckle"];
+  if (hardware === "black") return ["black buckle", "pvd buckle"];
+  return [];
+};
+
+const dedupeTerms = (parts: string[]) =>
+  [...new Set(parts.map((part) => part.replace(/\s+/g, " ").trim()).filter(Boolean))];
+
 const buildDeterministicQueries = (seed: ShoppingSeed): GeminiQueryPlan => {
   const style = humanizeStyle(seed.styleFamily);
-  const hardware = seed.hardwareFinish === "silver" ? "steel buckle" : `${seed.hardwareFinish} buckle`;
-  const materialLabel = seed.material === "metal" ? "watch bracelet" : `${seed.material} watch strap`;
-  const exactBase = `${seed.colorFamily} ${style} ${materialLabel}`.replace(/\s+/g, " ").trim();
-  const compatibleBase = `${seed.colorFamily} ${seed.material} watch strap`.replace(/\s+/g, " ").trim();
-  const similarBase = `${seed.material} watch strap ${style}`.replace(/\s+/g, " ").trim();
   const descriptor = buildDescriptorFromKeywords(seed.keywords);
-  const patternHints = buildPatternHints(seed.keywords).join(" ");
-  const decoratedExact = `${descriptor} ${patternHints} ${seed.material === "metal" ? "watch bracelet" : "watch strap"}`
-    .replace(/\s+/g, " ")
-    .trim();
+  const patternHints = buildPatternHints(seed.keywords);
+  const materialTerms = MATERIAL_QUERY_TERMS[seed.material];
+  const styleTerms = STYLE_QUERY_TERMS[seed.styleFamily];
+  const colorTerms = buildColorTerms(seed.colorFamily, seed.keywords);
+  const hardwareTerms = buildHardwareTerms(seed.hardwareFinish, seed.material);
+  const exactQueries = dedupeTerms([
+    `${descriptor} ${patternHints.join(" ")} ${styleTerms[0] || style} ${materialTerms[0]}`,
+    `${colorTerms[0] || seed.colorFamily} ${descriptor} ${styleTerms[0] || style} ${materialTerms.join(" ")}`,
+    `${colorTerms.join(" ")} ${styleTerms.join(" ")} ${materialTerms.join(" ")} ${hardwareTerms[0] || ""}`,
+    `${descriptor} ${colorTerms[0] || ""} ${style} watch strap`
+  ]);
+  const compatibleQueries = dedupeTerms([
+    `${colorTerms[0] || seed.colorFamily} ${styleTerms[0] || style} watch strap ${hardwareTerms[0] || ""}`,
+    `${colorTerms[0] || seed.colorFamily} ${materialTerms.join(" ")} ${hardwareTerms[0] || ""}`,
+    `${descriptor} ${materialTerms.join(" ")}`
+  ]);
+  const similarQueries = dedupeTerms([
+    `${styleTerms.join(" ")} ${materialTerms.join(" ")}`,
+    `${descriptor} ${patternHints.join(" ")} ${materialTerms.join(" ")}`,
+    `${seed.material} watch strap ${style}`
+  ]);
 
   return {
-    exact: [
-      decoratedExact,
-      `${exactBase} ${seed.material === "metal" ? "" : hardware}`.replace(/\s+/g, " ").trim(),
-      `${seed.colorFamily} ${descriptor} ${style} watch strap`.replace(/\s+/g, " ").trim(),
-      `${seed.colorFamily} ${patternHints} ${style} watch strap`.replace(/\s+/g, " ").trim()
-    ].filter(Boolean),
-    compatible: [
-      `${compatibleBase} ${seed.material === "metal" ? "" : hardware}`.replace(/\s+/g, " ").trim(),
-      `${seed.colorFamily} watch strap`.replace(/\s+/g, " ").trim()
-    ].filter(Boolean),
-    similar: [similarBase, `${style} watch strap`.replace(/\s+/g, " ").trim()].filter(Boolean),
+    exact: exactQueries.slice(0, 4),
+    compatible: compatibleQueries.slice(0, 4),
+    similar: similarQueries.slice(0, 4),
     negativeKeywords: seed.negativeKeywords
   };
 };
@@ -523,6 +603,17 @@ const isLikelyCategoryPage = (title: string, url: string) => {
   return genericTitle && genericPathMarkers.some((marker) => normalizedUrl.includes(marker));
 };
 
+const getMerchantWeight = (store: string, url: string) => {
+  const haystack = `${store} ${url}`.toLowerCase();
+  for (const blocked of MERCHANT_BLOCKLIST) {
+    if (haystack.includes(blocked)) return -12;
+  }
+  for (const preferred of MERCHANT_ALLOWLIST) {
+    if (haystack.includes(preferred)) return 6;
+  }
+  return 0;
+};
+
 const readNestedString = (value: unknown, path: string[]): string | undefined => {
   let current: unknown = value;
   for (const key of path) {
@@ -649,6 +740,13 @@ const rankLiveProduct = (strap: StrapVariant, result: NormalizedShoppingResult):
   const sameColor = result.parsedColor ? areColorFamiliesCompatible(meta.colorFamily, result.parsedColor) : false;
   const sameHardware = result.parsedHardware === meta.hardwareFinish;
   const sharedKeywords = result.keywords.filter((keyword) => meta.keywords.includes(keyword)).length;
+  const merchantWeight = getMerchantWeight(result.store, result.url);
+  const hasPatternKeywords = meta.keywords.some((keyword) =>
+    ["stripe", "holi", "block", "indigo", "oaxaca", "serape", "talavera"].includes(keyword)
+  );
+  const matchedPatternKeywords = result.keywords.filter((keyword) =>
+    ["stripe", "striped", "holi", "block", "indigo", "oaxaca", "serape", "talavera", "patterned", "woven"].includes(keyword)
+  ).length;
 
   let score = 0;
   if (sameMaterial) score += 10;
@@ -656,12 +754,28 @@ const rankLiveProduct = (strap: StrapVariant, result: NormalizedShoppingResult):
   if (sameColor) score += 6;
   if (sameHardware) score += 3;
   score += Math.min(sharedKeywords, 4);
+  score += merchantWeight;
+  if (hasPatternKeywords) score += matchedPatternKeywords * 4;
 
+  if (merchantWeight < 0) return null;
   if (!sameMaterial && meta.material !== "metal") return null;
   if (!sameStyle && !sameColor && sharedKeywords === 0) return null;
+  if (hasPatternKeywords && matchedPatternKeywords === 0) return null;
+  if (meta.material === "metal" && !sameStyle && !result.keywords.some((keyword) => ["bracelet", "mesh", "milanese", "jubilee", "oyster", "link"].includes(keyword))) {
+    return null;
+  }
+  if (meta.material === "rubber" && !result.keywords.some((keyword) => ["rubber", "fkm", "silicone", "tropic", "performance"].includes(keyword))) {
+    return null;
+  }
+  if (meta.material === "fabric" && !result.keywords.some((keyword) => ["nato", "nylon", "canvas", "sailcloth", "fabric"].includes(keyword))) {
+    return null;
+  }
+  if (meta.material === "leather" && !result.keywords.some((keyword) => ["leather", "suede", "nubuck", "grain", "pebbled", "saffiano"].includes(keyword))) {
+    return null;
+  }
 
   const matchType: SimilarProductCard["matchType"] =
-    sameMaterial && sameStyle && sameColor
+    sameMaterial && sameStyle && sameColor && (!hasPatternKeywords || matchedPatternKeywords > 0)
       ? "exact"
       : sameMaterial && (sameStyle || sameColor)
         ? "compatible"
@@ -669,10 +783,10 @@ const rankLiveProduct = (strap: StrapVariant, result: NormalizedShoppingResult):
 
   const reason =
     matchType === "exact"
-      ? "Close match on material, color, and style"
+      ? "Close match on material, color, style, and finish"
       : matchType === "compatible"
-        ? "Compatible alternative with a similar feel"
-        : "Similar look — check specs before buying";
+        ? "Compatible alternative with strong attribute overlap"
+        : "Similar look, check specs before buying";
 
   return {
     product: {

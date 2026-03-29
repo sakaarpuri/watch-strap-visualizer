@@ -31,6 +31,8 @@ RAPIDAPI_COUNTRY=uk
 RAPIDAPI_LANGUAGE=en
 RAPIDAPI_SORT_BY=BEST_MATCH
 GEMINI_MODEL=gemini-3-flash-preview
+SHOPPING_MERCHANT_ALLOWLIST=watchgecko,cns watch bands,barton,strapcode,watch obsession,forstner,staib,crown & buckle,bulang
+SHOPPING_MERCHANT_BLOCKLIST=amazon,ebay,etsy,aliexpress,temu,wish
 ```
 
 Notes:
@@ -46,6 +48,8 @@ Notes:
   a real product match when it is not. Re-enable only with:
   `ALLOW_CURATED_SHOPPING_FALLBACK=true`.
 - Without `GEMINI_API_KEY`, the route still works using deterministic queries.
+- Query generation is now material-aware across leather, fabric, rubber, and metal,
+  with stricter ranking for style, finish, and merchant quality.
 - The UI shopping section is still intentionally gated in
   `/tmp/watchstrap-serp-hybrid/components/HomePageClient.tsx` via
   `NEXT_PUBLIC_ENABLE_SHOPPING_PREVIEW=true`.
