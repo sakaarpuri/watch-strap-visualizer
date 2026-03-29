@@ -27,6 +27,7 @@ export interface SimilarProductCard {
 
 interface ShoppingSeed {
   productType: "watch strap";
+  label: string;
   construction: "single-pass" | "two-piece" | "bracelet-two-piece";
   material: StrapVariant["shopping"]["material"];
   styleFamily: StrapVariant["shopping"]["styleFamily"];
@@ -265,6 +266,7 @@ const inferConstruction = (strap: StrapVariant): ShoppingSeed["construction"] =>
 
 const buildSeedFromStrap = (strap: StrapVariant): ShoppingSeed => ({
   productType: "watch strap",
+  label: strap.label,
   construction: inferConstruction(strap),
   material: strap.shopping.material,
   styleFamily: strap.shopping.styleFamily,
@@ -351,6 +353,25 @@ const buildPatternHints = (keywords: string[]) => {
   return [...new Set(hints)];
 };
 
+const buildAliasTerms = (seed: ShoppingSeed) => {
+  const aliases: string[] = [];
+  const keywordSet = new Set(seed.keywords);
+  const normalizedLabel = seed.label.toLowerCase();
+
+  if (keywordSet.has("bond") || normalizedLabel.includes("bond nato")) {
+    aliases.push("james bond nato", "bond nato");
+  }
+  if (keywordSet.has("seatbelt")) aliases.push("seatbelt nato");
+  if (keywordSet.has("canvas")) aliases.push("canvas watch strap");
+  if (keywordSet.has("sailcloth")) aliases.push("sailcloth watch strap");
+  if (keywordSet.has("tropic")) aliases.push("tropic rubber watch strap");
+  if (keywordSet.has("fkm")) aliases.push("fkm rubber watch strap");
+  if (keywordSet.has("mesh") || seed.styleFamily === "mesh") aliases.push("milanese watch bracelet");
+  if (keywordSet.has("jubilee")) aliases.push("jubilee watch bracelet");
+
+  return [...new Set(aliases)];
+};
+
 const buildColorTerms = (color: ShoppingSeed["colorFamily"], keywords: string[]) => {
   if (color === "multicolor") {
     const keywordHints = keywords.filter((keyword) => MULTICOLOR_HINTS.has(keyword)).slice(0, 2);
@@ -382,13 +403,18 @@ const buildDeterministicQueries = (seed: ShoppingSeed): GeminiQueryPlan => {
   const styleTerms = STYLE_QUERY_TERMS[seed.styleFamily];
   const colorTerms = buildColorTerms(seed.colorFamily, seed.keywords);
   const hardwareTerms = buildHardwareTerms(seed.hardwareFinish, seed.material);
+  const labelTerms = seed.label.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const aliasTerms = buildAliasTerms(seed);
   const exactQueries = dedupeTerms([
+    `${labelTerms} watch strap`,
+    ...aliasTerms.map((alias) => `${alias} watch strap`),
     `${descriptor} ${patternHints.join(" ")} ${styleTerms[0] || style} ${materialTerms[0]}`,
     `${colorTerms[0] || seed.colorFamily} ${descriptor} ${styleTerms[0] || style} ${materialTerms.join(" ")}`,
     `${colorTerms.join(" ")} ${styleTerms.join(" ")} ${materialTerms.join(" ")} ${hardwareTerms[0] || ""}`,
     `${descriptor} ${colorTerms[0] || ""} ${style} watch strap`
   ]);
   const compatibleQueries = dedupeTerms([
+    ...aliasTerms,
     `${colorTerms[0] || seed.colorFamily} ${styleTerms[0] || style} watch strap ${hardwareTerms[0] || ""}`,
     `${colorTerms[0] || seed.colorFamily} ${materialTerms.join(" ")} ${hardwareTerms[0] || ""}`,
     `${descriptor} ${materialTerms.join(" ")}`
@@ -632,6 +658,19 @@ const readNestedNumber = (value: unknown, path: string[]): number | undefined =>
   return typeof current === "number" && Number.isFinite(current) ? current : undefined;
 };
 
+const readFirstStringFromList = (value: unknown, path: string[]): string | undefined => {
+  let current: unknown = value;
+  for (const key of path) {
+    if (!current || typeof current !== "object" || !(key in current)) return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  if (Array.isArray(current)) {
+    const first = current.find((entry) => typeof entry === "string" && entry.trim());
+    return typeof first === "string" ? first.trim() : undefined;
+  }
+  return undefined;
+};
+
 const normalizeRapidApiResult = (raw: Record<string, unknown>, strap: StrapVariant): NormalizedShoppingResult | null => {
   const title =
     (typeof raw.product_title === "string" && raw.product_title.trim()) ||
@@ -646,12 +685,15 @@ const normalizeRapidApiResult = (raw: Record<string, unknown>, strap: StrapVaria
     "Unknown store";
   const url =
     (typeof raw.product_url === "string" && raw.product_url.trim()) ||
+    (typeof raw.offer_page_url === "string" && raw.offer_page_url.trim()) ||
     readNestedString(raw, ["offer", "offer_page_url"]) ||
     readNestedString(raw, ["offer", "product_url"]) ||
     (typeof raw.link === "string" && raw.link.trim()) ||
     "";
   const imageSrc =
     (typeof raw.product_photo === "string" && raw.product_photo.trim()) ||
+    readFirstStringFromList(raw, ["product_photos"]) ||
+    readFirstStringFromList(raw, ["photos"]) ||
     (typeof raw.thumbnail === "string" && raw.thumbnail.trim()) ||
     (typeof raw.image === "string" && raw.image.trim()) ||
     "";
