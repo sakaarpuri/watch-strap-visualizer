@@ -279,6 +279,25 @@ const humanizeStyle = (style: ShoppingSeed["styleFamily"]) => {
   return style.replace(/-/g, " ");
 };
 
+const GENERIC_QUERY_KEYWORDS = new Set(["classic", "smooth", "grain", "pebbled", "pull", "saffiano"]);
+
+const buildDescriptorFromKeywords = (keywords: string[]) =>
+  keywords
+    .filter((keyword) => !GENERIC_QUERY_KEYWORDS.has(keyword))
+    .slice(0, 3)
+    .join(" ")
+    .trim();
+
+const buildPatternHints = (keywords: string[]) => {
+  const set = new Set(keywords);
+  const hints: string[] = [];
+  if (set.has("stripe") || set.has("striped") || set.has("holi")) hints.push("striped");
+  if (set.has("block") || set.has("talavera")) hints.push("patterned");
+  if (set.has("oaxaca") || set.has("serape")) hints.push("woven");
+  if (set.has("indigo")) hints.push("indigo");
+  return [...new Set(hints)];
+};
+
 const buildDeterministicQueries = (seed: ShoppingSeed): GeminiQueryPlan => {
   const style = humanizeStyle(seed.styleFamily);
   const hardware = seed.hardwareFinish === "silver" ? "steel buckle" : `${seed.hardwareFinish} buckle`;
@@ -286,17 +305,24 @@ const buildDeterministicQueries = (seed: ShoppingSeed): GeminiQueryPlan => {
   const exactBase = `${seed.colorFamily} ${style} ${materialLabel}`.replace(/\s+/g, " ").trim();
   const compatibleBase = `${seed.colorFamily} ${seed.material} watch strap`.replace(/\s+/g, " ").trim();
   const similarBase = `${seed.material} watch strap ${style}`.replace(/\s+/g, " ").trim();
+  const descriptor = buildDescriptorFromKeywords(seed.keywords);
+  const patternHints = buildPatternHints(seed.keywords).join(" ");
+  const decoratedExact = `${descriptor} ${patternHints} ${seed.material === "metal" ? "watch bracelet" : "watch strap"}`
+    .replace(/\s+/g, " ")
+    .trim();
 
   return {
     exact: [
+      decoratedExact,
       `${exactBase} ${seed.material === "metal" ? "" : hardware}`.replace(/\s+/g, " ").trim(),
-      `${seed.colorFamily} ${style} watch strap`.replace(/\s+/g, " ").trim()
-    ],
+      `${seed.colorFamily} ${descriptor} ${style} watch strap`.replace(/\s+/g, " ").trim(),
+      `${seed.colorFamily} ${patternHints} ${style} watch strap`.replace(/\s+/g, " ").trim()
+    ].filter(Boolean),
     compatible: [
       `${compatibleBase} ${seed.material === "metal" ? "" : hardware}`.replace(/\s+/g, " ").trim(),
       `${seed.colorFamily} watch strap`.replace(/\s+/g, " ").trim()
-    ],
-    similar: [similarBase, `${style} watch strap`.replace(/\s+/g, " ").trim()],
+    ].filter(Boolean),
+    similar: [similarBase, `${style} watch strap`.replace(/\s+/g, " ").trim()].filter(Boolean),
     negativeKeywords: seed.negativeKeywords
   };
 };
@@ -486,6 +512,17 @@ const tokenize = (text: string) =>
     )
   ];
 
+const isLikelyCategoryPage = (title: string, url: string) => {
+  const normalizedTitle = title.toLowerCase().trim();
+  const normalizedUrl = url.toLowerCase();
+  const genericTitle =
+    /^(nylon|leather|canvas|rubber|metal|mesh|silicone|suede|fabric)\s+watch\s+(bands|straps)$/.test(normalizedTitle) ||
+    normalizedTitle.endsWith(" watch bands") ||
+    normalizedTitle.endsWith(" watch straps");
+  const genericPathMarkers = ["/collections/", "/shop-by-style/", "/shop-by-material/", "/category/", "/watch-bands", "/watch-straps"];
+  return genericTitle && genericPathMarkers.some((marker) => normalizedUrl.includes(marker));
+};
+
 const readNestedString = (value: unknown, path: string[]): string | undefined => {
   let current: unknown = value;
   for (const key of path) {
@@ -526,7 +563,7 @@ const normalizeRapidApiResult = (raw: Record<string, unknown>, strap: StrapVaria
     (typeof raw.product_photo === "string" && raw.product_photo.trim()) ||
     (typeof raw.thumbnail === "string" && raw.thumbnail.trim()) ||
     (typeof raw.image === "string" && raw.image.trim()) ||
-    strap.strapASrc;
+    "";
   const price =
     readNestedString(raw, ["offer", "price"]) ||
     (typeof raw.price === "string" && raw.price.trim()) ||
@@ -535,7 +572,8 @@ const normalizeRapidApiResult = (raw: Record<string, unknown>, strap: StrapVaria
       ? String(readNestedNumber(raw, ["offer", "extracted_price"]))
       : undefined);
 
-  if (!title || !url) return null;
+  if (!title || !url || !imageSrc) return null;
+  if (isLikelyCategoryPage(title, url)) return null;
 
   const haystack = `${title} ${store} ${typeof raw.snippet === "string" ? raw.snippet : ""} ${
     typeof raw.product_description === "string" ? raw.product_description : ""
