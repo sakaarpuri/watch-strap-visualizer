@@ -45,7 +45,7 @@ const DEFAULT_WATCH_PREVIEW_SCALE = 0.64;
 const DEFAULT_SCENE_ZOOM = 0.75;
 const DEFAULT_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.28;
 const DEFAULT_UPLOADED_STRAP_AUTO_FIT_WIDTH_FACTOR = 0.4;
-const SHOW_SHOPPING_PREVIEW = false;
+const SHOW_SHOPPING_PREVIEW = process.env.NEXT_PUBLIC_ENABLE_SHOPPING_PREVIEW === "true";
 const strapScaleToUi = (scale: number) => {
   const t = clamp((scale - STRAP_SCALE_MIN) / (STRAP_SCALE_MAX - STRAP_SCALE_MIN), 0, 1);
   return Math.cbrt(t) * 100;
