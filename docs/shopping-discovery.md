@@ -40,7 +40,11 @@ Notes:
 - The current code tries `search-v2`, then `search`, then `search-light-v2`
   because the RapidAPI docs and embedded schema expose slightly different path
   names. Override with `RAPIDAPI_PRODUCT_SEARCH_PATHS` if needed.
-- Without `RAPIDAPI_PRODUCT_SEARCH_KEY`, the route safely falls back to curated results.
+- Without `RAPIDAPI_PRODUCT_SEARCH_KEY`, the route returns no live shopping matches
+  unless you explicitly opt into the curated fallback.
+- Curated collection-page fallback is now off by default because it can look like
+  a real product match when it is not. Re-enable only with:
+  `ALLOW_CURATED_SHOPPING_FALLBACK=true`.
 - Without `GEMINI_API_KEY`, the route still works using deterministic queries.
 - The UI shopping section is still intentionally gated in
   `/tmp/watchstrap-serp-hybrid/components/HomePageClient.tsx` via

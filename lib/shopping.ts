@@ -581,6 +581,8 @@ const scoreCuratedProduct = (strap: StrapVariant, product: SimilarProduct) => {
   return score;
 };
 
+const ALLOW_CURATED_SHOPPING_FALLBACK = process.env.ALLOW_CURATED_SHOPPING_FALLBACK === "true";
+
 const getCuratedProductsForStrap = (strapId: string, limit = 4): SimilarProductCard[] => {
   const strap = getStrapById(strapId);
   if (!strap) return [];
@@ -723,7 +725,7 @@ const getHybridProductsForStrap = async (strapId: string, limit = 6): Promise<Si
 
   const apiKey = process.env.RAPIDAPI_PRODUCT_SEARCH_KEY || process.env.RAPIDAPI_KEY;
   if (!apiKey) {
-    return getCuratedProductsForStrap(strapId, limit);
+    return ALLOW_CURATED_SHOPPING_FALLBACK ? getCuratedProductsForStrap(strapId, limit) : [];
   }
 
   const seed = buildSeedFromStrap(strap);
@@ -765,7 +767,7 @@ const getHybridProductsForStrap = async (strapId: string, limit = 6): Promise<Si
   ).slice(0, limit);
 
   if (liveProducts.length) return liveProducts;
-  return getCuratedProductsForStrap(strapId, limit);
+  return ALLOW_CURATED_SHOPPING_FALLBACK ? getCuratedProductsForStrap(strapId, limit) : [];
 };
 
 export const getSimilarProductsForStrap = async (strapId: string, limit = 6): Promise<SimilarProductCard[]> =>
