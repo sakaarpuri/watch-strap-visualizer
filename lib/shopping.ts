@@ -62,10 +62,16 @@ interface RankedShoppingResult {
   score: number;
 }
 
-const SERPAPI_ENDPOINT = "https://serpapi.com/search.json";
-const DEFAULT_SERP_COUNTRY = process.env.SERPAPI_COUNTRY || "uk";
-const DEFAULT_SERP_LANGUAGE = process.env.SERPAPI_LANGUAGE || "en";
+const RAPIDAPI_PRODUCT_SEARCH_HOST = "real-time-product-search.p.rapidapi.com";
+const RAPIDAPI_PRODUCT_SEARCH_BASE_URL = `https://${RAPIDAPI_PRODUCT_SEARCH_HOST}`;
+const DEFAULT_RAPIDAPI_COUNTRY = process.env.RAPIDAPI_COUNTRY || "uk";
+const DEFAULT_RAPIDAPI_LANGUAGE = process.env.RAPIDAPI_LANGUAGE || "en";
+const DEFAULT_RAPIDAPI_SORT = process.env.RAPIDAPI_SORT_BY || "BEST_MATCH";
 const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3-flash-preview";
+const RAPIDAPI_SEARCH_PATHS = (process.env.RAPIDAPI_PRODUCT_SEARCH_PATHS || "search-v2,search,search-light-v2")
+  .split(",")
+  .map((entry) => entry.trim().replace(/^\/+/, ""))
+  .filter(Boolean);
 
 const CURATED_PRODUCTS: SimilarProduct[] = [
   {
@@ -480,28 +486,60 @@ const tokenize = (text: string) =>
     )
   ];
 
-const normalizeSerpResult = (raw: Record<string, unknown>, strap: StrapVariant): NormalizedShoppingResult | null => {
-  const title = typeof raw.title === "string" ? raw.title.trim() : "";
+const readNestedString = (value: unknown, path: string[]): string | undefined => {
+  let current: unknown = value;
+  for (const key of path) {
+    if (!current || typeof current !== "object" || !(key in current)) return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return typeof current === "string" && current.trim() ? current.trim() : undefined;
+};
+
+const readNestedNumber = (value: unknown, path: string[]): number | undefined => {
+  let current: unknown = value;
+  for (const key of path) {
+    if (!current || typeof current !== "object" || !(key in current)) return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return typeof current === "number" && Number.isFinite(current) ? current : undefined;
+};
+
+const normalizeRapidApiResult = (raw: Record<string, unknown>, strap: StrapVariant): NormalizedShoppingResult | null => {
+  const title =
+    (typeof raw.product_title === "string" && raw.product_title.trim()) ||
+    (typeof raw.title === "string" && raw.title.trim()) ||
+    "";
   const store =
+    readNestedString(raw, ["offer", "store", "name"]) ||
+    readNestedString(raw, ["offer", "merchant", "name"]) ||
     (typeof raw.source === "string" && raw.source.trim()) ||
     (typeof raw.store === "string" && raw.store.trim()) ||
+    (typeof raw.seller_name === "string" && raw.seller_name.trim()) ||
     "Unknown store";
   const url =
+    (typeof raw.product_url === "string" && raw.product_url.trim()) ||
+    readNestedString(raw, ["offer", "offer_page_url"]) ||
+    readNestedString(raw, ["offer", "product_url"]) ||
     (typeof raw.link === "string" && raw.link.trim()) ||
-    (typeof raw.product_link === "string" && raw.product_link.trim()) ||
-    (typeof raw.serpapi_link === "string" && raw.serpapi_link.trim()) ||
     "";
   const imageSrc =
+    (typeof raw.product_photo === "string" && raw.product_photo.trim()) ||
     (typeof raw.thumbnail === "string" && raw.thumbnail.trim()) ||
     (typeof raw.image === "string" && raw.image.trim()) ||
     strap.strapASrc;
   const price =
+    readNestedString(raw, ["offer", "price"]) ||
     (typeof raw.price === "string" && raw.price.trim()) ||
-    (typeof raw.extracted_price === "number" ? String(raw.extracted_price) : undefined);
+    (typeof raw.extracted_price === "number" ? String(raw.extracted_price) : undefined) ||
+    (readNestedNumber(raw, ["offer", "extracted_price"]) !== undefined
+      ? String(readNestedNumber(raw, ["offer", "extracted_price"]))
+      : undefined);
 
   if (!title || !url) return null;
 
-  const haystack = `${title} ${store} ${typeof raw.snippet === "string" ? raw.snippet : ""}`.toLowerCase();
+  const haystack = `${title} ${store} ${typeof raw.snippet === "string" ? raw.snippet : ""} ${
+    typeof raw.product_description === "string" ? raw.product_description : ""
+  }`.toLowerCase();
   const parsedMaterial = parseMaterial(haystack);
   const parsedStyle = parseStyle(haystack, parsedMaterial);
   const parsedColor = parseColor(haystack, parsedMaterial);
@@ -611,32 +649,62 @@ const rankLiveProduct = (strap: StrapVariant, result: NormalizedShoppingResult):
   };
 };
 
-const fetchSerpShoppingResults = async (query: string): Promise<Record<string, unknown>[]> => {
-  const apiKey = process.env.SERPAPI_API_KEY;
+const unwrapRapidApiResults = (payload: unknown): Record<string, unknown>[] => {
+  if (!payload || typeof payload !== "object") return [];
+  const root = payload as Record<string, unknown>;
+  if (Array.isArray(root.data)) return root.data.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object");
+  if (!root.data || typeof root.data !== "object") return [];
+  const data = root.data as Record<string, unknown>;
+  for (const key of ["products", "shopping_results", "results", "items"]) {
+    const value = data[key];
+    if (Array.isArray(value)) {
+      return value.filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object");
+    }
+  }
+  return [];
+};
+
+const fetchRapidApiShoppingResults = async (query: string): Promise<Record<string, unknown>[]> => {
+  const apiKey = process.env.RAPIDAPI_PRODUCT_SEARCH_KEY || process.env.RAPIDAPI_KEY;
   if (!apiKey) return [];
 
   const searchParams = new URLSearchParams({
-    engine: "google_shopping",
     q: query,
-    api_key: apiKey,
-    gl: DEFAULT_SERP_COUNTRY,
-    hl: DEFAULT_SERP_LANGUAGE,
-    num: "10"
+    country: DEFAULT_RAPIDAPI_COUNTRY,
+    language: DEFAULT_RAPIDAPI_LANGUAGE,
+    limit: "10",
+    sort_by: DEFAULT_RAPIDAPI_SORT
   });
 
-  const response = await fetch(`${SERPAPI_ENDPOINT}?${searchParams.toString()}`, {
-    headers: { Accept: "application/json" },
-    next: { revalidate: 60 * 60 * 6 }
-  });
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    throw new Error(`Shopping lookup failed (${response.status})`);
+  for (const path of RAPIDAPI_SEARCH_PATHS) {
+    const response = await fetch(`${RAPIDAPI_PRODUCT_SEARCH_BASE_URL}/${path}?${searchParams.toString()}`, {
+      headers: {
+        Accept: "application/json",
+        "X-RapidAPI-Host": RAPIDAPI_PRODUCT_SEARCH_HOST,
+        "X-RapidAPI-Key": apiKey
+      },
+      next: { revalidate: 60 * 60 * 6 }
+    });
+
+    if (response.status === 404) {
+      lastError = new Error(`RapidAPI product search path not found: ${path}`);
+      continue;
+    }
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(`RapidAPI shopping lookup failed (${response.status})${body ? `: ${body.slice(0, 200)}` : ""}`);
+    }
+
+    const payload = (await response.json()) as unknown;
+    const results = unwrapRapidApiResults(payload);
+    if (results.length) return results;
   }
 
-  const payload = (await response.json()) as {
-    shopping_results?: Record<string, unknown>[];
-  };
-  return Array.isArray(payload.shopping_results) ? payload.shopping_results : [];
+  if (lastError) throw lastError;
+  return [];
 };
 
 const dedupeProducts = (products: SimilarProductCard[]) => {
@@ -653,7 +721,7 @@ const getHybridProductsForStrap = async (strapId: string, limit = 6): Promise<Si
   const strap = getStrapById(strapId);
   if (!strap) return [];
 
-  const apiKey = process.env.SERPAPI_API_KEY;
+  const apiKey = process.env.RAPIDAPI_PRODUCT_SEARCH_KEY || process.env.RAPIDAPI_KEY;
   if (!apiKey) {
     return getCuratedProductsForStrap(strapId, limit);
   }
@@ -679,9 +747,9 @@ const getHybridProductsForStrap = async (strapId: string, limit = 6): Promise<Si
 
   for (const entry of orderedQueries) {
     const searchQuery = buildSearchQuery(entry.query, plan.negativeKeywords || []);
-    const rawResults = await fetchSerpShoppingResults(searchQuery);
+    const rawResults = await fetchRapidApiShoppingResults(searchQuery);
     const normalized = rawResults
-      .map((raw) => normalizeSerpResult(raw, strap))
+      .map((raw) => normalizeRapidApiResult(raw, strap))
       .filter((result): result is NormalizedShoppingResult => Boolean(result));
 
     for (const result of normalized) {
