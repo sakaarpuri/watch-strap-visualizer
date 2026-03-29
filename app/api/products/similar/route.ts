@@ -9,6 +9,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing strap id" }, { status: 400 });
   }
 
-  const products = await getSimilarProductsForStrap(strapId);
-  return NextResponse.json({ products });
+  try {
+    const products = await getSimilarProductsForStrap(strapId);
+    return NextResponse.json({ products });
+  } catch (error) {
+    console.error("similar-products lookup failed", { strapId, error });
+    return NextResponse.json({ products: [], error: "Shopping lookup failed" }, { status: 200 });
+  }
 }

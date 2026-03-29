@@ -823,7 +823,7 @@ const fetchRapidApiShoppingResults = async (query: string): Promise<Record<strin
   if (!apiKey) return [];
 
   const searchParams = new URLSearchParams({
-    q: query,
+    query,
     country: DEFAULT_RAPIDAPI_COUNTRY,
     language: DEFAULT_RAPIDAPI_LANGUAGE,
     limit: "10",
