@@ -7,12 +7,12 @@ This project now has a hybrid shopping-retrieval backend behind the existing
 
 1. The active library strap provides a normalized seed from
    `/tmp/watchstrap-serp-hybrid/lib/strapLibrary.ts`.
-2. `/tmp/watchstrap-serp-hybrid/lib/shopping.ts` builds deterministic Google
-   Shopping queries from that seed.
+2. `/tmp/watchstrap-serp-hybrid/lib/shopping.ts` builds deterministic product
+   search queries from that seed.
 3. If `GEMINI_API_KEY` is present, Gemini enriches those queries with better
    exact / compatible / similar search phrasing.
-4. If `SERPAPI_API_KEY` is present, SerpApi is used to retrieve live Google
-   Shopping results.
+4. If `RAPIDAPI_PRODUCT_SEARCH_KEY` is present, RapidAPI's Real-Time Product
+   Search is used to retrieve live product results.
 5. Watchstrapper parses those results and ranks them into:
    - `exact`
    - `compatible`
@@ -26,19 +26,38 @@ Optional:
 
 ```bash
 GEMINI_API_KEY=your_key_here
-SERPAPI_API_KEY=your_key_here
-SERPAPI_COUNTRY=uk
-SERPAPI_LANGUAGE=en
-GEMINI_MODEL=gemini-2.0-flash
+RAPIDAPI_PRODUCT_SEARCH_KEY=your_key_here
+RAPIDAPI_COUNTRY=uk
+RAPIDAPI_LANGUAGE=en
+RAPIDAPI_SORT_BY=BEST_MATCH
+GEMINI_MODEL=gemini-3-flash-preview
+ENABLE_GEMINI_SHOPPING_QUERY_ENRICHMENT=false
+SHOPPING_CACHE_TTL_SECONDS=21600
+SHOPPING_MERCHANT_ALLOWLIST=watchgecko,cns watch bands,barton,strapcode,watch obsession,forstner,staib,crown & buckle,bulang
+SHOPPING_MERCHANT_BLOCKLIST=amazon,ebay,etsy,aliexpress,temu,wish
 ```
 
 Notes:
 
-- Without `SERPAPI_API_KEY`, the route safely falls back to curated results.
-- Without `GEMINI_API_KEY`, the route still works using deterministic queries.
+- RapidAPI auth uses `X-RapidAPI-Key` plus
+  `X-RapidAPI-Host: real-time-product-search.p.rapidapi.com`.
+- The current code tries `search-v2`, then `search`, then `search-light-v2`
+  because the RapidAPI docs and embedded schema expose slightly different path
+  names. Override with `RAPIDAPI_PRODUCT_SEARCH_PATHS` if needed.
+- Without `RAPIDAPI_PRODUCT_SEARCH_KEY`, the route returns no live shopping matches
+  unless you explicitly opt into the curated fallback.
+- Curated collection-page fallback is now off by default because it can look like
+  a real product match when it is not. Re-enable only with:
+  `ALLOW_CURATED_SHOPPING_FALLBACK=true`.
+- Gemini query enrichment is off by default on the critical path. Turn it on only
+  with `ENABLE_GEMINI_SHOPPING_QUERY_ENRICHMENT=true`.
+- Library-strap shopping results are cached, and query tiers now run in parallel
+  with early exit after strong exact matches.
+- Query generation is now material-aware across leather, fabric, rubber, and metal,
+  with stricter ranking for style, finish, and merchant quality.
 - The UI shopping section is still intentionally gated in
   `/tmp/watchstrap-serp-hybrid/components/HomePageClient.tsx` via
-  `SHOW_SHOPPING_PREVIEW = false`.
+  `NEXT_PUBLIC_ENABLE_SHOPPING_PREVIEW=true`.
 
 ## Current scope
 

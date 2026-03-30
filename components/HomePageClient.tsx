@@ -624,6 +624,8 @@ export default function HomePageClient({
   const [showLugGuideOnboarding, setShowLugGuideOnboarding] = useState(false);
   const [similarProducts, setSimilarProducts] = useState<SimilarProductCard[]>([]);
   const [similarProductsLoading, setSimilarProductsLoading] = useState(false);
+  const [similarProductsRequestedFor, setSimilarProductsRequestedFor] = useState<string | null>(null);
+  const [similarProductsError, setSimilarProductsError] = useState<string | null>(null);
   const [mockupReadyHighlight, setMockupReadyHighlight] = useState(false);
   const [animateStrapSettle, setAnimateStrapSettle] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
@@ -658,6 +660,7 @@ export default function HomePageClient({
   const mockupReadyTimeoutRef = useRef<number | null>(null);
   const strapSettleTimeoutRef = useRef<number | null>(null);
   const firstRenderedStrapRef = useRef(false);
+  const similarProductsRequestRef = useRef<string | null>(null);
 
   const clearMockupReadyHighlight = () => {
     setMockupReadyHighlight(false);
@@ -1436,36 +1439,35 @@ export default function HomePageClient({
   };
 
   useEffect(() => {
-    if (strapSourceMode !== "library" || !lockView || !activeLibraryStrap?.id) {
-      setSimilarProducts([]);
-      setSimilarProductsLoading(false);
-      return;
-    }
+    similarProductsRequestRef.current = null;
+    setSimilarProducts([]);
+    setSimilarProductsLoading(false);
+    setSimilarProductsRequestedFor(null);
+    setSimilarProductsError(null);
+  }, [activeLibraryStrap?.id, strapSourceMode]);
 
-    let active = true;
+  const loadSimilarProducts = async () => {
+    if (strapSourceMode !== "library" || !activeLibraryStrap?.id) return;
+    const strapId = activeLibraryStrap.id;
+    similarProductsRequestRef.current = strapId;
     setSimilarProductsLoading(true);
-    fetch(`/api/products/similar?strapId=${encodeURIComponent(activeLibraryStrap.id)}`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Could not load shopping matches.");
-        return response.json() as Promise<{ products?: SimilarProductCard[] }>;
-      })
-      .then((payload) => {
-        if (!active) return;
-        setSimilarProducts(Array.isArray(payload.products) ? payload.products : []);
-      })
-      .catch(() => {
-        if (!active) return;
-        setSimilarProducts([]);
-      })
-      .finally(() => {
-        if (!active) return;
-        setSimilarProductsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [activeLibraryStrap?.id, strapSourceMode, lockView]);
+    setSimilarProductsRequestedFor(strapId);
+    setSimilarProductsError(null);
+    try {
+      const response = await fetch(`/api/products/similar?strapId=${encodeURIComponent(strapId)}`);
+      if (!response.ok) throw new Error("Could not load shopping matches.");
+      const payload = (await response.json()) as { products?: SimilarProductCard[] };
+      if (similarProductsRequestRef.current !== strapId) return;
+      setSimilarProducts(Array.isArray(payload.products) ? payload.products : []);
+    } catch {
+      if (similarProductsRequestRef.current !== strapId) return;
+      setSimilarProducts([]);
+      setSimilarProductsError("Could not load shopping matches right now.");
+    } finally {
+      if (similarProductsRequestRef.current !== strapId) return;
+      setSimilarProductsLoading(false);
+    }
+  };
 
   const runCleanupFallback = async () => {
     if (!uploadedWatchFile) return;
@@ -2654,34 +2656,38 @@ export default function HomePageClient({
             </div>
             {SHOW_SHOPPING_PREVIEW && strapSourceMode === "library" ? (
               <div
-                className={`glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 transition ${
-                  lockView
-                    ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_24px_rgba(56,44,32,0.08)]"
-                    : "opacity-78 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] grayscale-[0.14]"
-                }`}
+                className="glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_24px_rgba(56,44,32,0.08)] transition"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                    Similar Straps Available For Buying Elsewhere
+                      Find Similar Straps To Buy
                     </p>
-                    {lockView ? (
-                      <p className="mt-1 text-sm text-muted">
-                        We may earn affiliate commission from one of the listed purchase links.
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-sm text-muted">
-                        Matching buying options will show up here for the strap on the bench.
-                      </p>
-                    )}
+                    <p className="mt-1 text-sm text-muted">
+                      Try the selected library strap against live shopping results without leaving the preview flow.
+                    </p>
                   </div>
                   <span className="rounded-full border border-line bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-                    Coming soon
+                    Preview
                   </span>
                 </div>
-                {lockView ? (
+                {similarProductsRequestedFor !== activeLibraryStrap?.id ? (
+                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-5">
+                    <p className="text-sm text-muted">
+                      We&apos;ll look for exact, compatible, and similar shopping matches for{" "}
+                      <span className="font-semibold text-ink">{activeLibraryStrap?.label}</span>.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void loadSimilarProducts()}
+                      className="neo-button mt-4 rounded-2xl px-5 py-3 text-sm font-semibold text-ink"
+                    >
+                      Find Similar Straps
+                    </button>
+                  </div>
+                ) : (
                   similarProductsLoading ? (
-                    <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+                    <p className="mt-4 text-sm text-muted">Looking for similar straps…</p>
                   ) : similarProducts.length ? (
                     <div className="mt-4 space-y-3">
                       {similarProducts.map((product) => (
@@ -2719,29 +2725,22 @@ export default function HomePageClient({
                         </a>
                       ))}
                     </div>
+                  ) : similarProductsError ? (
+                    <div className="mt-4 rounded-2xl border border-dashed border-[#d8c9bc] bg-white/55 p-4">
+                      <p className="text-sm text-[#8f5a48]">{similarProductsError}</p>
+                      <button
+                        type="button"
+                        onClick={() => void loadSimilarProducts()}
+                        className="neo-button mt-3 rounded-xl px-4 py-2 text-sm font-semibold text-ink"
+                      >
+                        Try Again
+                      </button>
+                    </div>
                   ) : (
                     <p className="mt-3 text-sm text-muted">
-                      No close store match yet for this strap.
+                      No close shopping matches found yet for this strap.
                     </p>
                   )
-                ) : (
-                  <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/42 p-4 grayscale-[0.18]">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <MaterialInset
-                        src="/strap-selection-kie/cognac-grain-leather-buckle.png"
-                        label="Leather strap sample"
-                        fit="contain"
-                      />
-                      <MaterialInset
-                        src="/strap-selection-kie/black-rubber-buckle.png"
-                        label="Rubber strap sample"
-                        fit="contain"
-                      />
-                    </div>
-                    <p className="mt-3 text-sm text-slate-500">
-                      Shopping links will appear here when matching options are available.
-                    </p>
-                  </div>
                 )}
               </div>
             ) : null}
@@ -2853,34 +2852,38 @@ export default function HomePageClient({
           </div>
           {SHOW_SHOPPING_PREVIEW && strapSourceMode === "library" ? (
             <div
-              className={`glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 transition ${
-                lockView
-                  ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_24px_rgba(56,44,32,0.08)]"
-                  : "opacity-78 shadow-[inset_0_1px_0_rgba(255,255,255,0.38)] grayscale-[0.14]"
-              }`}
+              className="glass-card rounded-[1.9rem] border border-[#d7d1c8] bg-[linear-gradient(180deg,rgba(241,239,235,0.96),rgba(232,228,221,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_24px_rgba(56,44,32,0.08)] transition"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">
-                  Similar Straps Available For Buying Elsewhere
+                    Find Similar Straps To Buy
                   </p>
-                  {lockView ? (
-                    <p className="mt-1 text-sm text-muted">
-                      We may earn affiliate commission from one of the listed purchase links.
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-muted">
-                      Matching buying options will show up here for the strap on the bench.
-                    </p>
-                  )}
+                  <p className="mt-1 text-sm text-muted">
+                    Try the selected library strap against live shopping results without leaving the preview flow.
+                  </p>
                 </div>
                 <span className="rounded-full border border-line bg-white/72 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-                  Coming soon
+                  Preview
                 </span>
               </div>
-              {lockView ? (
+              {similarProductsRequestedFor !== activeLibraryStrap?.id ? (
+                <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/55 p-4">
+                  <p className="text-sm text-muted">
+                    We&apos;ll look for exact, compatible, and similar shopping matches for{" "}
+                    <span className="font-semibold text-ink">{activeLibraryStrap?.label}</span>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void loadSimilarProducts()}
+                    className="neo-button mt-4 rounded-2xl px-5 py-3 text-sm font-semibold text-ink"
+                  >
+                    Find Similar Straps
+                  </button>
+                </div>
+              ) : (
                 similarProductsLoading ? (
-                  <p className="mt-3 text-sm text-muted">Looking around the strap counter…</p>
+                  <p className="mt-4 text-sm text-muted">Looking for similar straps…</p>
                 ) : similarProducts.length ? (
                   <div className="mt-4 space-y-3">
                     {similarProducts.map((product) => (
@@ -2918,29 +2921,22 @@ export default function HomePageClient({
                       </a>
                     ))}
                   </div>
+                ) : similarProductsError ? (
+                  <div className="mt-4 rounded-2xl border border-dashed border-[#d8c9bc] bg-white/55 p-4">
+                    <p className="text-sm text-[#8f5a48]">{similarProductsError}</p>
+                    <button
+                      type="button"
+                      onClick={() => void loadSimilarProducts()}
+                      className="neo-button mt-3 rounded-xl px-4 py-2 text-sm font-semibold text-ink"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 ) : (
                   <p className="mt-3 text-sm text-muted">
-                    No close store match yet for this strap.
+                    No close shopping matches found yet for this strap.
                   </p>
                 )
-              ) : (
-                <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white/42 p-4 grayscale-[0.18]">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <MaterialInset
-                      src="/strap-selection-kie/cognac-grain-leather-buckle.png"
-                      label="Leather strap sample"
-                      fit="contain"
-                    />
-                    <MaterialInset
-                      src="/strap-selection-kie/black-rubber-buckle.png"
-                      label="Rubber strap sample"
-                      fit="contain"
-                    />
-                  </div>
-                  <p className="mt-3 text-sm text-slate-500">
-                    Shopping links will appear here when matching options are available.
-                  </p>
-                </div>
               )}
             </div>
           ) : null}
