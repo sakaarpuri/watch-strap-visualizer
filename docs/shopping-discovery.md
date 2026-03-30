@@ -31,6 +31,8 @@ RAPIDAPI_COUNTRY=uk
 RAPIDAPI_LANGUAGE=en
 RAPIDAPI_SORT_BY=BEST_MATCH
 GEMINI_MODEL=gemini-3-flash-preview
+ENABLE_GEMINI_SHOPPING_QUERY_ENRICHMENT=false
+SHOPPING_CACHE_TTL_SECONDS=21600
 SHOPPING_MERCHANT_ALLOWLIST=watchgecko,cns watch bands,barton,strapcode,watch obsession,forstner,staib,crown & buckle,bulang
 SHOPPING_MERCHANT_BLOCKLIST=amazon,ebay,etsy,aliexpress,temu,wish
 ```
@@ -47,7 +49,10 @@ Notes:
 - Curated collection-page fallback is now off by default because it can look like
   a real product match when it is not. Re-enable only with:
   `ALLOW_CURATED_SHOPPING_FALLBACK=true`.
-- Without `GEMINI_API_KEY`, the route still works using deterministic queries.
+- Gemini query enrichment is off by default on the critical path. Turn it on only
+  with `ENABLE_GEMINI_SHOPPING_QUERY_ENRICHMENT=true`.
+- Library-strap shopping results are cached, and query tiers now run in parallel
+  with early exit after strong exact matches.
 - Query generation is now material-aware across leather, fabric, rubber, and metal,
   with stricter ranking for style, finish, and merchant quality.
 - The UI shopping section is still intentionally gated in

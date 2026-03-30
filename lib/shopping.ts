@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { getStrapsForCategory, StrapVariant } from "@/lib/strapLibrary";
 
 export interface SimilarProduct {
@@ -69,6 +70,8 @@ const DEFAULT_RAPIDAPI_COUNTRY = process.env.RAPIDAPI_COUNTRY || "uk";
 const DEFAULT_RAPIDAPI_LANGUAGE = process.env.RAPIDAPI_LANGUAGE || "en";
 const DEFAULT_RAPIDAPI_SORT = process.env.RAPIDAPI_SORT_BY || "BEST_MATCH";
 const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3-flash-preview";
+const ENABLE_GEMINI_SHOPPING_QUERY_ENRICHMENT = process.env.ENABLE_GEMINI_SHOPPING_QUERY_ENRICHMENT === "true";
+const SHOPPING_CACHE_TTL_SECONDS = Number(process.env.SHOPPING_CACHE_TTL_SECONDS || 60 * 60 * 6);
 const RAPIDAPI_SEARCH_PATHS = (process.env.RAPIDAPI_PRODUCT_SEARCH_PATHS || "search-v2,search,search-light-v2")
   .split(",")
   .map((entry) => entry.trim().replace(/^\/+/, ""))
@@ -478,6 +481,7 @@ Strap label: ${strap.label}
 Known attributes: ${JSON.stringify(seed)}`;
 
 const getGeminiPlan = async (strap: StrapVariant, seed: ShoppingSeed): Promise<GeminiQueryPlan | null> => {
+  if (!ENABLE_GEMINI_SHOPPING_QUERY_ENRICHMENT) return null;
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
@@ -913,7 +917,34 @@ const dedupeProducts = (products: SimilarProductCard[]) => {
   });
 };
 
-const getHybridProductsForStrap = async (strapId: string, limit = 6): Promise<SimilarProductCard[]> => {
+const fetchAndRankQueryBatch = async (
+  strap: StrapVariant,
+  queries: string[],
+  negativeKeywords: string[]
+): Promise<RankedShoppingResult[]> => {
+  const settled = await Promise.allSettled(
+    queries.map(async (query) => {
+      const searchQuery = buildSearchQuery(query, negativeKeywords);
+      const rawResults = await fetchRapidApiShoppingResults(searchQuery);
+      return rawResults
+        .map((raw) => normalizeRapidApiResult(raw, strap))
+        .filter((result): result is NormalizedShoppingResult => Boolean(result))
+        .map((result) => rankLiveProduct(strap, result))
+        .filter((result): result is RankedShoppingResult => Boolean(result));
+    })
+  );
+
+  return settled.flatMap((entry) => (entry.status === "fulfilled" ? entry.value : []));
+};
+
+const finalizeRankedProducts = (ranked: RankedShoppingResult[], limit: number) =>
+  dedupeProducts(
+    ranked
+      .sort((a, b) => b.score - a.score || a.product.title.localeCompare(b.product.title))
+      .map(({ product }) => product)
+  ).slice(0, limit);
+
+const getHybridProductsForStrapUncached = async (strapId: string, limit = 6): Promise<SimilarProductCard[]> => {
   const strap = getStrapById(strapId);
   if (!strap) return [];
 
@@ -933,36 +964,27 @@ const getHybridProductsForStrap = async (strapId: string, limit = 6): Promise<Si
     plan = deterministicPlan;
   }
 
-  const orderedQueries = [
-    ...plan.exact.map((query) => ({ query, tier: "exact" as const })),
-    ...plan.compatible.map((query) => ({ query, tier: "compatible" as const })),
-    ...plan.similar.map((query) => ({ query, tier: "similar" as const }))
-  ].slice(0, 8);
+  const negativeKeywords = plan.negativeKeywords || [];
 
-  const ranked: RankedShoppingResult[] = [];
+  const exactRanked = await fetchAndRankQueryBatch(strap, plan.exact.slice(0, 3), negativeKeywords);
+  const exactProducts = finalizeRankedProducts(exactRanked, limit);
+  if (exactProducts.length >= Math.min(3, limit)) return exactProducts;
 
-  for (const entry of orderedQueries) {
-    const searchQuery = buildSearchQuery(entry.query, plan.negativeKeywords || []);
-    const rawResults = await fetchRapidApiShoppingResults(searchQuery);
-    const normalized = rawResults
-      .map((raw) => normalizeRapidApiResult(raw, strap))
-      .filter((result): result is NormalizedShoppingResult => Boolean(result));
+  const compatibleRanked = await fetchAndRankQueryBatch(strap, plan.compatible.slice(0, 2), negativeKeywords);
+  const exactAndCompatible = finalizeRankedProducts([...exactRanked, ...compatibleRanked], limit);
+  if (exactAndCompatible.length >= Math.min(4, limit)) return exactAndCompatible;
 
-    for (const result of normalized) {
-      const rankedResult = rankLiveProduct(strap, result);
-      if (rankedResult) ranked.push(rankedResult);
-    }
-  }
-
-  const liveProducts = dedupeProducts(
-    ranked
-      .sort((a, b) => b.score - a.score || a.product.title.localeCompare(b.product.title))
-      .map(({ product }) => product)
-  ).slice(0, limit);
-
+  const similarRanked = await fetchAndRankQueryBatch(strap, plan.similar.slice(0, 2), negativeKeywords);
+  const liveProducts = finalizeRankedProducts([...exactRanked, ...compatibleRanked, ...similarRanked], limit);
   if (liveProducts.length) return liveProducts;
   return ALLOW_CURATED_SHOPPING_FALLBACK ? getCuratedProductsForStrap(strapId, limit) : [];
 };
 
+const getCachedHybridProductsForStrap = unstable_cache(
+  async (strapId: string, limit: number) => getHybridProductsForStrapUncached(strapId, limit),
+  ["shopping-similar-products"],
+  { revalidate: SHOPPING_CACHE_TTL_SECONDS }
+);
+
 export const getSimilarProductsForStrap = async (strapId: string, limit = 6): Promise<SimilarProductCard[]> =>
-  getHybridProductsForStrap(strapId, limit);
+  getCachedHybridProductsForStrap(strapId, limit);
