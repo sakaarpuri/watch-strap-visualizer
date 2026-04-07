@@ -1,0 +1,229 @@
+{
+  "watchArchetypes": [
+    {
+      "id": "field-watch",
+      "title": "Field Watch",
+      "reference": "Hamilton Khaki Field direction",
+      "description": "Matte steel field watch with a black dial and high-legibility numerals."
+    },
+    {
+      "id": "diver-watch",
+      "title": "Diver Watch",
+      "reference": "Seiko diver direction",
+      "description": "Steel diver with black bezel, bold dial furniture, and a more muscular silhouette."
+    },
+    {
+      "id": "modern-sport-watch",
+      "title": "Modern Sport Watch",
+      "reference": "Tissot PRX direction",
+      "description": "Slim steel sport-dress watch with a cleaner urban feel."
+    }
+  ],
+  "heroPairs": [
+    {
+      "id": "hero-field-brown-leather",
+      "title": "Field + Brown Smooth Leather",
+      "label": "Field + Brown Leather",
+      "watchArchetypeId": "field-watch",
+      "libraryStrapId": "leather-dark-brown-smooth",
+      "strapCategory": "Leather",
+      "mood": "calm premium everyday-dress",
+      "assetBase": "/homepage/hero/hero-field-brown-leather",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5"
+    },
+    {
+      "id": "hero-field-grey-canvas",
+      "title": "Field + Grey Canvas",
+      "label": "Field + Grey Canvas",
+      "watchArchetypeId": "field-watch",
+      "libraryStrapId": "fabric-grey-canvas",
+      "strapCategory": "Fabric",
+      "mood": "rugged editorial textile-forward",
+      "assetBase": "/homepage/hero/hero-field-grey-canvas",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5"
+    },
+    {
+      "id": "hero-field-olive-nato",
+      "title": "Field + Olive NATO",
+      "label": "Field + Olive NATO",
+      "watchArchetypeId": "field-watch",
+      "libraryStrapId": "fabric-olive-nato",
+      "strapCategory": "Fabric",
+      "mood": "utilitarian classic military-inspired",
+      "assetBase": "/homepage/hero/hero-field-olive-nato",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5"
+    },
+    {
+      "id": "hero-diver-black-rubber",
+      "title": "Diver + Black Rubber",
+      "label": "Diver + Black Rubber",
+      "watchArchetypeId": "diver-watch",
+      "libraryStrapId": "rubber-navy-performance",
+      "strapCategory": "Rubber",
+      "mood": "sporty sharp modern",
+      "assetBase": "/homepage/hero/hero-diver-black-rubber",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5",
+      "note": "Marketing asset should use an original black rubber strap; current live mapping uses the closest existing rubber strap."
+    },
+    {
+      "id": "hero-diver-steel-bracelet",
+      "title": "Diver + Steel Bracelet",
+      "label": "Diver + Steel Bracelet",
+      "watchArchetypeId": "diver-watch",
+      "libraryStrapId": "metal-steel-bracelet",
+      "strapCategory": "Metal",
+      "mood": "tool-watch metallic premium",
+      "assetBase": "/homepage/hero/hero-diver-steel-bracelet",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5"
+    },
+    {
+      "id": "hero-diver-bond-nato",
+      "title": "Diver + Bond NATO",
+      "label": "Diver + Bond NATO",
+      "watchArchetypeId": "diver-watch",
+      "libraryStrapId": "fabric-bond-nato",
+      "strapCategory": "Fabric",
+      "mood": "iconic refined recognizable",
+      "assetBase": "/homepage/hero/hero-diver-bond-nato",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5"
+    },
+    {
+      "id": "hero-modern-black-pebbled-leather",
+      "title": "Modern Sport + Black Pebbled Leather",
+      "label": "Modern Sport + Black Leather",
+      "watchArchetypeId": "modern-sport-watch",
+      "libraryStrapId": "leather-black-grain",
+      "strapCategory": "Leather",
+      "mood": "city-smart polished elevated",
+      "assetBase": "/homepage/hero/hero-modern-black-pebbled-leather",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5"
+    },
+    {
+      "id": "hero-modern-navy-suede",
+      "title": "Modern Sport + Navy Suede",
+      "label": "Modern Sport + Navy Suede",
+      "watchArchetypeId": "modern-sport-watch",
+      "libraryStrapId": "leather-sapphire-suede",
+      "strapCategory": "Leather",
+      "mood": "tactile fashion-forward soft-luxury",
+      "assetBase": "/homepage/hero/hero-modern-navy-suede",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5"
+    },
+    {
+      "id": "hero-modern-steel-bracelet",
+      "title": "Modern Sport + Fine Steel Bracelet",
+      "label": "Modern Sport + Steel Bracelet",
+      "watchArchetypeId": "modern-sport-watch",
+      "libraryStrapId": "metal-steel-link-bracelet",
+      "strapCategory": "Metal",
+      "mood": "clean contemporary precise",
+      "assetBase": "/homepage/hero/hero-modern-steel-bracelet",
+      "variants": ["a", "b"],
+      "background": "warm-ivory",
+      "crop": "4:5"
+    }
+  ],
+  "styleStarters": [
+    {
+      "id": "starter-field",
+      "title": "Field",
+      "subtitle": "Tool watch classic",
+      "watchArchetypeId": "field-watch",
+      "libraryStrapId": "leather-dark-brown-smooth",
+      "strapCategory": "Leather",
+      "image": "/homepage/starters/starter-field.png"
+    },
+    {
+      "id": "starter-diver",
+      "title": "Diver",
+      "subtitle": "Built for water and motion",
+      "watchArchetypeId": "diver-watch",
+      "libraryStrapId": "rubber-navy-performance",
+      "strapCategory": "Rubber",
+      "image": "/homepage/starters/starter-diver.png",
+      "note": "Current live mapping uses the nearest existing rubber strap until a black rubber strap is added to the library."
+    },
+    {
+      "id": "starter-bracelet",
+      "title": "Bracelet",
+      "subtitle": "Clean metal fit",
+      "watchArchetypeId": "modern-sport-watch",
+      "libraryStrapId": "metal-steel-link-bracelet",
+      "strapCategory": "Metal",
+      "image": "/homepage/starters/starter-bracelet.png"
+    },
+    {
+      "id": "starter-dress",
+      "title": "Dress",
+      "subtitle": "Sharp for city wear",
+      "watchArchetypeId": "modern-sport-watch",
+      "libraryStrapId": "leather-black-grain",
+      "strapCategory": "Leather",
+      "image": "/homepage/starters/starter-dress.png"
+    },
+    {
+      "id": "starter-weekend-nylon",
+      "title": "Weekend Nylon",
+      "subtitle": "Easy weekend change",
+      "watchArchetypeId": "diver-watch",
+      "libraryStrapId": "fabric-bond-nato",
+      "strapCategory": "Fabric",
+      "image": "/homepage/starters/starter-weekend-nylon.png"
+    },
+    {
+      "id": "starter-soft-texture",
+      "title": "Soft Texture",
+      "subtitle": "Soft texture, quiet detail",
+      "watchArchetypeId": "modern-sport-watch",
+      "libraryStrapId": "leather-sapphire-suede",
+      "strapCategory": "Leather",
+      "image": "/homepage/starters/starter-soft-texture.png"
+    }
+  ],
+  "strapWorlds": [
+    {
+      "id": "world-leather",
+      "title": "Leather",
+      "description": "Smooth, pebbled, suede, and dress-forward pairings.",
+      "category": "Leather",
+      "image": "/homepage/worlds/world-leather.png"
+    },
+    {
+      "id": "world-fabric",
+      "title": "Fabric",
+      "description": "Canvas, nylon, and woven straps with character.",
+      "category": "Fabric",
+      "image": "/homepage/worlds/world-fabric.png"
+    },
+    {
+      "id": "world-rubber",
+      "title": "Rubber",
+      "description": "Performance-first straps for dive and sport watches.",
+      "category": "Rubber",
+      "image": "/homepage/worlds/world-rubber.png"
+    },
+    {
+      "id": "world-bracelet",
+      "title": "Bracelet",
+      "description": "Steel and metal options with a more technical finish.",
+      "category": "Metal",
+      "image": "/homepage/worlds/world-bracelet.png"
+    }
+  ]
+}

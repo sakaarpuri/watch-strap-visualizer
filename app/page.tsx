@@ -4,6 +4,9 @@ import { PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState
 import Link from "next/link";
 import CanvasPreview, { CanvasPreviewRef } from "@/components/CanvasPreview";
 import CropEditor from "@/components/CropEditor";
+import HeroSection from "@/components/home/HeroSection";
+import StrapWorldsSection from "@/components/home/StrapWorldsSection";
+import StyleStartersSection from "@/components/home/StyleStartersSection";
 import ImageUploader from "@/components/ImageUploader";
 import StrapSplitEditor from "@/components/StrapSplitEditor";
 import {
@@ -22,6 +25,11 @@ import {
   StrapCategory,
   StrapVariant
 } from "@/lib/strapLibrary";
+import {
+  HERO_PAIRS,
+  type HomepageStyleStarter,
+  type HomepageStrapWorld
+} from "@/lib/homepageContent";
 import type { SimilarProductCard } from "@/lib/shopping";
 
 const clamp = (value: number, min: number, max: number) =>
@@ -601,14 +609,80 @@ export default function Home() {
     }
   };
 
-  const strapsInCategory = useMemo(() => {
-    const straps = [...getStrapsForCategory(category)];
-    return straps.sort((a, b) => {
+  const sortStrapsForDrawer = (straps: StrapVariant[]) =>
+    [...straps].sort((a, b) => {
       const scoreDiff = getStrapSortScore(a) - getStrapSortScore(b);
       if (scoreDiff !== 0) return scoreDiff;
       return a.label.localeCompare(b.label);
     });
-  }, [category]);
+
+  const selectLibraryStrap = (nextIndex: number) => {
+    setStrapIndex(nextIndex);
+    setHasSelectedLibraryStrap(true);
+    setShowFitBench(false);
+    setFitState("auto");
+    if (hasUserUpload) {
+      setHighlightPreviewWindow(true);
+      triggerStrapSettle();
+      window.setTimeout(() => {
+        previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    }
+  };
+
+  const focusPreviewStage = () => {
+    window.setTimeout(() => {
+      previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  };
+
+  const activateLibrarySelection = (strapId: string, forcedCategory?: StrapCategory) => {
+    const target = getStrapsForCategory("All categories").find((strap) => strap.id === strapId);
+    if (!target) return;
+
+    const nextCategory = forcedCategory ?? target.category;
+    const nextStraps = sortStrapsForDrawer(getStrapsForCategory(nextCategory));
+    const nextIndex = nextStraps.findIndex((strap) => strap.id === strapId);
+    if (nextIndex === -1) return;
+
+    setStrapSourceMode("library");
+    setCategory(nextCategory);
+    setStrapIndex(nextIndex);
+    setHasSelectedLibraryStrap(true);
+    setShowFitBench(false);
+    setFitState("auto");
+    setHighlightUploadGuide(true);
+
+    if (hasUserUpload) {
+      setHighlightPreviewWindow(true);
+      triggerStrapSettle();
+    }
+
+    focusPreviewStage();
+  };
+
+  const activateLibraryCategory = (nextCategory: StrapCategory) => {
+    const nextStraps = sortStrapsForDrawer(getStrapsForCategory(nextCategory));
+
+    setStrapSourceMode("library");
+    setCategory(nextCategory);
+
+    if (nextStraps.length) {
+      setStrapIndex(0);
+      setHasSelectedLibraryStrap(true);
+      setShowFitBench(false);
+      setFitState("auto");
+
+      if (hasUserUpload) {
+        setHighlightPreviewWindow(true);
+        triggerStrapSettle();
+      }
+    }
+
+    focusPreviewStage();
+  };
+
+  const strapsInCategory = useMemo(() => sortStrapsForDrawer(getStrapsForCategory(category)), [category]);
   const currentStrap: StrapVariant = strapsInCategory[strapIndex] ?? strapsInCategory[0];
   const hasUserUpload = Boolean(uploadedWatchFile && originalWatchSrc);
   const hasUploadedStrap = Boolean(uploadedStrapPartA && uploadedStrapPartB);
@@ -1293,14 +1367,38 @@ export default function Home() {
 
   return (
       <main className="mx-auto max-w-[92rem] px-4 pb-8 pt-6 sm:px-6 sm:pb-10 sm:pt-8 lg:px-8">
-      <header className="mb-10 text-center sm:mb-12">
-        <p className="font-serif text-[2.3rem] leading-none tracking-tight text-[#2b241d] sm:text-[2.9rem]">
-          Watchstrapper
-        </p>
-        <h1 className="mt-4 font-['Instrument_Sans',ui-sans-serif,system-ui,sans-serif] text-[2rem] font-medium leading-[1.02] tracking-[-0.04em] text-ink sm:text-[3.15rem]">
-          See any strap on your watch before you buy.
-        </h1>
-      </header>
+      <HeroSection
+        className="mb-14 sm:mb-16 xl:mb-20"
+        primaryCtaHref="#fitting-studio"
+        secondaryCtaHref="#style-starters"
+        onSelectPair={(pairId) => {
+          const pair = HERO_PAIRS.find((item) => item.id === pairId);
+          if (!pair) return;
+          activateLibrarySelection(pair.libraryStrapId, pair.strapCategory as StrapCategory);
+        }}
+      />
+
+      <section id="style-starters" className="mb-12 sm:mb-14 xl:mb-16">
+        <StyleStartersSection
+          onSelectStarter={(starter: HomepageStyleStarter) => {
+            activateLibrarySelection(starter.libraryStrapId, starter.strapCategory as StrapCategory);
+          }}
+          onSelectCategory={(nextCategory) => {
+            activateLibraryCategory(nextCategory as StrapCategory);
+          }}
+        />
+      </section>
+
+      <section id="strap-worlds" className="mb-14 sm:mb-16 xl:mb-20">
+        <StrapWorldsSection
+          onSelectWorld={(world: HomepageStrapWorld) => {
+            activateLibraryCategory(world.category as StrapCategory);
+          }}
+          onSelectCategory={(nextCategory) => {
+            activateLibraryCategory(nextCategory as StrapCategory);
+          }}
+        />
+      </section>
 
       {strapSplitSourceUrl && uploadedStrapSheetFile ? (
         <section className="mx-auto mb-6 w-full max-w-[920px]">
@@ -1326,7 +1424,23 @@ export default function Home() {
         }}
       />
 
-      <section className="mt-10 grid gap-5 xl:mt-20 xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem] xl:items-start">
+      <section id="fitting-studio" className="mb-6 sm:mb-7">
+        <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7c7165]">
+              Fitting Studio
+            </p>
+            <h2 className="mt-2 font-serif text-[1.95rem] leading-none tracking-[-0.025em] text-[#2b241d] sm:text-[2.45rem]">
+              Bring your own watch into the studio.
+            </h2>
+          </div>
+          <p className="max-w-[36rem] text-sm leading-6 text-muted sm:text-[0.97rem]">
+            Upload a watch, browse the strap drawer, and refine the pairing without leaving the page.
+          </p>
+        </div>
+      </section>
+
+      <section className="mt-10 grid gap-5 xl:mt-12 xl:grid-cols-[18.5rem_minmax(0,1fr)_15.25rem] xl:items-start">
         <aside className="order-2 space-y-3 xl:order-1">
           <div className="glass-card atelier-card-soft rounded-[1.9rem] p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
@@ -1380,10 +1494,15 @@ export default function Home() {
                         type="button"
                         onClick={() => {
                           setCategory(option);
-                          setStrapIndex(0);
-                          setHasSelectedLibraryStrap(false);
-                          setShowFitBench(false);
-                          setFitState("auto");
+                          const nextStraps = sortStrapsForDrawer(getStrapsForCategory(option));
+                          if (!nextStraps.length) {
+                            setStrapIndex(0);
+                            setHasSelectedLibraryStrap(false);
+                            setShowFitBench(false);
+                            setFitState("auto");
+                            return;
+                          }
+                          selectLibraryStrap(0);
                         }}
                         data-testid={`category-${option.toLowerCase().replace(/\s+/g, "-")}`}
                         className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
@@ -1420,17 +1539,7 @@ export default function Home() {
                         <StrapDrawerButton
                           key={strap.id}
                           onClick={() => {
-                            setStrapIndex(index);
-                            setHasSelectedLibraryStrap(true);
-                            setShowFitBench(false);
-                            setFitState("auto");
-                            if (hasUserUpload) {
-                              setHighlightPreviewWindow(true);
-                              triggerStrapSettle();
-                              window.setTimeout(() => {
-                                previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                              }, 80);
-                            }
+                            selectLibraryStrap(index);
                           }}
                           strap={strap}
                           active={active}
@@ -1513,7 +1622,7 @@ export default function Home() {
           </div>
         </aside>
 
-        <section ref={previewSectionRef} className="order-1 min-w-0 space-y-4 xl:order-2">
+        <section id="upload-watch" ref={previewSectionRef} className="order-1 min-w-0 space-y-4 xl:order-2">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               {previewStageTitle ? (
